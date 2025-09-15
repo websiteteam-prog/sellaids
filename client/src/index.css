@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset default spacing */
+body,
+html,
+#root {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    /* ✅ Prevent horizontal scroll */
+}
+
+/* Apply default font */
+body {
+    @apply font-body text-gray-800;
+}
+
+/* Custom container width */
+.container {
+    max-width: 1280px;
+}
+
+@layer utilities {
+    .animate-marquee {
+        display: inline-block;
+        animation: marquee 20s linear infinite;
+        will-change: transform;
+    }
+
+    @keyframes marquee {
+        0% {
+            transform: translateX(100%);
+            /* ✅ Start from right */
+        }
+
+        100% {
+            transform: translateX(-100%);
+            /* ✅ Exit completely on left */
+        }
+    }
+}
+
+.-translate-x-1\/2 {
+    --tw-translate-x: -50%;
+
+}
