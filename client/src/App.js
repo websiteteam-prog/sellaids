@@ -19,6 +19,9 @@ import WeDontSell from "./pages/WeDontSell";
 import WhoCanSell from "./pages/WhoCanSell";
 import AdviceSellers from "./pages/AdviceSellers";
 import Blogs from "./pages/Blogs";
+import Luxury from "./pages/Luxury";
+import Kidsaids from "./components/aids/Kidsaids";
+
 
 // ✅ Vendor Auth Pages
 import Login from "./pages/vendor/Login";
@@ -64,7 +67,10 @@ const App = () => {
       <Route path="/UserLogin" element={<UserLogin />} />
       <Route path="/UserRegister" element={<UserRegister />} />
       <Route path="/userragister" element={<UserRegister />} />
-
+      <Route path="/Fashionaids" element={<Layout><Luxury /></Layout>} />
+      <Route path="/Designeraids" element={<Layout><Luxury /></Layout>} />
+        <Route path="/kidsaids" element={<Layout><Luxury /></Layout>} />
+      
       {/* 🔓 Vendor Auth Routes */}
       <Route path="/vendor/login" element={<Login />} />
       <Route path="/vendor/register" element={<Register />} />
@@ -92,3 +98,4 @@ const App = () => {
 };
 
 export default App;
+
