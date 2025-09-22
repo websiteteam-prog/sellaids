@@ -1,96 +1,74 @@
-const express = require("express");
-const mysql = require("mysql2");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
+import express from "express"
+import dotenv from "dotenv"
+import cors from "cors"
+import cookieParser from "cookie-parser";
+import session from "express-session";
+// import contactFormRoutes from "./routes/contactFormRoutes.js"
+// import user routes
+import userRoutes from "./routes/user/userRoutes.js"
+import userAuthRoutes from "./routes/user/userAuthRoutes.js"
+// import userProfileRoutes from "./routes/user/userProfileRoutes.js"
+// import userSupportRoutes from './routes/user/userSupportRoutes.js'
+// import vendor routes
+// import vendorRoutes from "./routes/vendor/vendorRoutes.js"
+// import vendorAuthRoutes from "./routes/vendor/vendorAuthRoutes.js"
+// import vendorProfileRoutes from "./routes/vendor/vendorProfileRoutes.js"
+// import vendorSupportRoutes from './routes/vendor/vendorSupportRoutes.js'
+// import admin routes
+// import adminRoutes from "./routes/admin/adminRoutes.js"
+// import adminProfileRoutes from "./routes/admin/adminProfileRoutes.js"
+// import adminSupportRoutes from './routes/admin/adminSupportRoutes.js'
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+dotenv.config()
+const app = express()
 
-// ✅ MySQL Connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",      // apna MySQL user dalna
-  password: "",      // agar password set hai toh dalna
-  database: "sellaids"
-});
+// session setup
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false, 
+    cookie: {
+        maxAge: 1 * 60 * 1000, // 1 minute inactivity
+        httpOnly: true,
+        sameSite: 'strict',
+        // secure: true
+    },
+    rolling: true // being activity then expiry session refresh 
+}))
 
-db.connect((err) => {
-  if (err) {
-    console.error("❌ MySQL connection error:", err);
-  } else {
-    console.log("✅ MySQL connected!");
-  }
-});
+// define middleware
+app.use(express.json())
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}))
+app.use(cookieParser())
 
-// ✅ Register API
-app.post("/api/auth/register", (req, res) => {
-  const { mobile, email, password } = req.body;
+// defines and mount common routes
+// app.use('/api/contact', contactFormRoutes)
 
-  if (!mobile || !email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
+// define and mount user routes
+app.use('/api/user', userRoutes)
+app.use('/api/user/auth', userAuthRoutes)
+// app.use('/api/user/profile', userProfileRoutes)
+// app.use('/api/user/support', userSupportRoutes)
 
-  const hashedPassword = bcrypt.hashSync(password, 10);
+// define and mount vendor routes
+// app.use('/api/vendor', vendorRoutes)
+// app.use('/api/vendor/auth', vendorAuthRoutes)
+// app.use('/api/vendor/profile', vendorProfileRoutes)
+// app.use('/api/vendor/support', vendorSupportRoutes)
 
-  const sql = "INSERT INTO users (mobile, email, password) VALUES (?, ?, ?)";
-  db.query(sql, [mobile, email, hashedPassword], (err, result) => {
-    if (err) {
-      console.error("❌ Error inserting user:", err);
-      return res.status(500).json({ message: "Database error" });
-    }
-    res.json({ message: "User registered successfully!" });
-  });
-});
+// define and mount admin routes
+// app.use('/api/admin', adminRoutes)
+// app.use('/api/admin/profile', adminProfileRoutes)
+// app.use('/api/admin/support', adminSupportRoutes)
 
+// define PORT
+const PORT = process.env.PORT || 8000
 
-// ✅ Login API
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  const sql = "SELECT * FROM users WHERE email = ?";
-  db.query(sql, [email], (err, results) => {
-    if (err) {
-      console.error("❌ Error finding user:", err);
-      return res.status(500).json({ message: "Database error" });
-    }
-
-    if (results.length === 0) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    const user = results[0];
-
-    // Compare password
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    // JWT token
-    const token = jwt.sign({ id: user.id, email: user.email }, "secret123", {
-      expiresIn: "1h",
-    });
-
-    // ✅ Send user data also
-    res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user.id,
-        mobile: user.mobile,   // yeh header me naam dikhane ke liye
-        email: user.email,
-      },
-    });
-  });
-});
-
-// ✅ Server start
-app.listen(5000, () => {
-  console.log("🚀 Server running on port 5000");
-});
+// server start
+app.listen(PORT,()=>{
+    console.log(`Server is listening at the PORT ${PORT}`)
+})
