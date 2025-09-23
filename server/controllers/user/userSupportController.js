@@ -1,52 +1,85 @@
-import { connectToDb } from "../db.js";
+import { connectToDb } from "../../config/db.js"
 
-// Create ticket (User)
 export const createUserTicket = async (req, res) => {
-  const { title, description } = req.body;
-  const userId = req.user.id;
+    try {
+        // fetch data from frontend
+        const { name, email, subject, description } = req.body;
 
-  try {
-    const [result] = await connectToDb.query(
-      "INSERT INTO tickets (panel_type, panel_id, title, description, status) VALUES (?, ?, ?, ?, ?)",
-      ["user", userId, title, description, "open"]
-    );
-    res.status(201).json({ message: "Ticket created", ticketId: result.insertId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Something went wrong" });
-  }
-};
+        // check all field required or not
+        if (!name || !email || !subject || !description) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
 
-// Get all tickets for user
-export const getUserTickets = async (req, res) => {
-  const userId = req.user.id;
+        // create a ticket
+        const [result] = await connectToDb.promise().query(
+            "INSERT INTO tickets (name, email, subject, description, status) VALUES (?, ?, ?, ?, ?)",
+            [name, email, subject, description]
+        );
+        return res.status(200).json({
+            success: true,
+            message: "ticket create successfully",
+            data: result
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "ticket creation failed",
+            error: error.message
+        })
+    }
+}
 
-  try {
-    const [tickets] = await connectToDb.query(
-      "SELECT * FROM tickets WHERE panel_type=? AND panel_id=? ORDER BY created_at DESC",
-      ["user", userId]
-    );
-    res.status(200).json(tickets);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Something went wrong" });
-  }
-};
-
-// Get single ticket
 export const getUserSingleTicket = async (req, res) => {
-  const ticketId = req.params.id;
-  const userId = req.user.id;
+    try {
+        const ticketId = req.params.id;
+        const userId = req.user.id;
+        // get Single ticket
+        const [tickets] = await connectToDb.promise().query(
+            "SELECT * FROM tickets WHERE id=? AND panel_type=? AND panel_id=?",
+            [ticketId, "user", userId]
+        );
+        if (tickets.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Ticket not found"
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "get single ticket successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "get single ticket failed",
+            error: error.message
+        })
+    }
+}
 
-  try {
-    const [tickets] = await connectToDb.query(
-      "SELECT * FROM tickets WHERE id=? AND panel_type=? AND panel_id=?",
-      [ticketId, "user", userId]
-    );
-    if (!tickets.length) return res.status(404).json({ message: "Ticket not found" });
-    res.status(200).json(tickets[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Something went wrong" });
-  }
-};
+export const getUserTickets = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        // get all rase ticket
+        const [tickets] = await connectToDb.promise().query(
+            "SELECT * FROM tickets WHERE panel_type=? AND panel_id=? ORDER BY created_at DESC",
+            ["user", userId]
+        )
+        if (tickets.length === 0) {
+            res.status(400).json({
+                success: false,
+                message: "not get all ticket"
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "get all ticket successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "get all ticket failed",
+            error: error.message
+        })
+    }
+}

@@ -7,16 +7,17 @@ import session from "express-session";
 // import user routes
 import userRoutes from "./routes/user/userRoutes.js"
 import userAuthRoutes from "./routes/user/userAuthRoutes.js"
-// import userProfileRoutes from "./routes/user/userProfileRoutes.js"
+import userProfileRoutes from "./routes/user/userProfileRoutes.js"
 // import userSupportRoutes from './routes/user/userSupportRoutes.js'
 // import vendor routes
-// import vendorRoutes from "./routes/vendor/vendorRoutes.js"
-// import vendorAuthRoutes from "./routes/vendor/vendorAuthRoutes.js"
-// import vendorProfileRoutes from "./routes/vendor/vendorProfileRoutes.js"
+import vendorRoutes from "./routes/vendor/vendorRoutes.js"
+import vendorAuthRoutes from "./routes/vendor/vendorAuthRoutes.js"
+import vendorProfileRoutes from "./routes/vendor/vendorProfileRoutes.js"
 // import vendorSupportRoutes from './routes/vendor/vendorSupportRoutes.js'
 // import admin routes
-// import adminRoutes from "./routes/admin/adminRoutes.js"
-// import adminProfileRoutes from "./routes/admin/adminProfileRoutes.js"
+import adminRoutes from "./routes/admin/adminRoutes.js"
+import adminAuthRoutes from "./routes/admin/adminAuthRoutes.js"
+import adminProfileRoutes from "./routes/admin/adminProfileRoutes.js"
 // import adminSupportRoutes from './routes/admin/adminSupportRoutes.js'
 
 dotenv.config()
@@ -51,18 +52,19 @@ app.use(cookieParser())
 // define and mount user routes
 app.use('/api/user', userRoutes)
 app.use('/api/user/auth', userAuthRoutes)
-// app.use('/api/user/profile', userProfileRoutes)
+app.use('/api/user/profile', userProfileRoutes)
 // app.use('/api/user/support', userSupportRoutes)
 
 // define and mount vendor routes
-// app.use('/api/vendor', vendorRoutes)
-// app.use('/api/vendor/auth', vendorAuthRoutes)
-// app.use('/api/vendor/profile', vendorProfileRoutes)
+app.use('/api/vendor', vendorRoutes)
+app.use('/api/vendor/auth', vendorAuthRoutes)
+app.use('/api/vendor/profile', vendorProfileRoutes)
 // app.use('/api/vendor/support', vendorSupportRoutes)
 
 // define and mount admin routes
-// app.use('/api/admin', adminRoutes)
-// app.use('/api/admin/profile', adminProfileRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/admin/auth', adminAuthRoutes)
+app.use('/api/admin/profile', adminProfileRoutes)
 // app.use('/api/admin/support', adminSupportRoutes)
 
 // define PORT

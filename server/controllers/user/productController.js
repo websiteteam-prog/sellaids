@@ -1,19 +1,20 @@
-import connectToDb from "../config/db.js"
+import connectToDb from "../../config/db.js"
 
 export const createProductController = async (req, res) => {
     try {
-        const { name, description, price, stock, category, image } = req.body;
+        const data = req.body;
 
-        if (!name || !price || stock == null) {
+        // Basic required validations
+        if (!data.name || !data.price || data.stock == null) {
             return res.status(400).json({ message: "Name, price and stock are required" });
         }
 
         const status = stock > 0 ? "Active" : "Out of Stock";
 
-        const [result] = await connectToDb.query(
-            "INSERT INTO products (name, description, price, stock, category, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [name, description, price, stock, category, image, status]
-        );
+        const sql = ``
+        const values = []
+
+        const [result] = await connectToDb.promise().query(sql, values)
 
         return res.status(201).json({
             success: true,
@@ -31,9 +32,15 @@ export const createProductController = async (req, res) => {
 
 export const getSingleProductController = async (req, res) => {
     try {
+        // fetch the id from param
+        const { id } = req.params;
+
+        // fetch single product
+        const [rows] = await connectToDb.promise().query("SELECT * FROM products WHERE id = ?", [id])
         return res.status(200).json({
             success: true,
-            message: "get product successfully"
+            message: "get product successfully",
+            data: rows[0]
         })
     } catch (error) {
         return res.status(500).json({
@@ -46,7 +53,14 @@ export const getSingleProductController = async (req, res) => {
 
 export const getAllProductController = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM products");
+        // fetch all products
+        const [rows] = await connectToDb.promise().query("SELECT * FROM products");
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "not found products"
+            })
+        }
         return res.status(200).json({
             success: true,
             message: "get all products successfully",
@@ -78,9 +92,15 @@ export const updateProductController = async (req, res) => {
 
 export const deleteProductController = async (req, res) => {
     try {
+        // fetch the id from param
+        const { id } = req.params;
+
+        // delete product
+        const [result] = await connectToDb.promise().query("DELETE FROM products WHERE id = ?", [id])
         return res.status(200).json({
             success: true,
-            message: "Product delete successfully"
+            message: "Product delete successfully",
+            data: result
         })
     } catch (error) {
         return res.status(500).json({

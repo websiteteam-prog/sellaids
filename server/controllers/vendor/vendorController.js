@@ -1,8 +1,27 @@
-import connectToDb from "../config/db.js"
+import connectToDb from "../../config/db.js"
 import crypto from "crypto"
 import dotenv from "dotenv"
-import { sendEmail } from "../utils/mailer.js"
+import bcrypt from "bcryptjs"
+import { sendEmail } from "../../utils/mailer.js"
 dotenv.config()
+
+export const getAllVendorsController = async (req, res)=>{
+    try {
+        // get all vendors
+        const [results] = await connectToDb.promise().query("SELECT id, name, phone, email FROM vendors")
+        return res.status(200).json({
+            success: true,
+            message: "get all vendor successfully",
+            data: results
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "get all vendor process failed",
+            error: error.message
+        })
+    }
+}
 
 export const vendorForgotPasswordController = async (req, res) => {
     try {
@@ -27,7 +46,7 @@ export const vendorForgotPasswordController = async (req, res) => {
 
         // Save token to DB
         await connectToDb.promise().query(
-            "UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE email = ?",
+            "UPDATE vendors SET reset_token = ?, reset_token_expires = ? WHERE email = ?",
             [resetToken, tokenExpiry, email]
         );
 
@@ -44,7 +63,7 @@ export const vendorForgotPasswordController = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "User forgot password process failed",
+            message: "Vendor forgot password process failed",
             error: error.message
         })
     }
@@ -62,7 +81,7 @@ export const vendorResetPasswordController = async (req, res) => {
 
         // Verify token & expiry
         const [vendors] = await connectToDb.promise().query(
-            "SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > NOW()",
+            "SELECT * FROM vendors WHERE reset_token = ? AND reset_token_expires > NOW()",
             [token]
         );
 
@@ -77,10 +96,20 @@ export const vendorResetPasswordController = async (req, res) => {
 
         // Update password & clear token
         await connectToDb.promise().query(
-            "UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
+            "UPDATE vendors SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
             [hashedPassword, vendor.id]
         );
 
+        //  Send reset link to via email to
+        await sendEmail(
+            vendor.email,
+            "Password Reset Confirmation",
+            `Hello ${vendor.name || "Vendor"},\n\n` +
+            `This is to inform you that your password has been reset successfully.\n\n` +
+            `If you did not initiate this change, please contact the support team immediately or take necessary security measures.\n\n` +
+            `Best regards,\nYour App Team`
+        );
+        
         return res.status(200).json({
             success: true,
             message: "Password reset successfully"
@@ -88,7 +117,7 @@ export const vendorResetPasswordController = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "User reset password process failed",
+            message: "Vendor reset password process failed",
             error: error.message
         })
     }

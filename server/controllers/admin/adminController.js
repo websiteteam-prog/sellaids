@@ -1,7 +1,8 @@
-import connectToDb from "../config/db.js"
+import connectToDb from "../../config/db.js"
 import crypto from "crypto"
 import dotenv from "dotenv"
-import { sendEmail } from "../utils/mailer.js"
+import bcrypt from "bcryptjs"
+import { sendEmail } from "../../utils/mailer.js"
 dotenv.config()
 
 export const adminForgotPasswordController = async (req, res) => {
@@ -14,20 +15,20 @@ export const adminForgotPasswordController = async (req, res) => {
             return res.status(400).json({ success: false, message: "Email is required" });
         }
 
-        const [rows] = await connectToDb.promise().query("SELECT * FROM users WHERE email = ?", [email]);
+        const [rows] = await connectToDb.promise().query("SELECT * FROM admin WHERE email = ?", [email]);
 
-        // User not found
+        // Admin not found
         if (rows.length === 0) {
-            return res.status(404).json({ success: false, message: "User not found with this email" });
+            return res.status(404).json({ success: false, message: "Admin not found with this email" });
         }
 
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString("hex");
-        const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour expiry
+        const tokenExpiry = new Date(Date.now() + 60000); // 5 min expiry
 
         // Save token to DB
         await connectToDb.promise().query(
-            "UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE email = ?",
+            "UPDATE admin SET reset_token = ?, reset_token_expires = ? WHERE email = ?",
             [resetToken, tokenExpiry, email]
         );
 
@@ -44,7 +45,7 @@ export const adminForgotPasswordController = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "User forgot password process failed",
+            message: "Admin forgot password process failed",
             error: error.message
         })
     }
@@ -61,26 +62,36 @@ export const adminResetPasswordController = async (req, res) => {
         }
 
         // Verify token & expiry
-        const [users] = await connectToDb.promise().query(
-            "SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > NOW()",
+        const [admins] = await connectToDb.promise().query(
+            "SELECT * FROM admin WHERE reset_token = ? AND reset_token_expires > NOW()",
             [token]
         );
 
-        if (users.length === 0) {
+        if (admins.length === 0) {
             return res.status(400).json({ success: false, message: "Invalid or expired token" });
         }
 
-        const user = users[0];
+        const admin = admins[0];
 
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         // Update password & clear token
         await connectToDb.promise().query(
-            "UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
-            [hashedPassword, user.id]
+            "UPDATE admin SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
+            [hashedPassword, admin.id]
         );
 
+        //  Send reset link to via email to
+        await sendEmail(
+            admin.email,
+            "Password Reset Confirmation",
+            `Hello ${admin.name || "Admin"},\n\n` +
+            `This is to inform you that your password has been reset successfully.\n\n` +
+            `If you did not initiate this change, please contact the support team immediately or take necessary security measures.\n\n` +
+            `Best regards,\nYour App Team`
+        );
+        
         return res.status(200).json({
             success: true,
             message: "Password reset successfully"
@@ -88,7 +99,7 @@ export const adminResetPasswordController = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "User reset password process failed",
+            message: "Admin reset password process failed",
             error: error.message
         })
     }

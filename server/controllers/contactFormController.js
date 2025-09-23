@@ -1,5 +1,5 @@
-import connectToDb from "../config/db.js"
-import { sendEmail } from "../utils/mailer.js";
+import connectToDb from "../../config/db.js"
+import { sendEmail } from "../../utils/mailer.js";
 
 export const userContactFormController = async (req, res) => {
     try {
