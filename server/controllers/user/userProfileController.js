@@ -1,9 +1,12 @@
-import connectToDb from "../config/db.js";
+import connectToDb from "../../config/db.js";
 
 export const getUserProfileController = async (req, res) => {
     try {
         // get user ID from request parameters
         const userId = req.params.id;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "User ID is required" });
+        }
 
         // fetch user details from the 'users' table
         const [user] = await connectToDb.promise().query("SELECT name, email, phone FROM users WHERE id = ?", [userId]);
@@ -33,12 +36,32 @@ export const getUserProfileController = async (req, res) => {
 
 export const updateUserProfileController = async (req, res) => {
     try {
-        // get user ID from params and new data from body
-        const userId = req.params.id;
         const { name, email, phone } = req.body;
 
+        // get user ID from params and new data from body
+        const userId = req.params.id;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "User ID is required" });
+        }
+
+        // Get existing user data first
+        const [existingRows] = await connectToDb.promise().query(
+            "SELECT * FROM users WHERE id = ?",
+            [userId]
+        );
+
+        if (existingRows.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const existingUser = existingRows[0];
+
+        // Use provided values or fall back to existing ones
+        const updatedName = name ?? existingUser.name;
+        const updatedEmail = email ?? existingUser.email;
+        const updatedPhone = phone ?? existingUser.phone;
+
         // Update user details in the database
-        const [result] = await connectToDb.promise().query("UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?", [name, email, phone, userId]);
+        const [result] = await connectToDb.promise().query("UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?", [updatedName, updatedEmail, updatedPhone, userId]);
 
         return res.status(200).json({
             success: true,
@@ -54,3 +77,11 @@ export const updateUserProfileController = async (req, res) => {
         });
     }
 };
+
+export const bsh = () =>{
+    try {
+        
+    } catch (error) {
+        
+    }
+}

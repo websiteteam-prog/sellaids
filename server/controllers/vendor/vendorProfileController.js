@@ -1,4 +1,4 @@
-import connectToDb from "../config/db.js";
+import connectToDb from "../../config/db.js";
 
 export const getVendorProfileController = async (req, res) => {
     try {

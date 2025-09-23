@@ -5,6 +5,24 @@ import bcrypt from "bcryptjs"
 import { sendEmail } from "../../utils/mailer.js"
 dotenv.config()
 
+export const getAllUsersController = async (req, res)=>{
+    try {
+        // get all users
+        const [results] = await connectToDb.promise().query("SELECT id, name, phone, email FROM users")
+        return res.status(200).json({
+            success: true,
+            message: "get all user successfully",
+            data: results
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "get all user process failed",
+            error: error.message
+        })
+    }
+}
+
 export const userForgotPasswordController = async (req, res) => {
     try {
         // fetch email from frontend
@@ -34,9 +52,8 @@ export const userForgotPasswordController = async (req, res) => {
 
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
-        const abc = "gupta770494@gmail.com"
         //  Send reset link to via email to
-        await sendEmail(abc, "Reset Your Password", `Click here to reset your password: ${resetLink}`)
+        await sendEmail(email, "Reset Your Password", `Click here to reset your password: ${resetLink}`)
 
         return res.status(200).json({
             success: true,
@@ -82,10 +99,10 @@ export const userResetPasswordController = async (req, res) => {
             "UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?",
             [hashedPassword, user.id]
         );
-        const abc = "gupta770494@gmail.com"
+        
         //  Send reset link to via email to
         await sendEmail(
-            abc,
+            user.email,
             "Password Reset Successful",
             `Hello ${user.name || "User"},\n\n` +
             `Your password has been reset successfully.\n\n` +

@@ -1,5 +1,9 @@
 import bcrypt from "bcryptjs";
 import connectToDb from "../../config/db.js"
+import { OAuth2Client  } from "google-auth-library";
+
+const CLIENT_ID  = process.env.GOOGLE_CLIENT_ID
+const client = new OAuth2Client(CLIENT_ID)
 
 export const registerUserController = async (req, res) => {
     try {
@@ -123,5 +127,61 @@ export const logoutUserController = async (req, res) => {
             message: "User logout failed",
             error: error
         })
+    }
+}
+
+export const googleLoginUserController = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({ success: false, message: "No ID token provided" });
+        }
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, sub: googleId } = payload;
+
+        // 1. Check if user already exists
+        const [rows] = await connectToDb.promise().query("SELECT * FROM users WHERE email = ?", [email]);
+
+        let user;
+
+        if (rows.length === 0) {
+            // 2. If not, create user
+            const [result] = await connectToDb.promise().query(
+                "INSERT INTO users (name, email, picture, google_id) VALUES (?, ?, ?, ?)",
+                [name, email, googleId]
+            );
+
+            user = {
+                id: result.insertId,
+                name,
+                email,
+                google_id: googleId
+            };
+        } else {
+            user = rows[0];
+        }
+
+        // 3. Set session
+        req.session.userId = user.id;
+        req.session.userName = user.name;
+
+        return res.status(200).json({
+            success: true,
+            message: `${user.name} logged in with Google successfully`,
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email
+            }
+        });
+
+    } catch (error) {
+        return res.status(401).json({ success: false, message: "Invalid ID token", error: error.message });
     }
 }
