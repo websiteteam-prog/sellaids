@@ -1,21 +1,30 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const navigate = useNavigate()
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/login", {
+      const res = await axios.post("http://localhost:5000/api/user/auth/login", {
         email,
         password,
-      });
+      },{withCredentials: true});
 
       alert("Login Successful ✅");
-      localStorage.setItem("user", JSON.stringify(res.data.user));
       console.log(res.data);
+      const { success } = res?.data
+      if (success) {
+        setEmail("")
+        setPassword("")
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        // navigate('/login')
+      }
     } catch (err) {
       console.error(err.response?.data || err.message);
       alert("Invalid Credentials ❌");

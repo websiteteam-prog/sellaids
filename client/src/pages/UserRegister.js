@@ -1,13 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 
 function Register() {
+  const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const navigate = useNavigate()
   const validateForm = () => {
     let formErrors = {};
     const passwordRegex =
@@ -41,13 +46,25 @@ function Register() {
     if (!validateForm()) return;
 
     try {
-      const res = await axios.post("http://localhost:5000/register", {
-        name:mobile,
+      const res = await axios.post("http://localhost:5000/api/user/auth/register", {
+        phone: mobile,
+        name,
         email,
         password,
+      }, {
+        withCredentials: true
       });
+      console.log(res?.data);
       alert("Registration Successful ✅");
-      console.log(res.data);
+
+      const { success } = res?.data
+      if (success) {
+        setName("")
+        setMobile("")
+        setEmail("")
+        setPassword("")
+        navigate('/login')
+      }
     } catch (err) {
       alert("Something went wrong ❌");
     }
@@ -61,18 +78,26 @@ function Register() {
         </h2>
 
         <form onSubmit={handleRegister}>
-          {/* Mobile Number */}
-          <label className="block text-gray-700 font-medium mb-1">
-            Mobile Number *
-          </label>
+          {/* Name */}
           <input
             type="text"
+            placeholder="Enter Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={`w-full border ${errors.name ? "border-red-500" : "border-gray-300"
+              } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
+          />
+          {errors.name && (
+            <p className="text-red-500 text-sm mb-2">{errors.name}</p>
+          )}
+          {/* Mobile Number */}
+          <input
+            type="number"
             placeholder="Enter Mobile Number"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            className={`w-full border ${
-              errors.mobile ? "border-red-500" : "border-gray-300"
-            } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
+            className={`w-full border ${errors.mobile ? "border-red-500" : "border-gray-300"
+              } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
           />
           {errors.mobile && (
             <p className="text-red-500 text-sm mb-2">{errors.mobile}</p>
@@ -84,24 +109,31 @@ function Register() {
             placeholder="Email ID"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={`w-full border ${
-              errors.email ? "border-red-500" : "border-gray-300"
-            } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
+            className={`w-full border ${errors.email ? "border-red-500" : "border-gray-300"
+              } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
           />
           {errors.email && (
             <p className="text-red-500 text-sm mb-2">{errors.email}</p>
           )}
 
-          {/* Password */}
+          {/* Password input */}
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={`w-full border ${
-              errors.password ? "border-red-500" : "border-gray-300"
-            } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
+            className={`w-full border ${errors.password ? "border-red-500" : "border-gray-300"
+              } rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500`}
           />
+
+          {/* Toggle button */}
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
           {errors.password && (
             <p className="text-red-500 text-sm mb-2">{errors.password}</p>
           )}
