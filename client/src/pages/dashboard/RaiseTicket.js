@@ -35,24 +35,7 @@ export default function RaiseTicket() {
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
       <h2 className="text-2xl font-bold mb-6">Raise a Support Ticket</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
-        <input
-          type="text"
-          name="name"
-          placeholder="Your Name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full border px-4 py-2 rounded"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Your Email"
-          value={form.email}
-          onChange={handleChange}
-          className="w-full border px-4 py-2 rounded"
-          required
-        />
+        
         <input
           type="text"
           name="subject"
@@ -80,3 +63,4 @@ export default function RaiseTicket() {
     </div>
   );
 }
+
