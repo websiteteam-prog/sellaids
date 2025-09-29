@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, ShoppingCart, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // ✅ Import navigate hook
 
 import bestseller1 from '../assets/images/bestseller1.webp';
 import bestseller2 from '../assets/images/bestseller2.webp';
@@ -35,14 +36,13 @@ const products = [
 
 function Bestsellers() {
     const [hoveredIndex, setHoveredIndex] = useState(null);
+    const navigate = useNavigate(); // ✅ navigation hook
 
     return (
         <div className="bg-white py-6 px-4 sm:px-8 lg:px-16">
-            {/* 🔹 Heading spacing fixed */}
             <h2 className="text-5xl font-heading text-black leading-tight text-center mt-0 mb-6 md:mb-12">
                 Bestseller
             </h2>
-
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 {products.map((product, index) => (
@@ -59,7 +59,7 @@ function Bestsellers() {
                                 className="w-full h-[400px] object-cover"
                             />
 
-                            {/* Icon panel on right side of image only */}
+                            {/* Icon panel */}
                             <div
                                 className={`absolute top-1/2 right-0 py-5 transform -translate-y-1/2 bg-white border-l border-gray-300 px-2 flex flex-col space-y-4 shadow-md transition-transform duration-300 ${hoveredIndex === index ? 'translate-x-0' : 'translate-x-full'
                                     }`}
@@ -75,14 +75,13 @@ function Bestsellers() {
                                     {
                                         label: 'Add to Cart',
                                         Icon: ShoppingCart,
-                                        onClick: () =>
-                                            alert(`Added "${product.title}" to cart!`),
+                                        onClick: () => navigate('/AddToCart'), // ✅ redirect
                                     },
                                     {
                                         label: 'View Details',
                                         Icon: Eye,
                                         onClick: () =>
-                                            (window.location.href = `/product/${product.id}`),
+                                            navigate(`/product/${product.id}`),
                                     },
                                 ].map(({ label, Icon, onClick }) => (
                                     <button
@@ -99,7 +98,6 @@ function Bestsellers() {
                         </div>
 
                         <div className="p-4">
-                            {/* Product title clickable */}
                             <h3 className="text-sm font-medium text-gray-800">
                                 <a
                                     href={`/product/${product.id}`}

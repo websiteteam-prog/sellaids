@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import raiseTicket from "../../api/raiseTicket"; // ✅ use API
+// import raiseTicket from "../../api/raiseTicket"; // ✅ use API
 
 export default function RaiseTicket() {
   const [form, setForm] = useState({
@@ -19,16 +19,16 @@ export default function RaiseTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const res = await raiseTicket(form);
-      alert(res.message || "Ticket submitted successfully!");
+    // try {
+    //   const res = await raiseTicket(form);
+    //   alert(res.message || "Ticket submitted successfully!");
 
-      // reset form
-      setForm({ name: "", email: "", subject: "", message: "" });
-      navigate("/user/support"); // redirect after success
-    } catch (err) {
-      alert("Something went wrong!");
-    }
+    //   // reset form
+    //   setForm({ name: "", email: "", subject: "", message: "" });
+    //   navigate("/user/support"); // redirect after success
+    // } catch (err) {
+    //   alert("Something went wrong!");
+    // }
   };
 
   return (
