@@ -82,7 +82,6 @@ export const loginUserController = async (req, res) => {
         }
 
         req.session.userId = user.id;
-        req.session.usernName = user.name;
         console.log(req.session)
 
         return res.status(200).json({

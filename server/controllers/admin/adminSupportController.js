@@ -1,51 +1,117 @@
-import { connectToDb } from "../db.js";
-import { sendEmail } from "../utils/sendEmail.js";
+import connectToDb from "../../config/db.js";
 
-// Get all tickets raised by user/vendor
-export const getAllTickets = async (req, res) => {
-  try {
-    const [tickets] = await connectToDb.query(
-      "SELECT t.*, u.name AS user_name FROM tickets t LEFT JOIN users u ON (t.panel_type='user' AND t.panel_id=u.id) LEFT JOIN vendors v ON (t.panel_type='vendor' AND t.panel_id=v.id) ORDER BY created_at DESC"
-    );
-    res.status(200).json(tickets);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Something went wrong" });
-  }
+// Admin: get all users ticket
+export const getAllUserTicketController = async (req, res) => {
+    try {
+        // fetch all user ticket admin side
+        const [rows] = await connectToDb.promise().query(
+            "SELECT * FROM user_tickets ORDER BY created_at DESC"
+        );
+        return res.status(200).json({
+            success: true,
+            message: "Fetch all tickets successfully",
+            tickets: rows
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Fetch all tickets failed",
+            error: error.message
+        });
+    }
 };
 
-// Close ticket
-export const closeTicket = async (req, res) => {
-  const ticketId = req.params.id;
+// Admin: Update User Ticket Status
+export const updateUserTicketStatusController = async (req, res) => {
+    try {
+        // ticket id from url
+        const { id } = req.params;
 
-  try {
-    const [result] = await connectToDb.query(
-      "UPDATE tickets SET status='closed', updated_at=NOW() WHERE id=?",
-      [ticketId]
-    );
-    if (result.affectedRows === 0) return res.status(404).json({ message: "Ticket not found" });
+        // fetch status from frontend
+        const { status } = req.body;
 
-    // Fetch panel email
-    const [rows] = await connectToDb.query(
-      "SELECT panel_type, panel_id FROM tickets WHERE id=?",
-      [ticketId]
-    );
-    if (rows.length) {
-      const ticket = rows[0];
-      let emailRow;
-      if (ticket.panel_type === "user") {
-        [emailRow] = await connectToDb.query("SELECT email FROM users WHERE id=?", [ticket.panel_id]);
-      } else {
-        [emailRow] = await connectToDb.query("SELECT email FROM vendors WHERE id=?", [ticket.panel_id]);
-      }
-      if (emailRow && emailRow.length) {
-        await sendEmail(emailRow[0].email, "Your ticket is closed", "Hello, your ticket has been resolved.");
-      }
+        // update the ticket status
+        const [result] = await connectToDb.promise().query(
+            "UPDATE user_tickets SET status = ? WHERE id = ?",
+            [status, id]
+        );
+
+        // If no rows were affected, ticket was not found
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Ticket not found" });
+        }
+
+        // Successfully updated
+        return res.status(200).json({
+            success: true,
+            message: "Ticket status updated successfully",
+            data: result
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update ticket status",
+            error: error.message
+        });
     }
+};
 
-    res.status(200).json({ message: "Ticket closed successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Something went wrong" });
-  }
+// Admin: get all vendor ticket
+export const getAllVendorTicketController = async (req, res) => {
+    try {
+        // fetch all vendor ticket admin side
+        const [rows] = await connectToDb.promise().query(
+            "SELECT * FROM vendor_tickets ORDER BY created_at DESC"
+        );
+        return res.status(200).json({
+            success: true,
+            message: "Fetch all tickets successfully",
+            tickets: rows
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Fetch all tickets failed",
+            error: error.message
+        });
+    }
+};
+
+// Admin: Update Vendor Ticket Status
+export const updateVendorTicketStatusController = async (req, res) => {
+    try {
+        // ticket id from url
+        const { id } = req.params;
+
+        // fetch status from frontend
+        const { status } = req.body;
+
+        // Check if the new status is valid
+        if (!["open", "in-progress", "resolved", "closed"].includes(status)) {
+            return res.status(400).json({ success: false, message: "Invalid status" });
+        }
+
+        // update the ticket status
+        const [result] = await connectToDb.promise().query(
+            "UPDATE vendor_tickets SET status = ? WHERE id = ?",
+            [status, id]
+        );
+
+        // If no rows were affected, ticket was not found
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Ticket not found" });
+        }
+
+        // Successfully updated
+        return res.status(200).json({
+            success: true,
+            message: "Ticket status updated successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update ticket status",
+            error: error.message
+        });
+    }
 };

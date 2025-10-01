@@ -29,11 +29,11 @@ export const registerAdminController = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10)
 
         // admin register
-        const [result] = await connectToDb.promise().query("INSERT INTO admin (name, email, password, phone) values(?, ?, ?, ?)", [name, email, hashedPassword, phone])
+        const [rows] = await connectToDb.promise().query("INSERT INTO admin (name, email, password, phone) values(?, ?, ?, ?)", [name, email, hashedPassword, phone])
         return res.status(201).json({
             success: true,
             message: `${name} register successfully`,
-            data: result
+            data: rows
         })
     } catch (error) {
         return res.status(500).json({
@@ -79,6 +79,7 @@ export const loginAdminController = async (req, res) => {
 
         req.session.adminId = admin.id;
         req.session.adminName = admin.name;
+        req.session.cookie.maxAge = 30 * 60 * 1000;
         // console.log(req.session)
 
         return res.status(200).json({

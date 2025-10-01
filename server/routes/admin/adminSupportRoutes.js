@@ -1,16 +1,17 @@
 import express from "express";
-import { adminAuth } from "../middleware/auth.js";
-import {
-  getAllTickets,
-  closeTicket
-} from "../controllers/adminTicketController.js";
+import { getAllUserTicketController, updateUserTicketStatusController, getAllVendorTicketController, updateVendorTicketStatusController } from "../../controllers/admin/adminSupportController.js";
+import { isAdminLoginIn } from "../../middlewares/authmiddlewares.js"
 
+// define router object
 const router = express.Router();
 
-// Get all tickets raised by all users/vendors
-router.get("/tickets", adminAuth, getAllTickets);
+// define all routes
+// user admin side
+router.get("/user/tickets", isAdminLoginIn, getAllUserTicketController);
+router.put("/user/tickets/:id", isAdminLoginIn, updateUserTicketStatusController);
 
-// Close a ticket by ID (Admin)
-router.patch("/tickets/:id/close", adminAuth, closeTicket);
+// vendor admin side
+router.get("/vendor/tickets", isAdminLoginIn, getAllVendorTicketController);
+router.put("/vendor/tickets/:id", isAdminLoginIn, updateVendorTicketStatusController);
 
 export default router;

@@ -6,7 +6,7 @@ export const getAdminProfileController = async (req, res) => {
         const adminId = req.params.id;
 
         // fetch admin details from the 'admin' table
-        const [admin] = await connectToDb.promise().query("SELECT * FROM admin WHERE id = ?", [adminId]);
+        const [admin] = await connectToDb.promise().query("SELECT name, email, phone FROM admin WHERE id = ?", [adminId]);
 
         // If admin not found, return 404
         if (admin.length === 0) {
@@ -20,20 +20,20 @@ export const getAdminProfileController = async (req, res) => {
             success: true,
             message: "get admin profile successfully",
             data: admin[0]
-        });
+        })
 
     } catch (err) {
         return res.status(500).json({
             success: false,
             message: "get admin profile failed",
             error: err.message
-        });
+        })
     }
-};
+}
 
 export const updateAdminProfileController = async (req, res) => {
     try {
-        const { name, email, phone } = req.body;
+        const { name, email, phone } = req.body
 
         // get admin ID from params and new data from body
         const adminId = req.params.id;
@@ -43,21 +43,21 @@ export const updateAdminProfileController = async (req, res) => {
 
         // Get existing admin data first
         const [existingRows] = await connectToDb.promise().query(
-            "SELECT * FROM admin WHERE id = ?",
+            "SELECT name, email, phone FROM admin WHERE id = ?",
             [adminId]
-        );
+        )
 
         if (existingRows.length === 0) {
-            return res.status(404).json({ success: false, message: "Admin not found" });
+            return res.status(404).json({ success: false, message: "Admin not found" })
         }
-        const existingAdmin = existingRows[0];
+        const existingAdmin = existingRows[0]
 
         // Use provided values or fall back to existing ones
-        const updatedName = name ?? existingAdmin.name;
-        const updatedEmail = email ?? existingAdmin.email;
-        const updatedPhone = phone ?? existingAdmin.phone;
+        const updatedName = name ?? existingAdmin.name
+        const updatedEmail = email ?? existingAdmin.email
+        const updatedPhone = phone ?? existingAdmin.phone
         // Update admin details in the database
-        const [result] = await connectToDb.promise().query("UPDATE admin SET name = ?, email = ?, phone = ? WHERE id = ?", [updatedName, updatedEmail, updatedPhone, adminId]);
+        const result = await connectToDb.promise().query("UPDATE admin SET name = ?, email = ?, phone = ? WHERE id = ?", [updatedName, updatedEmail, updatedPhone, adminId])
 
         return res.status(200).json({
             success: true,
