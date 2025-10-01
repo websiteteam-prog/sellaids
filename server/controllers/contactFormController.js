@@ -1,7 +1,7 @@
-import connectToDb from "../../config/db.js"
-import { sendEmail } from "../../utils/mailer.js";
+import connectToDb from "../config/db.js"
+import { sendEmail } from "../utils/mailer.js";
 
-export const userContactFormController = async (req, res) => {
+export const contactFormController = async (req, res) => {
     try {
         // fetch data from frontend
         const { name, email, phone, message } = req.body;
@@ -24,12 +24,12 @@ export const userContactFormController = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "User form submitted successfully & email sent!",
+            message: "Form submitted successfully",
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "User contact form submission failed",
+            message: "Contact form submission failed",
             error: error.message
         })
     }

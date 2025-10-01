@@ -4,7 +4,12 @@ import connectToDb from "../../config/db.js"
 export const registerVendorController = async (req, res) => {
     try {
         // fetch data from the frontend
-        const { name, email, password, phone } = req.body;
+        const {
+            name, email, phone, password,
+            designation, businessName, businessType, gstNumber, panNumber,
+            houseNo, streetName, city, state, pincode, country,
+            accountNumber, ifscCode, bankName, accountType
+        } = req.body;
 
         // if check all fields are required or not
         if (!name || !email || !password || !phone) {
@@ -26,8 +31,57 @@ export const registerVendorController = async (req, res) => {
         // hash password
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        // vendor register
-        const [result] = await connectToDb.promise().query("INSERT INTO vendors (name, email, password, phone) values(?, ?, ?, ?)", [name, email, hashedPassword, phone])
+        // vendor registration proccess 
+        // Insert vendor core info
+        const [vendorResult] = await connectToDb.promise().query(
+            `INSERT INTO vendors 
+            (name,email,phone,password,designation,businessName,businessType,gstNumber,panNumber)
+            VALUES (?,?,?,?,?,?,?,?,?)`,
+            [name, email, phone, hashedPassword, designation, businessName, businessType, gstNumber, panNumber]
+        );
+        // console.log(vendorResult)
+        const vendorId = vendorResult.insertId;
+
+        // Insert address details
+        await connectToDb.promise().query(
+            `INSERT INTO vendor_addresses (vendorId,houseNo,streetName,city,state,pincode,country) VALUES (?,?,?,?,?,?,?)`,
+            [vendorId, houseNo, streetName, city, state, pincode, country || 'India']
+        );
+
+        // Bank details
+        const bankDoc = req.files?.bankDocument ? req.files.bankDocument[0].path : null;
+        await connectToDb.promise().query(
+            `INSERT INTO vendor_bank_details (vendorId,accountNumber,ifscCode,bankName,accountType,bankDocumentUrl) VALUES (?,?,?,?,?,?)`,
+            [vendorId, accountNumber, ifscCode, bankName, accountType || 'Savings', bankDoc]
+        );
+
+        // KYC Documents
+        const documentFields = ['gstCertificateDocument', 'panCardDocument', 'businessLicenseDocument', 'aadhaarFront', 'aadhaarBack'];
+        const docPromises = documentFields.map(field => {
+            if (req.files?.[field]) {
+                const file = req.files[field][0];
+                return connectToDb.promise().query(
+                    `INSERT INTO vendor_documents (vendorId, documentType, documentUrl) VALUES (?,?,?)`,
+                    [vendorId, field, file.path]
+                );
+            }
+        }).filter(Boolean);
+
+        await Promise.all(docPromises);
+
+        // ================= Fetch Complete Vendor Data =================
+        const [[vendor]] = await connectToDb.promise().query(`SELECT id,name,email,phone,designation,businessName,businessType,gstNumber,panNumber,status,createdAt FROM vendors WHERE id=?`, [vendorId]);
+
+        const [addresses] = await connectToDb.promise().query(`SELECT * FROM vendor_addresses WHERE vendorId=?`, [vendorId]);
+        const [bankDetails] = await connectToDb.promise().query(`SELECT * FROM vendor_bank_details WHERE vendorId=?`, [vendorId]);
+        const [documents] = await connectToDb.promise().query(`SELECT documentType,documentUrl FROM vendor_documents WHERE vendorId=?`, [vendorId]);
+
+        const result = {
+            ...vendor,
+            addresses,
+            bankDetails,
+            documents
+        };
         return res.status(201).json({
             success: true,
             message: `${name} register successfully`,
@@ -76,8 +130,6 @@ export const loginVendorController = async (req, res) => {
         }
 
         req.session.vendorId = vendor.id;
-        req.session.vendorName = vendor.name;
-        // console.log(req.session)
 
         return res.status(200).json({
             success: true,

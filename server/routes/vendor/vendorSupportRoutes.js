@@ -1,20 +1,13 @@
 import express from "express";
-import { vendorAuth } from "../middleware/auth.js";
-import {
-  createVendorTicket,
-  getVendorTickets,
-  getVendorSingleTicket
-} from "../controllers/vendorTicketController.js";
+import { createVendorTicketController, getAllVendorTicketController, getSingleTicketController } from "../../controllers/vendor/vendorSupportController.js"
+import { isVendorLoginIn } from "../../middlewares/authmiddlewares.js"
 
+// define router object
 const router = express.Router();
 
-// Create ticket (Vendor)
-router.post("/create", vendorAuth, createVendorTicket);
-
-// Get all tickets raised by logged-in vendor
-router.get("/my-tickets", vendorAuth, getVendorTickets);
-
-// Get single ticket by ID (Vendor)
-router.get("/:id", vendorAuth, getVendorSingleTicket);
+// define all routes
+router.post("/tickets", isVendorLoginIn, createVendorTicketController);
+router.get("/tickets", isVendorLoginIn, getAllVendorTicketController);
+router.get("/tickets/:id", isVendorLoginIn, getSingleTicketController);
 
 export default router;
