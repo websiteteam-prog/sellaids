@@ -1,30 +1,30 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import fashionAidImg from '../assets/images/fashion-aid.webp';
 import designerAidImg from '../assets/images/designer-aid.webp';
 import kidsAidImg from '../assets/images/kids-aid.webp';
 
 const overlaySections = [
-    {
-        title: 'FASHION AID',
-        img: fashionAidImg,
-        buttonText: 'SHOP NOW',
-        buttonLink: '#fashion',
-    },
-    {
-        title: 'DESIGNER AID',
-        img: designerAidImg,
-        buttonText: 'SHOP NOW',
-        buttonLink: '#designer',
-    },
-    {
-        title: 'KIDS AID',
-        img: kidsAidImg,
-        buttonText: 'SHOP NOW',
-        buttonLink: '#kids',
-    },
+  {
+    title: 'FASHION AID',
+    img: fashionAidImg,
+    buttonText: 'SHOP NOW',
+    buttonLink: 'Fashionaids',
+  },
+  {
+    title: 'DESIGNER AID',
+    img: designerAidImg,
+    buttonText: 'SHOP NOW',
+    buttonLink: 'Designeraids',
+  },
+  {
+    title: 'KIDS AID',
+    img: kidsAidImg,
+    buttonText: 'SHOP NOW',
+    buttonLink: 'Kidsaids', // ✅ Updated route
+  },
 ];
-
 function OverlaySection() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 md:px-20 my-8 md:my-12 py-6">

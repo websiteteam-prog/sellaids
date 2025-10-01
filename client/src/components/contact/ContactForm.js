@@ -8,14 +8,59 @@ const ContactForm = () => {
         message: "",
     });
 
+    const [errors, setErrors] = useState({});
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        // Restrict phone input to digits only, max 10
+        if (name === "phone") {
+            const onlyDigits = value.replace(/\D/g, ""); // Remove non-digits
+            if (onlyDigits.length <= 10) {
+                setFormData({ ...formData, [name]: onlyDigits });
+            }
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
+    };
+
+    const validate = () => {
+        let tempErrors = {};
+
+        if (!formData.name.trim()) {
+            tempErrors.name = "Name is required.";
+        }
+
+        if (!formData.email.trim()) {
+            tempErrors.email = "Email is required.";
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            tempErrors.email = "Invalid email format.";
+        }
+
+        if (!formData.phone.trim()) {
+            tempErrors.phone = "Phone number is required.";
+        } else if (!/^\d{10}$/.test(formData.phone)) {
+            tempErrors.phone = "Phone must be 10 digits.";
+        }
+
+        setErrors(tempErrors);
+        return Object.keys(tempErrors).length === 0;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Form Submitted:", formData);
-        alert("Your query has been submitted ✅");
+        if (validate()) {
+            console.log("Form Submitted:", formData);
+            alert("Your query has been submitted ✅");
+
+            setFormData({
+                name: "",
+                email: "",
+                phone: "",
+                message: "",
+            });
+            setErrors({});
+        }
     };
 
     return (
@@ -34,9 +79,11 @@ const ContactForm = () => {
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            required
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         />
+                        {errors.name && (
+                            <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                        )}
                     </div>
 
                     {/* Email */}
@@ -49,9 +96,11 @@ const ContactForm = () => {
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            required
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         />
+                        {errors.email && (
+                            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                        )}
                     </div>
 
                     {/* Phone */}
@@ -64,9 +113,11 @@ const ContactForm = () => {
                             name="phone"
                             value={formData.phone}
                             onChange={handleChange}
-                            required
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         />
+                        {errors.phone && (
+                            <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                        )}
                     </div>
 
                     {/* Message */}
