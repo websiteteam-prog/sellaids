@@ -39,6 +39,6 @@ module.exports = {
     'text-gray-800',
   ],
   plugins: [
-    require('tailwind-scrollbar-hide'), // ✅ ADDED HERE
+    require('tailwind-scrollbar-hide'), 
   ],
 };

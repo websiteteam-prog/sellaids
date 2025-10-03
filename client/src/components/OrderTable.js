@@ -24,13 +24,19 @@ const OrderTable = () => {
 
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
   const startIndex = (currentPage - 1) * ordersPerPage;
-  const currentOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
+  const currentOrders = filteredOrders.slice(
+    startIndex,
+    startIndex + ordersPerPage
+  );
 
   const handleExport = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredOrders);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
     const file = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(file, "orders_export.xlsx");
   };
@@ -49,7 +55,6 @@ const OrderTable = () => {
             setCurrentPage(1);
           }}
         />
-
         <button
           onClick={handleExport}
           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition w-full sm:w-auto"
@@ -58,30 +63,33 @@ const OrderTable = () => {
         </button>
       </div>
 
-      {/* Table Wrapper */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left border">
+      {/* Responsive Table Wrapper with Bottom Scrollbar */}
+      <div className="overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <table className="min-w-[600px] text-sm text-left border border-gray-200">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="px-4 py-2 border">Order ID</th>
-              <th className="px-4 py-2 border">Date</th>
-              <th className="px-4 py-2 border">Status</th>
-              <th className="px-4 py-2 border">Total</th>
+              <th className="px-4 py-2 border whitespace-nowrap">Order ID</th>
+              <th className="px-4 py-2 border whitespace-nowrap">Date</th>
+              <th className="px-4 py-2 border whitespace-nowrap">Status</th>
+              <th className="px-4 py-2 border whitespace-nowrap">Total</th>
             </tr>
           </thead>
           <tbody>
             {currentOrders.length > 0 ? (
               currentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 border">{order.id}</td>
-                  <td className="px-4 py-3 border">{order.date}</td>
-                  <td className="px-4 py-3 border">{order.status}</td>
-                  <td className="px-4 py-3 border">{order.total}</td>
+                  <td className="px-4 py-3 border whitespace-nowrap">{order.id}</td>
+                  <td className="px-4 py-3 border whitespace-nowrap">{order.date}</td>
+                  <td className="px-4 py-3 border whitespace-nowrap">{order.status}</td>
+                  <td className="px-4 py-3 border whitespace-nowrap">{order.total}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="text-center py-4 text-gray-500">
+                <td
+                  colSpan="4"
+                  className="text-center py-4 text-gray-500 whitespace-nowrap"
+                >
                   No matching orders found.
                 </td>
               </tr>

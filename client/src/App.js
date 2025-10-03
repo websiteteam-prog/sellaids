@@ -1,12 +1,12 @@
 // src/App.js
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom"; 
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 
 // ✅ Layouts
 import Layout from "./Layout";
 import VendorDashboardLayout from "./Layout/VendorDashboardLayout";
-import DashboardLayout from "./components/DashboardLayout"; //
+import DashboardLayout from "./components/DashboardLayout";
 
 // ✅ Public Pages
 import About from "./pages/About";
@@ -24,7 +24,7 @@ import AdviceSellers from "./pages/AdviceSellers";
 import Blogs from "./pages/Blogs";
 import Luxury from "./pages/Luxury";
 
-// ✅ User Aids
+// User Aids
 import Kidsaids from "./components/aids/Kidsaids";
 
 // ✅ Vendor Auth Pages
@@ -35,7 +35,7 @@ import Register from "./pages/vendor/MultiStepRegister";
 import UserLogin from "./pages/Userlogin";
 import UserRegister from "./pages/UserRegister";
 
-// ✅ Vendor Pages
+// ✅ Vendor Dashboard Pages
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
 import AddProduct from "./pages/vendor/AddProduct";
 import AllProducts from "./pages/vendor/AllProducts";
@@ -54,15 +54,25 @@ import Support from "./pages/dashboard/Support";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import RaiseTicket from "./pages/dashboard/RaiseTicket";
 
-// ✅ Admin Pages
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminDashboardHome from "./pages/vendor/DashboardHome";
+// ✅ Admin Layout and Pages
+import AdminLayout from "./components/admindashboard/Layout"; 
+import AdminDashboard from "./pages/Admin/Dashboard";
+import AdminUsers from "./pages/Admin/Users";
+import AdminVendors from "./pages/Admin/Vendors";
+import AdminProducts from "./pages/Admin/Products";
+import AdminOrders from "./pages/Admin/Orders";
+import AdminPayments from "./pages/Admin/Payments";
+import AdminReports from "./pages/Admin/Reports";
+import AdminNotifications from "./pages/Admin/Notifications";
+import AdminSettings from "./pages/Admin/Settings";
+import AdminSecurity from "./pages/Admin/Security";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 const App = () => {
   return (
     <Routes>
-      {/* 🔓 Public Routes */}
+
+      {/* ✅ Public Routes */}
       <Route path="/" element={<Layout><LandingPage /></Layout>} />
       <Route path="/landingpage" element={<Layout><LandingPage /></Layout>} />
       <Route path="/about" element={<Layout><About /></Layout>} />
@@ -81,7 +91,7 @@ const App = () => {
       <Route path="/Designeraids" element={<Layout><Luxury /></Layout>} />
       <Route path="/kidsaids" element={<Layout><Kidsaids /></Layout>} />
 
-      {/* 🔓 User Auth Routes */}
+      {/* ✅ User Auth Routes */}
       <Route path="/UserLogin" element={<UserLogin />} />
       <Route path="/register" element={<UserRegister />} />
 
@@ -94,16 +104,15 @@ const App = () => {
         <Route path="payments" element={<Payments />} />
         <Route path="wishlist" element={<Wishlist />} />
         <Route path="support" element={<Support />} />
-        <Route path="raise-ticket" element={<RaiseTicket />} /> 
+        <Route path="raise-ticket" element={<RaiseTicket />} />
       </Route>
 
-      {/* 🔓 Vendor Auth Routes */}
+      {/* ✅ Vendor Auth Routes */}
       <Route path="/vendor/login" element={<Login />} />
       <Route path="/vendor/register" element={<Register />} />
 
-      {/* 🔐 Vendor Dashboard Routes */}
+      {/* ✅ Vendor Dashboard Routes */}
       <Route path="/vendor" element={<VendorDashboardLayout />}>
-        {/* ✅ Default redirect to /vendor/dashboard */}
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardHomeVendor />} />
         <Route path="add-product" element={<AddProduct />} />
@@ -114,9 +123,20 @@ const App = () => {
         <Route path="profile" element={<ProfileVendor />} />
       </Route>
 
-      {/* 🔐 Admin Routes */}
-      <Route path="/admin/dashboard" element={<AdminDashboardHome />} />
-      <Route path="/admindashboard/*" element={<AdminDashboard />} />
+      {/* ✅ Admin Dashboard Routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="vendors" element={<AdminVendors />} />
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="orders" element={<AdminOrders />} />
+        <Route path="payments" element={<AdminPayments />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="security" element={<AdminSecurity />} />
+      </Route>
+ 
     </Routes>
   );
 };
