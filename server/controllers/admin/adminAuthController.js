@@ -4,10 +4,10 @@ import connectToDb from "../../config/db.js"
 export const registerAdminController = async (req, res) => {
     try {
         // fetch data from the frontend
-        const { name, email, password, phone } = req.body;
+        const { id, name, email, password, phone } = req.body;
 
         // if check all fields are required or not
-        if (!name || !email || !password || !phone) {
+        if (!id || !name || !email || !password || !phone) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
@@ -29,7 +29,7 @@ export const registerAdminController = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10)
 
         // admin register
-        const [rows] = await connectToDb.promise().query("INSERT INTO admin (name, email, password, phone) values(?, ?, ?, ?)", [name, email, hashedPassword, phone])
+        const [rows] = await connectToDb.promise().query("INSERT INTO admin (id, name, email, password, phone) values(?, ?, ?, ?, ?)", [id, name, email, hashedPassword, phone])
         return res.status(201).json({
             success: true,
             message: `${name} register successfully`,
@@ -78,7 +78,6 @@ export const loginAdminController = async (req, res) => {
         }
 
         req.session.adminId = admin.id;
-        req.session.adminName = admin.name;
         req.session.cookie.maxAge = 30 * 60 * 1000;
         // console.log(req.session)
 
