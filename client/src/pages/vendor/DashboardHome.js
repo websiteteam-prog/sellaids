@@ -1,4 +1,3 @@
-// src/pages/DashboardHome.jsx
 import React, { useState } from "react";
 import { FaBox, FaClock, FaRupeeSign, FaChartLine } from "react-icons/fa";
 import {
@@ -42,12 +41,47 @@ const ordersData = [
   { name: "Dec", value: 240 },
 ];
 
+const recentOrders = [
+  {
+    id: "#ORD001",
+    customer: "Priya Sharma",
+    product: "Wireless Headphones",
+    amount: "₹2,999",
+    status: "Pending",
+    date: "Dec 15, 2024",
+    color: "yellow",
+  },
+  {
+    id: "#ORD002",
+    customer: "Amit Singh",
+    product: "Smart Watch",
+    amount: "₹8,999",
+    status: "Delivered",
+    date: "Dec 14, 2024",
+    color: "green",
+  },
+  {
+    id: "#ORD003",
+    customer: "Neha Gupta",
+    product: "Bluetooth Speaker",
+    amount: "₹1,599",
+    status: "Processing",
+    date: "Dec 13, 2024",
+    color: "blue",
+  },
+];
+
+const colorMap = {
+  yellow: { bg: "bg-yellow-100", text: "text-yellow-600" },
+  green: { bg: "bg-green-100", text: "text-green-600" },
+  blue: { bg: "bg-blue-100", text: "text-blue-600" },
+};
+
 const DashboardHome = () => {
   const [activeTab, setActiveTab] = useState("sales");
 
   const chartData = activeTab === "sales" ? salesData : ordersData;
 
-  // Summary values
   const summary = {
     sales: [
       { label: "Total Revenue", value: "₹1,24,580" },
@@ -62,75 +96,72 @@ const DashboardHome = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <h1 className="text-2xl font-bold">Vendor Dashboard</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
+        <h1 className="text-2xl font-bold mb-2 sm:mb-0">Vendor Dashboard</h1>
         <div className="flex items-center space-x-3">
-          <span className="text-gray-600">
+          <span className="text-gray-600 text-sm sm:text-base">
             Welcome back, <span className="font-semibold">Rajesh Kumar</span>
           </span>
-          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm sm:text-base">
             RK
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Total Products */}
-        <div className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
-          <div>
-            <h2 className="text-sm text-gray-500">Total Products</h2>
-            <p className="text-2xl font-bold">156</p>
-            <p className="text-green-600 text-sm">+12% from last month</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {[
+          {
+            label: "Total Products",
+            value: "156",
+            percent: "+12%",
+            icon: <FaBox className="text-blue-500 text-xl" />,
+            bg: "bg-blue-100",
+          },
+          {
+            label: "Pending Orders",
+            value: "23",
+            percent: "+5%",
+            icon: <FaClock className="text-yellow-500 text-xl" />,
+            bg: "bg-yellow-100",
+          },
+          {
+            label: "Total Earnings",
+            value: "₹1,24,580",
+            percent: "+18%",
+            icon: <FaRupeeSign className="text-green-500 text-xl" />,
+            bg: "bg-green-100",
+          },
+          {
+            label: "This Month Sales",
+            value: "₹45,230",
+            percent: "+25%",
+            icon: <FaChartLine className="text-purple-500 text-xl" />,
+            bg: "bg-purple-100",
+          },
+        ].map((card, idx) => (
+          <div
+            key={idx}
+            className="bg-white p-4 sm:p-5 rounded-xl shadow flex items-center justify-between"
+          >
+            <div>
+              <h2 className="text-sm text-gray-500">{card.label}</h2>
+              <p className="text-xl sm:text-2xl font-bold">{card.value}</p>
+              <p className="text-green-600 text-xs sm:text-sm">
+                {card.percent} from last month
+              </p>
+            </div>
+            <div className={`p-3 rounded-lg ${card.bg}`}>{card.icon}</div>
           </div>
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <FaBox className="text-blue-500 text-xl" />
-          </div>
-        </div>
-
-        {/* Pending Orders */}
-        <div className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
-          <div>
-            <h2 className="text-sm text-gray-500">Pending Orders</h2>
-            <p className="text-2xl font-bold">23</p>
-            <p className="text-green-600 text-sm">+5% from last month</p>
-          </div>
-          <div className="p-3 bg-yellow-100 rounded-lg">
-            <FaClock className="text-yellow-500 text-xl" />
-          </div>
-        </div>
-
-        {/* Total Earnings */}
-        <div className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
-          <div>
-            <h2 className="text-sm text-gray-500">Total Earnings</h2>
-            <p className="text-2xl font-bold">₹1,24,580</p>
-            <p className="text-green-600 text-sm">+18% from last month</p>
-          </div>
-          <div className="p-3 bg-green-100 rounded-lg">
-            <FaRupeeSign className="text-green-500 text-xl" />
-          </div>
-        </div>
-
-        {/* This Month Sales */}
-        <div className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
-          <div>
-            <h2 className="text-sm text-gray-500">This Month Sales</h2>
-            <p className="text-2xl font-bold">₹45,230</p>
-            <p className="text-green-600 text-sm">+25% from last month</p>
-          </div>
-          <div className="p-3 bg-purple-100 rounded-lg">
-            <FaChartLine className="text-purple-500 text-xl" />
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Sales Overview */}
-      <div className="bg-white p-6 rounded-xl shadow mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold">Sales Overview</h2>
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow mb-8 overflow-x-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+          <h2 className="font-bold mb-2 sm:mb-0">Sales Overview</h2>
           <div className="flex space-x-2">
             <button
               onClick={() => setActiveTab("sales")}
@@ -155,7 +186,6 @@ const DashboardHome = () => {
           </div>
         </div>
 
-        {/* Chart Added */}
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -168,7 +198,7 @@ const DashboardHome = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex justify-around mt-4">
+        <div className="flex flex-col sm:flex-row justify-around mt-4 gap-4">
           {summary[activeTab].map((item, idx) => (
             <div key={idx} className="text-center">
               <p className="font-bold">{item.value}</p>
@@ -178,60 +208,43 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Recent Orders */}
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="font-bold mb-4">Recent Orders</h2>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Order ID</th>
-              <th className="p-2">Customer</th>
-              <th className="p-2">Product</th>
-              <th className="p-2">Amount</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b">
-              <td className="p-2">#ORD001</td>
-              <td className="p-2">Priya Sharma</td>
-              <td className="p-2">Wireless Headphones</td>
-              <td className="p-2">₹2,999</td>
-              <td className="p-2">
-                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-600 rounded">
-                  Pending
-                </span>
-              </td>
-              <td className="p-2">Dec 15, 2024</td>
-            </tr>
-            <tr className="border-b">
-              <td className="p-2">#ORD002</td>
-              <td className="p-2">Amit Singh</td>
-              <td className="p-2">Smart Watch</td>
-              <td className="p-2">₹8,999</td>
-              <td className="p-2">
-                <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">
-                  Delivered
-                </span>
-              </td>
-              <td className="p-2">Dec 14, 2024</td>
-            </tr>
-            <tr>
-              <td className="p-2">#ORD003</td>
-              <td className="p-2">Neha Gupta</td>
-              <td className="p-2">Bluetooth Speaker</td>
-              <td className="p-2">₹1,599</td>
-              <td className="p-2">
-                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">
-                  Processing
-                </span>
-              </td>
-              <td className="p-2">Dec 13, 2024</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+     {/* Recent Orders */}
+<div className="bg-white p-4 sm:p-6 rounded-xl shadow overflow-x-auto">
+  <h2 className="font-bold mb-4">Recent Orders</h2>
+  <div className="w-full">
+    <table className="w-full text-left border-collapse">
+      <thead>
+        <tr className="border-b bg-gray-100">
+          <th className="p-2">Order ID</th>
+          <th className="p-2">Customer</th>
+          <th className="p-2">Product</th>
+          <th className="p-2">Amount</th>
+          <th className="p-2">Status</th>
+          <th className="p-2">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {recentOrders.map((order, idx) => (
+          <tr key={idx} className="border-b hover:bg-gray-50">
+            <td className="p-2">{order.id}</td>
+            <td className="p-2">{order.customer}</td>
+            <td className="p-2">{order.product}</td>
+            <td className="p-2">{order.amount}</td>
+            <td className="p-2">
+              <span
+                className={`px-2 py-1 text-xs rounded ${colorMap[order.color].bg} ${colorMap[order.color].text}`}
+              >
+                {order.status}
+              </span>
+            </td>
+            <td className="p-2">{order.date}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
     </div>
   );
 };

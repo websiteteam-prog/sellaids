@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   ShoppingBag,
@@ -9,7 +9,8 @@ import {
   Heart,
   HelpCircle,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react";
 
 const menuItems = [
@@ -24,10 +25,33 @@ const menuItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
+
+  const handleLogout = () => {
+    // Clear session/token
+    localStorage.removeItem("token"); // example
+    navigate("/login");
+  };
+
+  const renderMenuItems = () =>
+    menuItems.map(item => (
+      <Link
+        key={item.path}
+        to={item.path}
+        onClick={closeSidebar}
+        className={`flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 transition ${
+          location.pathname === item.path
+            ? "bg-red-100 text-red-600 font-medium"
+            : "text-gray-700"
+        }`}
+      >
+        {item.icon} {item.label}
+      </Link>
+    ));
 
   return (
     <>
@@ -39,24 +63,20 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Sidebar for desktop */}
-      <div className="w-64 bg-white shadow-md hidden md:block min-h-screen">
-        <div className="p-4 text-2xl font-bold text-red-600">MyShop</div>
-        <nav className="mt-6">
-          {menuItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 transition ${
-                location.pathname === item.path
-                  ? "bg-red-100 text-red-600 font-medium"
-                  : "text-gray-700"
-              }`}
-            >
-              {item.icon} {item.label}
-            </Link>
-          ))}
-        </nav>
+      {/* Sidebar for Desktop */}
+      <div className="w-64 bg-white shadow-md hidden md:flex flex-col justify-between min-h-screen">
+        <div>
+          <div className="p-4 text-2xl font-bold text-red-600">MyShop</div>
+          <nav className="mt-6 flex flex-col gap-1">{renderMenuItems()}</nav>
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 text-gray-700 transition border-t"
+        >
+          <LogOut size={18} /> Logout
+        </button>
       </div>
 
       {/* Sidebar Overlay for Mobile */}
@@ -69,32 +89,30 @@ export default function Sidebar() {
 
       {/* Sidebar Drawer for Mobile */}
       <div
-        className={`fixed top-0 left-0 w-64 h-full bg-white shadow-lg z-50 transform transition-transform duration-300 md:hidden ${
+        className={`fixed top-0 left-0 w-64 h-full bg-white shadow-lg z-50 transform transition-transform duration-300 md:hidden flex flex-col justify-between ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 flex justify-between items-center border-b">
-          <span className="text-2xl font-bold text-red-600">MyShop</span>
-          <button onClick={closeSidebar}>
-            <X size={24} />
-          </button>
+        <div>
+          <div className="p-4 flex justify-between items-center border-b">
+            <span className="text-2xl font-bold text-red-600">MyShop</span>
+            <button onClick={closeSidebar}>
+              <X size={24} />
+            </button>
+          </div>
+          <nav className="mt-4 flex flex-col gap-1">{renderMenuItems()}</nav>
         </div>
-        <nav className="mt-4">
-          {menuItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={closeSidebar}
-              className={`flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 transition ${
-                location.pathname === item.path
-                  ? "bg-red-100 text-red-600 font-medium"
-                  : "text-gray-700"
-              }`}
-            >
-              {item.icon} {item.label}
-            </Link>
-          ))}
-        </nav>
+
+        {/* Mobile Logout Button */}
+        <button
+          onClick={() => {
+            handleLogout();
+            closeSidebar();
+          }}
+          className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 text-gray-700 transition border-t"
+        >
+          <LogOut size={18} /> Logout
+        </button>
       </div>
     </>
   );
