@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import useUserStore from "../stores/useUserStore";
+// import useUserStore from "../stores/useUserStore";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useUserStore } from "../stores/useUserStore"
 
 function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { setUser } = useUserStore();
+  const { login } = useUserStore();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -21,14 +22,15 @@ function UserLogin() {
         { withCredentials: true }
       );
 
-      const { success, user } = res.data;
+      const { success, data } = res.data;
+      console.log(res.data)
       if (success) {
-        setUser(user);
+        login(data);
         setEmail("");
         setPassword("");
 
         alert("Login Successful ✅");
-        setTimeout(() => navigate("/"), 1000);
+        setTimeout(() => navigate("/user"), 1000);
       } else {
         alert("Login Failed ❌");
       }

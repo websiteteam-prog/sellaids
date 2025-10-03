@@ -58,6 +58,7 @@ import RaiseTicket from "./pages/dashboard/RaiseTicket";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDashboardHome from "./pages/vendor/DashboardHome";
 
+import ProtectedRoute from "./components/ProtectedRoute";
 const App = () => {
   return (
     <Routes>
@@ -85,7 +86,7 @@ const App = () => {
       <Route path="/register" element={<UserRegister />} />
 
       {/* 🔐 User Dashboard Routes */}
-      <Route path="/user" element={<DashboardLayout />}>
+      <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardHome />} />
         <Route path="orders" element={<Orders />} />
         <Route path="profile" element={<Profile />} />

@@ -1,4 +1,5 @@
 export default function Profile() {
+  
   return (
     <div className="bg-white p-6 rounded-xl shadow max-w-xl">
       <h1 className="text-2xl font-bold mb-4">Profile Settings</h1>

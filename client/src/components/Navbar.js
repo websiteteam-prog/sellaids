@@ -1,17 +1,41 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
-import useUserStore from "../stores/useUserStore"; // ✅ zustand store
+import { useUserStore } from "../stores/useUserStore"; // ✅ zustand store
+import axios from "axios";
 
 export default function Navbar() {
-  const user = useUserStore((s) => s.user); // ✅ get user from store
-  const logout = useUserStore((s) => s.logout); // ✅ logout function
+  // const user = useUserStore((s) => s.user); // ✅ get user from store
+  // const logout = useUserStore((s) => s.logout); // ✅ logout function
+  const {user, logout} = useUserStore()
   const navigate = useNavigate();
+  console.log(user)
 
-  const handleLogout = () => {
-    logout(); // clear user from zustand + localStorage
-    navigate("/login"); // redirect to login page
+  const handleLogout = async () => {
+    navigate("/UserLogin"); // redirect to login page
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/user/auth/logout",
+        {},
+        { withCredentials: true }
+      );
+
+      const { success } = res.data;
+      console.log(res.data)
+      if (success) {
+        logout();
+
+        alert("Logout Successful ✅");
+        setTimeout(() => navigate("/UserLogin"), 1000);
+      } else {
+        alert("Logout Failed ❌");
+      }
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Invalid Credentials ❌");
+    }
   };
+
 
   return (
     <div className="flex justify-between items-center px-6 py-3 bg-white shadow border-b">

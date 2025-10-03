@@ -1,16 +1,18 @@
+import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import raiseTicket from "../../api/raiseTicket"; // ✅ use API
+import { useUserStore } from "../../stores/useUserStore";
 
 export default function RaiseTicket() {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
     subject: "",
     message: "",
   });
 
   const navigate = useNavigate();
+  const { user } = useUserStore()
+  console.log(user?.id)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,23 +21,37 @@ export default function RaiseTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // try {
-    //   const res = await raiseTicket(form);
-    //   alert(res.message || "Ticket submitted successfully!");
+    try {
+      const res = await axios.post(
+        `http://localhost:5000/api/user/support/tickets`,
+        {
+          subject: form.subject,
+          description: form.message,
+        },
+        { withCredentials: true }
+      );;
+      alert(res.message || "Ticket submitted successfully!");
 
-    //   // reset form
-    //   setForm({ name: "", email: "", subject: "", message: "" });
-    //   navigate("/user/support"); // redirect after success
-    // } catch (err) {
-    //   alert("Something went wrong!");
-    // }
+      const { success, data } = res.data;
+      console.log(res.data)
+      if (success) {
+        setForm({ subject: "", message: "" });
+        alert("Ticket rased Successful ✅");
+        navigate("/user/support"); // redirect after success
+      } else {
+        alert("Ticket rased Failed ❌");
+      }
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Invalid Credentials ❌");
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
       <h2 className="text-2xl font-bold mb-6">Raise a Support Ticket</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
-        
+
         <input
           type="text"
           name="subject"

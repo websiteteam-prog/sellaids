@@ -2,7 +2,7 @@ import React from "react";
 import { MegaMenu, MensMegaMenu, KidsMegaMenu } from "./MegaMenu";
 import { User, Heart, Search, ShoppingCart, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import useUserStore from "../../stores/useUserStore";
+import { useUserStore } from "../../stores/useUserStore";
 
 const Header = () => {
   const navigate = useNavigate();
