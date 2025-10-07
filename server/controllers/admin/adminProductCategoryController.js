@@ -43,7 +43,7 @@ export const getAllProductCategoryController = async (req, res, next) => {
         // get All categories
         const [rows] = await connectToDb.promise().query(`SELECT * FROM categories ORDER BY id ASC`)
         const categoryTree = buildCategoryTree(rows)
-        return successResponse(res, "get all category successfully", categoryTree)
+        return successResponse(res, 200, "get all category successfully", categoryTree)
     } catch (error) {
         next(error)
     }

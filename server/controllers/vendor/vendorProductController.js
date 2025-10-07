@@ -1,7 +1,7 @@
 import connectToDb from "../../config/db.js"
 import { successResponse } from "../../utils/apiResponse.js"
 
-export const createVendorProductController = async (req, res) => {
+export const createVendorProductController = async (req, res, next) => {
     try {
         // Extract vendor ID from session
         const { vendorId } = req.session
@@ -16,11 +16,22 @@ export const createVendorProductController = async (req, res) => {
 
         // fetch data from frontend
         const {
-            group, category, type, condition, fit, fitOther, size, sizeOther,categoryId,
+            group, category, type, condition, fit, fitOther, size, sizeOther, categoryId,
             invoice, needsRepair, repairDetails, originalBox, dustBag, additionalItems,
-            purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink, additionalInfo,
-            name, email, phone, address, apartment, city, state, zip, sellerInfo, agree
+            purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink, additionalInfo, sellerInfo, agree
         } = req.body;
+
+        console.log(req.files)
+
+        // Image paths
+        const frontPhoto = req.files['frontPhoto']?.[0]?.path || null;
+        const backPhoto = req.files['backPhoto']?.[0]?.path || null;
+        const labelPhoto = req.files['labelPhoto']?.[0]?.path || null;
+        const insidePhoto = req.files['insidePhoto']?.[0]?.path || null;
+        const buttonPhoto = req.files['buttonPhoto']?.[0]?.path || null;
+        const wearingPhoto = req.files['wearingPhoto']?.[0]?.path || null;
+        const invoicePhoto = req.files['invoicePhoto']?.[0]?.path || null;
+        const repairPhoto = req.files['repairPhoto']?.[0]?.path || null;
 
         // Check if category exists
         if (!categoryId) {
@@ -30,22 +41,11 @@ export const createVendorProductController = async (req, res) => {
             })
         }
 
+        const sql = `INSERT INTO products (category_id, vendor_id, product_condition, fit, fit_other, size, size_other,invoice, invoice_photo, needs_repair, repair_details, repair_photo, original_box, dust_bag, additional_items,front_photo, back_photo, label_photo, inside_photo, button_photo, wearing_photo, more_images,purchase_price, selling_price, reason_to_sell, purchase_year, purchase_place, product_link, additional_info,agree) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-        await connectToDb.promise().query(`INSERT INTO products (vendor_id, group, category, type, condition, fit, fit_other, size, size_other, category_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [vendorId, group, category, type, condition, fit, fitOther, size, sizeOther, categoryId])
-        await connectToDb.promise().query(`INSERT INTO products (group, category, type, condition, fit, fit_other, size, size_other, category_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [vendorId, group, category, type, condition, fit, fitOther, size, sizeOther, categoryId])
-
-        const documentFields = ['front','back','label','inside','button','wearing','other']
-        documentFields.map((field)=>{
-            if(req.files?.[field]){
-                const file = req.files[field][0]
-                return connectToDb.promise.query('INSERT INTO product_images () VALUES()')
-            }
-        })
-        await connectToDb.promise().query(`INSERT INTO product_images (group, category, type, condition, fit, fit_other, size, size_other, category_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [vendorId, group, category, type, condition, fit, fitOther, size, sizeOther, categoryId])
-        await connectToDb.promise().query(`INSERT INTO products (purchase_price, selling_price, reason_to_sell, purchase_year, purchase_place, product_link, additional_info) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink, additionalInfo])
-        await connectToDb.promise().query(`INSERT INTO products (agreed_to_terms, seller_info) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [vendorId, group, category, type, condition, fit, fitOther, size, sizeOther, agreed_to_terms, seller_info])
+        const values = [group, category, type, condition, fit, fitOther, size, sizeOther,frontPhoto, backPhoto, labelPhoto, insidePhoto, buttonPhoto, wearingPhoto, invoicePhoto, repairPhoto, categoryId, invoice, needsRepair, repairDetails, originalBox, dustBag, additionalItems, purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink, additionalInfo, sellerInfo, agree]
         // add product
-        const result = await connectToDb.promise().query("INSERT INTO products WHERE vendor_id = ? AND category_id", [vendorId, categoryId])
+        const result = await connectToDb.promise().query(sql, values)
         if (result.affectedRows === 0) {
             return res.status(404).json({
                 success: false,
@@ -62,7 +62,7 @@ export const getAllVendorProductController = async (req, res) => {
     try {
         // Extract vendor ID from session
         const { vendorId } = req.session
-        
+
         // vendor id required
         if (!vendorId) {
             return res.status(400).json({
@@ -83,7 +83,7 @@ export const getSingleVendorProductController = async (req, res) => {
     try {
         // Extract vendor ID from session
         const { vendorId } = req.session
-        
+
         // vendor id required
         if (!vendorId) {
             return res.status(400).json({

@@ -67,6 +67,7 @@ import AdminNotifications from "./pages/Admin/Notifications";
 import AdminSettings from "./pages/Admin/Settings";
 import AdminSecurity from "./pages/Admin/Security";
 
+import ProtectedRoute from "./components/ProtectedRoute";
 const App = () => {
   return (
     <Routes>
@@ -94,8 +95,8 @@ const App = () => {
       <Route path="/UserLogin" element={<UserLogin />} />
       <Route path="/register" element={<UserRegister />} />
 
-      {/* ✅ User Dashboard Routes */}
-      <Route path="/user" element={<DashboardLayout />}>
+      {/* 🔐 User Dashboard Routes */}
+      <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardHome />} />
         <Route path="orders" element={<Orders />} />
         <Route path="profile" element={<Profile />} />

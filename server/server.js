@@ -18,6 +18,7 @@ import userSupportRoutes from './routes/user/userSupportRoutes.js'
 import vendorRoutes from "./routes/vendor/vendorRoutes.js"
 import vendorAuthRoutes from "./routes/vendor/vendorAuthRoutes.js"
 import vendorProfileRoutes from "./routes/vendor/vendorProfileRoutes.js"
+import vendorPrductRoutes from "./routes/vendor/vendorProductRoutes.js"
 // import vendorWatchlistRoutes from "./routes/vendor/vendorWatchlistRoutes.js"
 import vendorSupportRoutes from './routes/vendor/vendorSupportRoutes.js'
 // import admin routes
@@ -76,6 +77,7 @@ app.use('/api/user/support', userSupportRoutes)
 app.use('/api/vendor', vendorRoutes)
 app.use('/api/vendor/auth', vendorAuthRoutes)
 app.use('/api/vendor/profile', vendorProfileRoutes)
+app.use('/api/vendor/product', vendorPrductRoutes)
 // app.use('/api/vendor/watchlist', vendorWatchlistRoutes)
 app.use('/api/vendor/support', vendorSupportRoutes)
 
