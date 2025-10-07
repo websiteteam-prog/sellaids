@@ -1,42 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import useUserStore from "../../stores/useUserStore";
+import axios from "axios";
 
 export default function Payments() {
-  const [payments, setPayments] = useState([
-    { id: 1, type: "Visa", details: "**** 1234", expiry: "12/26" },
-    { id: 2, type: "UPI", details: "anuj@upi" },
-  ]);
+  const { user } = useUserStore();
 
+  const [payments, setPayments] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null means adding new
-
+  const [editingId, setEditingId] = useState(null);
   const initialForm = { type: "", details: "", expiry: "" };
   const [form, setForm] = useState(initialForm);
+  const [loading, setLoading] = useState(false);
 
-  // Validation function
-  const validateForm = () => {
-    if (!form.type.trim()) {
-      alert("Payment type is required");
-      return false;
+  // Fetch user payments on load
+  useEffect(() => {
+    if (user?.id) fetchPayments();
+  }, [user]);
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/user/${user.id}/payments`);
+      setPayments(res.data);
+    } catch (err) {
+      console.error("Failed to fetch payments:", err);
+    } finally {
+      setLoading(false);
     }
-    if (!form.details.trim()) {
-      alert("Payment details are required");
-      return false;
-    }
-    // Basic validations: For card type check digits, for UPI check '@'
-    if (form.type.toLowerCase().includes("visa") || form.type.toLowerCase().includes("mastercard")) {
-      // Check card number length (basic check for digits)
-      const digitsOnly = form.details.replace(/\D/g, "");
-      if (digitsOnly.length < 4) {
-        alert("Card details should have at least last 4 digits");
-        return false;
-      }
-    } else if (form.type.toLowerCase() === "upi") {
-      if (!form.details.includes("@")) {
-        alert("Invalid UPI ID format");
-        return false;
-      }
-    }
-    return true;
   };
 
   const handleChange = (e) => {
@@ -44,59 +34,52 @@ export default function Payments() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const openAddForm = () => {
-    setEditingId(null);
-    setForm(initialForm);
-    setShowForm(true);
-  };
-
   const openEditForm = (payment) => {
     setEditingId(payment.id);
-    setForm({
-      type: payment.type,
-      details: payment.details,
-      expiry: payment.expiry || "",
-    });
+    setForm({ type: payment.type, details: payment.details, expiry: payment.expiry || "" });
     setShowForm(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
-    if (editingId) {
-      // Update existing
-      setPayments((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? { ...p, type: form.type, details: form.details, expiry: form.expiry }
-            : p
-        )
-      );
-    } else {
-      // Add new
-      setPayments((prev) => [
-        ...prev,
-        { id: Date.now(), type: form.type, details: form.details, expiry: form.expiry },
-      ]);
+    if (!form.type.trim() || !form.details.trim()) {
+      alert("All required fields must be filled");
+      return;
     }
 
-    setShowForm(false);
-    setEditingId(null);
-    setForm(initialForm);
+    try {
+      const res = await axios.put(
+        `http://localhost:5000/api/user/${user.id}/payments/${editingId}`,
+        form
+      );
+      setPayments(res.data);
+      setShowForm(false);
+      setEditingId(null);
+      setForm(initialForm);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Failed to update payment method");
+    }
   };
 
-  const handleRemove = (id) => {
-    if (window.confirm("Are you sure to remove this payment method?")) {
-      setPayments((prev) => prev.filter((p) => p.id !== id));
-      // if editing the same, close form
+  const handleRemove = async (id) => {
+    if (!window.confirm("Are you sure to remove this payment method?")) return;
+
+    try {
+      const res = await axios.delete(`http://localhost:5000/api/user/${user.id}/payments/${id}`);
+      setPayments(res.data);
       if (editingId === id) {
         setShowForm(false);
         setEditingId(null);
         setForm(initialForm);
       }
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Failed to remove payment method");
     }
   };
+
+  if (loading) return <p>Loading payments...</p>;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow max-w-lg">
@@ -104,60 +87,52 @@ export default function Payments() {
 
       <div className="space-y-3 mb-4">
         {payments.map((payment) => (
-          <div
-            key={payment.id}
-            className="border p-3 rounded flex justify-between items-center"
-          >
+          <div key={payment.id} className="border p-3 rounded flex justify-between items-center">
             <div>
               <p className="font-medium">
-                {payment.type} {payment.details}
+                {payment.type}{" "}
+                {payment.type.toLowerCase().includes("card") && payment.details.length >= 4
+                  ? payment.details
+                  : payment.details}
               </p>
-              {payment.expiry && (
-                <p className="text-sm text-gray-500">Expiry: {payment.expiry}</p>
-              )}
+              {payment.expiry && <p className="text-sm text-gray-500">Expiry: {payment.expiry}</p>}
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => openEditForm(payment)}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Edit
-              </button>
-              <button
-                className="text-red-600 hover:text-red-800"
-                onClick={() => handleRemove(payment.id)}
-              >
-                Remove
-              </button>
+              {!showForm && (
+                <button
+                  onClick={() => openEditForm(payment)}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  Edit
+                </button>
+              )}
+              {showForm && editingId === payment.id && (
+                <button
+                  className="text-red-600 hover:text-red-800"
+                  onClick={() => handleRemove(payment.id)}
+                >
+                  Remove
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {!showForm && (
-        <button
-          onClick={openAddForm}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          + Add Payment Method
-        </button>
-      )}
-
-      {showForm && (
-        <form onSubmit={handleSubmit} className="space-y-3">
+      {showForm && editingId && (
+        <form onSubmit={handleSubmit} className="space-y-3 border p-4 rounded">
           <input
             type="text"
             name="type"
-            placeholder="Payment Type (e.g. Visa, UPI)"
             value={form.type}
             onChange={handleChange}
             className="border px-3 py-2 rounded w-full"
             required
+            disabled
           />
           <input
             type="text"
             name="details"
-            placeholder="Details (e.g. **** 1234, anuj@upi)"
             value={form.details}
             onChange={handleChange}
             className="border px-3 py-2 rounded w-full"
@@ -166,17 +141,16 @@ export default function Payments() {
           <input
             type="text"
             name="expiry"
-            placeholder="Expiry Date (optional, e.g. 12/26)"
             value={form.expiry}
             onChange={handleChange}
             className="border px-3 py-2 rounded w-full"
           />
-          <div className="flex gap-3">
+          <div className="flex gap-3 mt-2">
             <button
               type="submit"
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             >
-              {editingId ? "Update" : "Add"}
+              Save Changes
             </button>
             <button
               type="button"
