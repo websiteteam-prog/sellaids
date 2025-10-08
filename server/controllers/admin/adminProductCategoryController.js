@@ -7,8 +7,8 @@ export const createProductCategoryController = async (req, res, next) => {
         // fetch data from frontend
         const { name, parentId = null } = req.body
 
-        // Check if name is provided and valid
-        if (!name || !name.trim()) {
+        // Check if name is required
+        if (!name) {
             return res.status(400).json({ success: false, message: 'Category name is required.' })
         }
 

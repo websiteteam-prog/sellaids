@@ -8,6 +8,6 @@ const router = express.Router();
 // define all routes
 router.post("/", isUserLoginIn, addUserWatchlistController);
 router.get("/", isUserLoginIn, getAllUserWatchlistController);
-router.delete("/:itemId", isUserLoginIn, removeUserWatchlistController);
+router.delete("/:watchlistId", isUserLoginIn, removeUserWatchlistController);
 
 export default router;

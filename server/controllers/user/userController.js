@@ -3,6 +3,7 @@ import crypto from "crypto"
 import dotenv from "dotenv"
 import bcrypt from "bcryptjs"
 import { sendEmail } from "../../utils/mailer.js"
+import { successResponse } from "../../utils/apiResponse.js"
 dotenv.config()
 
 export const getAllUsersController = async (req, res)=>{
@@ -23,26 +24,26 @@ export const getAllUsersController = async (req, res)=>{
     }
 }
 
-export const userForgotPasswordController = async (req, res) => {
+export const userForgotPasswordController = async (req, res, next) => {
     try {
         // fetch email from frontend
-        const { email } = req.body;
+        const { email } = req.body
 
         // if email is required or not
         if (!email) {
-            return res.status(400).json({ success: false, message: "Email is required" });
+            return res.status(400).json({ success: false, message: "Email is required" })
         }
 
-        const [rows] = await connectToDb.promise().query("SELECT * FROM users WHERE email = ?", [email]);
+        const [rows] = await connectToDb.promise().query("SELECT * FROM users WHERE email = ?", [email])
 
         // User not found
         if (rows.length === 0) {
-            return res.status(404).json({ success: false, message: "User not found with this email" });
+            return res.status(404).json({ success: false, message: "User not found" })
         }
 
         // Generate reset token
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        const tokenExpiry = new Date(Date.now() + 60000); // 1 hour expiry
+        const resetToken = crypto.randomBytes(32).toString("hex")
+        const tokenExpiry = new Date(Date.now() + 300000) // 5 min expiry
 
         // Save token to DB
         await connectToDb.promise().query(
@@ -50,33 +51,25 @@ export const userForgotPasswordController = async (req, res) => {
             [resetToken, tokenExpiry, email]
         );
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
 
         //  Send reset link to via email to
         await sendEmail(email, "Reset Your Password", `Click here to reset your password: ${resetLink}`)
 
-        return res.status(200).json({
-            success: true,
-            message: "Reset link has been sent successfully",
-            resetLink  // In real app, you would email this instead of returning it
-        });
+        return successResponse(res, 200, "Reset link has been sent successfully", resetLink)
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "User forgot password process failed",
-            error: error.message
-        })
+        next(error)
     }
 }
 
-export const userResetPasswordController = async (req, res) => {
+export const userResetPasswordController = async (req, res, next) => {
     try {
         // fetch email from frontend
-        const { token, newPassword } = req.body;
+        const { token, newPassword } = req.body
 
         // if token and  newPassword required or not
         if (!token || !newPassword) {
-            return res.status(400).json({ success: false, message: "Token and new password are required" });
+            return res.status(400).json({ success: false, message: "Token and new password are required" })
         }
 
         // Verify token & expiry
@@ -89,10 +82,10 @@ export const userResetPasswordController = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid or expired token" });
         }
 
-        const user = users[0];
+        const user = users[0]
 
         // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
 
         // Update password & clear token
         await connectToDb.promise().query(
@@ -108,17 +101,10 @@ export const userResetPasswordController = async (req, res) => {
             `Your password has been reset successfully.\n\n` +
             `If you did not perform this action, please contact our support team immediately.\n\n` +
             `Regards,\nYour App Team`
-        );
+        )
 
-        return res.status(200).json({
-            success: true,
-            message: "Password reset successfully"
-        });
+        return successResponse(res, 200, "Password reset successfully")
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "User reset password process failed",
-            error: error.message
-        })
+        next(error)
     }
 }
