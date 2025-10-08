@@ -7,7 +7,7 @@ export const registerVendorController = async (req, res) => {
         const {
             name, email, phone, password,
             designation, businessName, businessType, gstNumber, panNumber,
-            houseNo, streetName, city, state, pincode,
+            houseNo, streetName, city, state, pincode,contactPersonName, contactPersonPhone,
             accountNumber, ifscCode, bankName, accountType
         } = req.body;
 
@@ -31,21 +31,19 @@ export const registerVendorController = async (req, res) => {
         // hash password
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        const sql = `INSERT INTO vendors (name, email, phone, password, designation, businessName, businessType, gstNumber, panNumber, houseNo, streetName, city, state, pincode, accountNumber, ifscCode, bankName, accountType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        const sql = `INSERT INTO vendors (name, email, phone, password, designation, business_name, business_type, gst_number, pan_number, house_no, street_name, city, state, pincode, contact_person_name, contact_person_phone, account_number, ifsc_code, bank_name, account_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-        const values = [name, email, phone, hashedPassword, designation, businessName, businessType, gstNumber, panNumber, houseNo, streetName, city, state, pincode, accountNumber, ifscCode, bankName, accountType]
+        const values = [name, email, phone, hashedPassword, designation, businessName, businessType, gstNumber, panNumber, houseNo, streetName, city, state, pincode, contactPersonName, contactPersonPhone, accountNumber, ifscCode, bankName, accountType]
 
         // vendor registration proccess 
-        const [vendor] = await connectToDb.promise().query(sql, values);
-        // console.log(vendorResult)
+        const [result] = await connectToDb.promise().query(sql, values);
 
-
-        // ================= Fetch Vendor Data =================
-        const [rows] = await connectToDb.promise().query(`SELECT * FROM vendors`);
+        // // ================= Fetch Vendor Data =================
+        // const [rows] = await connectToDb.promise().query(`SELECT * FROM vendors`);
         return res.status(201).json({
             success: true,
             message: `${name} register successfully`,
-            data: rows[0]
+            data: result
         })
     } catch (error) {
         return res.status(500).json({

@@ -10,9 +10,9 @@ import userRoutes from "./routes/user/userRoutes.js"
 import userAuthRoutes from "./routes/user/userAuthRoutes.js"
 import userProfileRoutes from "./routes/user/userProfileRoutes.js"
 import userProductRoutes from "./routes/user/userProductRoutes.js"
-// import userCartRoutes from "./routes/user/userCartRoutes.js"
+import userCartRoutes from "./routes/user/userCartRoutes.js"
 import userWatchlistRoutes from "./routes/user/userWatchlistRoutes.js"
-// import userPaymentRoutes from "./routes/user/userPaymentRoutes.js"
+import userOrderRoutes from "./routes/user/userOrderRoutes.js"
 import userSupportRoutes from './routes/user/userSupportRoutes.js'
 // import vendor routes
 import vendorRoutes from "./routes/vendor/vendorRoutes.js"
@@ -27,7 +27,7 @@ import adminAuthRoutes from "./routes/admin/adminAuthRoutes.js"
 import adminProfileRoutes from "./routes/admin/adminProfileRoutes.js"
 import adminProductCategoryRoutes from "./routes/admin/adminProductCategoryRoutes.js"
 import adminProductRoutes from "./routes/admin/adminProductRoutes.js"
-// import adminWatchlistRoutes from "./routes/admin/adminWatchlistRoutes.js"
+import adminWatchlistRoutes from "./routes/admin/adminWatchlistRoutes.js"
 import adminSupportRoutes from './routes/admin/adminSupportRoutes.js'
 
 dotenv.config()
@@ -68,9 +68,9 @@ app.use('/api/user', userRoutes)
 app.use('/api/user/auth', userAuthRoutes)
 app.use('/api/user/profile', userProfileRoutes)
 app.use('/api/user/product', userProductRoutes)
-// app.use('/api/user/cart', userCartRoutes)
+app.use('/api/user/cart', userCartRoutes)
 app.use('/api/user/watchlist', userWatchlistRoutes)
-// app.use('/api/user/payment', userPaymentRoutes)
+app.use('/api/user/order', userOrderRoutes)
 app.use('/api/user/support', userSupportRoutes)
 
 // define and mount vendor routes
@@ -87,7 +87,7 @@ app.use('/api/admin/auth', adminAuthRoutes)
 app.use('/api/admin/profile', adminProfileRoutes)
 app.use('/api/admin/category', adminProductCategoryRoutes)
 app.use('/api/admin/product', adminProductRoutes)
-// app.use('/api/admin/watchlist', adminWatchlistRoutes)
+app.use('/api/admin/watchlist', adminWatchlistRoutes)
 app.use('/api/admin/support', adminSupportRoutes)
 
 // define PORT

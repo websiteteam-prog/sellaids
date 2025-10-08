@@ -1,59 +1,50 @@
 import connectToDb from "../../config/db.js"
+import { successResponse } from "../../utils/apiResponse.js";
 
-export const getUserProfileController = async (req, res) => {
+export const getUserProfileController = async (req, res, next) => {
     try {
-        // get user ID from request parameters
-        const userId = req.params.id
+        const { userId } = req.session
         if (!userId) {
-            return res.status(400).json({ success: false, message: "User ID is required" })
+            return res.status(400).json({ success: false, message: "plz login required" })
         }
 
         // fetch user details from the 'users' table
-        const [user] = await connectToDb.promise().query("SELECT name, email, phone FROM users WHERE id = ?", [userId])
+        const [rows] = await connectToDb.promise().query("SELECT name, email, phone FROM users WHERE id = ?", [userId])
 
         // If user not found, return 404
-        if (user.length === 0) {
+        if (rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "User not found"
             });
         }
 
-        return res.status(200).json({
-            success: true,
-            message: "get user profile successfully",
-            data: user[0]
-        });
-
-    } catch (err) {
-        return res.status(500).json({
-            success: false,
-            message: "get user profile failed",
-            error: err.message
-        })
+        return successResponse(res, 200, "get user profile successfully", rows[0])
+    } catch (error) {
+        next(error)
     }
 };
 
-export const updateUserProfileController = async (req, res) => {
+export const updateUserProfileController = async (req, res, next) => {
     try {
-        const { name, email, phone } = req.body
-
-        // get user ID from params and new data from body
-        const userId = req.params.id
+        const { userId } = req.session
         if (!userId) {
-            return res.status(400).json({ success: false, message: "User ID is required" });
+            return res.status(400).json({ success: false, message: "plz login required" })
         }
 
+        // extract data from frontend
+        const { name, email, phone } = req.body
+
         // Get existing user data first
-        const [existingRows] = await connectToDb.promise().query(
+        const [rows] = await connectToDb.promise().query(
             "SELECT name, email, phone FROM users WHERE id = ?",
             [userId]
         )
 
-        if (existingRows.length === 0) {
+        if (rows.length === 0) {
             return res.status(404).json({ success: false, message: "User not found" })
         }
-        const existingUser = existingRows[0]
+        const existingUser = rows[0]
 
         // Use provided values or fall back to existing ones
         const updatedName = name ?? existingUser.name
@@ -63,17 +54,8 @@ export const updateUserProfileController = async (req, res) => {
         // Update user details in the database
         const [result] = await connectToDb.promise().query("UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?", [updatedName, updatedEmail, updatedPhone, userId])
 
-        return res.status(200).json({
-            success: true,
-            message: "Profile updated successfully",
-            data: result
-        })
-
-    } catch (err) {
-        return res.status(500).json({
-            success: false,
-            message: "Profile updated failed",
-            error: err.message
-        })
+        return successResponse(res, 200, "Profile updated successfully", result)
+    } catch (error) {
+        next(error)
     }
 };

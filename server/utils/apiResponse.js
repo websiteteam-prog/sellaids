@@ -1,11 +1,13 @@
-export const successResponse = (res, statusCode = 200, msg, result, meta = null) => {
+export const successResponse = (res, statusCode, msg, result, extra = null) => {
     const response = {
         success: true,
         message: msg,
         data: result
     };
 
-    if (meta) response.meta = meta;
+    if (extra && typeof extra === "object") {
+        Object.assign(response, extra);
+    }
 
     return res.status(statusCode).json(response);
 };
