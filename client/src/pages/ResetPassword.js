@@ -5,24 +5,35 @@ import axios from "axios";
 function ResetPassword() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
+
+    if (!newPassword) {
+      alert("Please fill both password fields");
       return;
     }
+
     try {
-      await axios.post(
-        `http://localhost:5000/api/user/auth/reset-password/${token}`,
-        { password }
+      setLoading(true);
+      const res = await axios.post(
+        `http://localhost:5000/api/user/reset-password`,
+        { token, newPassword } // backend expects { token, newPassword }
       );
-      alert("Password reset successful! Login now.");
-      navigate("/login");
+
+      if (res.data.success) {
+        alert("Password reset successful ✅");
+        navigate("/UserLogin"); // Login page or dashboard
+      } else {
+        alert("Password reset failed ❌");
+      }
     } catch (err) {
-      alert(err.response?.data?.message || "Invalid or expired token");
+      alert(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,28 +43,23 @@ function ResetPassword() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           Reset Password
         </h2>
+
         <form onSubmit={handleSubmit}>
           <input
             type="password"
-            placeholder="New password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter new password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
             required
           />
-          <input
-            type="password"
-            placeholder="Confirm password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
-            required
-          />
+
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md disabled:opacity-50"
           >
-            Reset Password
+            {loading ? "Resetting..." : "Reset Password"}
           </button>
         </form>
       </div>
