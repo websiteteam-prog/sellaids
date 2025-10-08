@@ -1,118 +1,61 @@
-import React, { useState } from "react";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-
-// Dummy Orders
-const initialOrders = [
-  { id: "#1001", date: "2025-09-10", status: "Delivered", total: "₹1,499" },
-  { id: "#1002", date: "2025-09-08", status: "Shipped", total: "₹899" },
-  { id: "#1003", date: "2025-09-05", status: "Processing", total: "₹2,199" },
-  { id: "#1004", date: "2025-09-03", status: "Cancelled", total: "₹499" },
-  { id: "#1005", date: "2025-09-01", status: "Delivered", total: "₹1,099" },
-];
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import useWishlistStore from "../stores/useWishlistStore";
 
 const OrderTable = () => {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 3;
+  const user = useWishlistStore(state => state.user); // Zustand user
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredOrders = initialOrders.filter(
-    (order) =>
-      order.id.toLowerCase().includes(search.toLowerCase()) ||
-      order.date.includes(search)
-  );
+  useEffect(() => {
+    if (!user) return;
 
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-  const startIndex = (currentPage - 1) * ordersPerPage;
-  const currentOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://localhost:5000/api/orders/${user.id}`);
+        setOrders(response.data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch orders");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleExport = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredOrders);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const file = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(file, "orders_export.xlsx");
-  };
+    fetchOrders();
+  }, [user]);
+
+  if (loading) return <p className="p-4">Loading orders...</p>;
+  if (error) return <p className="p-4 text-red-500">{error}</p>;
+  if (orders.length === 0) return <p className="p-4">No orders found.</p>;
 
   return (
-    <div className="bg-white p-4 rounded-md shadow">
-      {/* Filter and Export */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-        <input
-          type="text"
-          placeholder="Search by Order ID or Date"
-          className="border border-gray-300 rounded px-4 py-2 w-full sm:w-1/2"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-
-        <button
-          onClick={handleExport}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition w-full sm:w-auto"
-        >
-          Export to Excel
-        </button>
-      </div>
-
-      {/* Table Wrapper */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left border">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="px-4 py-2 border">Order ID</th>
-              <th className="px-4 py-2 border">Date</th>
-              <th className="px-4 py-2 border">Status</th>
-              <th className="px-4 py-2 border">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentOrders.length > 0 ? (
-              currentOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 border">{order.id}</td>
-                  <td className="px-4 py-3 border">{order.date}</td>
-                  <td className="px-4 py-3 border">{order.status}</td>
-                  <td className="px-4 py-3 border">{order.total}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="text-center py-4 text-gray-500">
-                  No matching orders found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
-        >
-          Previous
-        </button>
-
-        <span className="text-sm text-gray-600">
-          Page {currentPage} of {totalPages}
-        </span>
-
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
-    </div>
+    <table className="min-w-full text-sm text-left border border-gray-200">
+      <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+        <tr>
+          <th className="px-4 py-2 border">orderId</th>
+          <th className="px-4 py-2 border">productName</th>
+          <th className="px-4 py-2 border">price</th>
+          <th className="px-4 py-2 border">quantity</th>
+          <th className="px-4 py-2 border">status</th>
+          <th className="px-4 py-2 border">date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {orders?.map(order => (
+          <tr key={order?.id} className="hover:bg-gray-50">
+            <td className="px-4 py-2 border">{order?.id}</td>
+            <td className="px-4 py-2 border">{order?.product_name}</td>
+            <td className="px-4 py-2 border">₹{order?.price}</td>
+            <td className="px-4 py-2 border">{order?.quantity}</td>
+            <td className="px-4 py-2 border font-semibold text-blue-600">{order?.status}</td>
+            <td className="px-4 py-2 border">{new Date(order?.created_at).toLocaleDateString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 };
 

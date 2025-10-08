@@ -2,61 +2,11 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 const productsData = [
-  {
-    id: 1,
-    image: "https://via.placeholder.com/50?text=Headphones",
-    name: "Wireless Bluetooth Headphones",
-    sku: "WBH001",
-    category: "Electronics",
-    price: 2999,
-    stock: 24,
-    featured: true,
-    status: "Active",
-  },
-  {
-    id: 2,
-    image: "https://via.placeholder.com/50?text=Watch",
-    name: "Smart Watch Pro",
-    sku: "SWP002",
-    category: "Electronics",
-    price: 8999,
-    stock: 15,
-    featured: true,
-    status: "Active",
-  },
-  {
-    id: 3,
-    image: "https://via.placeholder.com/50?text=Speaker",
-    name: "Portable Bluetooth Speaker",
-    sku: "PBS003",
-    category: "Electronics",
-    price: 1599,
-    stock: 32,
-    featured: false,
-    status: "Active",
-  },
-  {
-    id: 4,
-    image: "https://via.placeholder.com/50?text=Charging",
-    name: "Wireless Charging Pad",
-    sku: "WCP004",
-    category: "Electronics",
-    price: 899,
-    stock: 18,
-    featured: false,
-    status: "Active",
-  },
-  {
-    id: 5,
-    image: "https://via.placeholder.com/50?text=Case",
-    name: "Premium Phone Case",
-    sku: "PPC005",
-    category: "Electronics",
-    price: 599,
-    stock: 45,
-    featured: true,
-    status: "Active",
-  },
+  { id: 1, image: "https://via.placeholder.com/50?text=Headphones", name: "Wireless Bluetooth Headphones", sku: "WBH001", category: "Electronics", price: 2999, stock: 24, featured: true, status: "Active" },
+  { id: 2, image: "https://via.placeholder.com/50?text=Watch", name: "Smart Watch Pro", sku: "SWP002", category: "Electronics", price: 8999, stock: 15, featured: true, status: "Active" },
+  { id: 3, image: "https://via.placeholder.com/50?text=Speaker", name: "Portable Bluetooth Speaker", sku: "PBS003", category: "Electronics", price: 1599, stock: 32, featured: false, status: "Active" },
+  { id: 4, image: "https://via.placeholder.com/50?text=Charging", name: "Wireless Charging Pad", sku: "WCP004", category: "Electronics", price: 899, stock: 18, featured: false, status: "Active" },
+  { id: 5, image: "https://via.placeholder.com/50?text=Case", name: "Premium Phone Case", sku: "PPC005", category: "Electronics", price: 599, stock: 45, featured: true, status: "Active" },
 ];
 
 export default function Products() {
@@ -67,11 +17,8 @@ export default function Products() {
   const categories = ["All Categories", "Electronics"];
 
   const filteredProducts = productsData.filter((product) => {
-    const matchCategory =
-      category === "All Categories" || product.category === category;
-    const matchName = product.name
-      .toLowerCase()
-      .includes(searchName.toLowerCase());
+    const matchCategory = category === "All Categories" || product.category === category;
+    const matchName = product.name.toLowerCase().includes(searchName.toLowerCase());
     const matchSKU = product.sku.toLowerCase().includes(searchSKU.toLowerCase());
     return matchCategory && matchName && matchSKU;
   });
@@ -83,17 +30,18 @@ export default function Products() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold mb-3">Products</h1>
-      <nav className="text-sm mb-6 text-gray-600">
+      <nav className="text-sm mb-4 text-gray-600">
         Home &gt; <span className="text-orange-600 cursor-pointer">Products</span>
       </nav>
 
-      <div className="bg-white p-4 rounded-md shadow mb-6 flex flex-wrap gap-4 items-center">
-        <div>
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-md shadow mb-6 flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[150px]">
           <label className="block font-semibold mb-1">Category</label>
           <select
-            className="border border-gray-300 rounded px-3 py-2"
+            className="border border-gray-300 rounded px-3 py-2 w-full"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -103,140 +51,84 @@ export default function Products() {
           </select>
         </div>
 
-        <div>
+        <div className="flex-1 min-w-[150px]">
           <label className="block font-semibold mb-1">Product Name</label>
           <input
             type="text"
             placeholder="Product Name"
-            className="border border-gray-300 rounded px-3 py-2"
+            className="border border-gray-300 rounded px-3 py-2 w-full"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
           />
         </div>
 
-        <div>
+        <div className="flex-1 min-w-[150px]">
           <label className="block font-semibold mb-1">SKU</label>
           <input
             type="text"
             placeholder="SKU"
-            className="border border-gray-300 rounded px-3 py-2"
+            className="border border-gray-300 rounded px-3 py-2 w-full"
             value={searchSKU}
             onChange={(e) => setSearchSKU(e.target.value)}
           />
         </div>
 
-        <div className="flex space-x-2 mt-6">
-          <button
-            onClick={() => {}}
-            className="bg-orange-600 text-white px-5 py-2 rounded hover:bg-orange-700 flex items-center"
-          >
-            <svg
-              className="w-5 h-5 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z"
-              />
-            </svg>
+        <div className="flex space-x-2 mt-4 sm:mt-6 flex-wrap">
+          <button className="bg-orange-600 text-white px-5 py-2 rounded hover:bg-orange-700 flex items-center mb-2 sm:mb-0">
             Search
           </button>
           <button
             onClick={resetFilters}
-            className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 flex items-center"
+            className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 flex items-center mb-2 sm:mb-0"
           >
-            <svg
-              className="w-5 h-5 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582M19 19v-5h-.581M15.949 15.95a7.5 7.5 0 01-11.314-11.314m12.728 12.728A7.5 7.5 0 005.637 5.636"
-              />
-            </svg>
             Reset
           </button>
         </div>
       </div>
 
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-orange-600 text-white">
-            <th className="py-3 px-4 text-left">SR.</th>
-            <th className="py-3 px-4 text-left">IMAGE</th>
-            <th className="py-3 px-4 text-left">NAME</th>
-            <th className="py-3 px-4 text-left">SKU</th>
-            <th className="py-3 px-4 text-left">CATEGORY</th>
-            <th className="py-3 px-4 text-left">PRICE</th>
-            <th className="py-3 px-4 text-left">STOCK</th>
-            <th className="py-3 px-4 text-left">FEATURED</th>
-            <th className="py-3 px-4 text-left">STATUS</th>
-            <th className="py-3 px-4 text-left">EDIT</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredProducts.map((product, index) => (
-            <tr
-              key={product.id}
-              className={index % 2 === 1 ? "bg-gray-50" : ""}
-            >
-              <td className="py-4 px-4 font-semibold">{index + 1}</td>
-              <td className="py-4 px-4">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-12 h-12 rounded"
-                />
-              </td>
-              <td className="py-4 px-4 font-semibold">{product.name}</td>
-              <td className="py-4 px-4 text-orange-600 cursor-pointer">
-                {product.sku}
-              </td>
-              <td className="py-4 px-4">{product.category}</td>
-              <td className="py-4 px-4 font-bold">
-                ₹{product.price.toLocaleString()}
-              </td>
-              <td className="py-4 px-4">{product.stock}</td>
-              <td className="py-4 px-4">{product.featured ? "Yes" : "No"}</td>
-              <td className="py-4 px-4">
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-                  {product.status}
-                </span>
-              </td>
-              <td className="py-4 px-4">
-                <Link
-                  to={`/edit-product/${product.id}`}
-                  className="text-orange-600 hover:text-orange-800 cursor-pointer p-1 rounded"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
-                  </svg>
-                </Link>
-              </td>
+      {/* Table */}
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <table className="min-w-[900px] w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-orange-600 text-white">
+              <th className="py-3 px-4 text-left">SR.</th>
+              <th className="py-3 px-4 text-left">IMAGE</th>
+              <th className="py-3 px-4 text-left">NAME</th>
+              <th className="py-3 px-4 text-left">SKU</th>
+              <th className="py-3 px-4 text-left">CATEGORY</th>
+              <th className="py-3 px-4 text-left">PRICE</th>
+              <th className="py-3 px-4 text-left">STOCK</th>
+              <th className="py-3 px-4 text-left">FEATURED</th>
+              <th className="py-3 px-4 text-left">STATUS</th>
+              <th className="py-3 px-4 text-left">EDIT</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredProducts.map((product, index) => (
+              <tr key={product.id} className={index % 2 === 1 ? "bg-gray-50" : ""}>
+                <td className="py-4 px-4 font-semibold">{index + 1}</td>
+                <td className="py-4 px-4">
+                  <img src={product.image} alt={product.name} className="w-12 h-12 rounded" />
+                </td>
+                <td className="py-4 px-4 font-semibold">{product.name}</td>
+                <td className="py-4 px-4 text-orange-600 cursor-pointer">{product.sku}</td>
+                <td className="py-4 px-4">{product.category}</td>
+                <td className="py-4 px-4 font-bold">₹{product.price.toLocaleString()}</td>
+                <td className="py-4 px-4">{product.stock}</td>
+                <td className="py-4 px-4">{product.featured ? "Yes" : "No"}</td>
+                <td className="py-4 px-4">
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">{product.status}</span>
+                </td>
+                <td className="py-4 px-4">
+                  <Link to={`/edit-product/${product.id}`} className="text-orange-600 hover:text-orange-800 cursor-pointer p-1 rounded">
+                    Edit
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

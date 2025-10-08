@@ -1,24 +1,45 @@
-// src/Layout/VendorDashboardLayout.jsx
 import { NavLink, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
   ChevronDown,
   ChevronRight,
-  PlusSquare,
   IndianRupee,
   User,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 
 export default function VendorDashboardLayout() {
   const [productOpen, setProductOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Mobile Hamburger */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white shadow fixed top-0 left-0 right-0 z-50">
+        <div className="text-lg font-bold text-orange-600">Vendor Panel</div>
+        <button onClick={() => setSidebarOpen(true)}>
+          <Menu size={28} />
+        </button>
+      </div>
+
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-lg flex flex-col justify-between">
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg flex flex-col justify-between z-50 transform transition-transform duration-300 md:relative md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div>
           {/* Logo */}
           <div className="flex items-center gap-2 p-4 border-b">
@@ -26,6 +47,13 @@ export default function VendorDashboardLayout() {
               V
             </div>
             <h2 className="text-lg font-bold text-gray-800">Vendor Panel</h2>
+            {/* Close button for mobile */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="ml-auto md:hidden"
+            >
+              <X size={24} />
+            </button>
           </div>
 
           {/* Navigation */}
@@ -134,7 +162,7 @@ export default function VendorDashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-6 pt-20 md:pt-6 overflow-y-auto">
         <Outlet />
       </main>
     </div>

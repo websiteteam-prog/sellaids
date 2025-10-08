@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 // import useUserStore from "../stores/useUserStore";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useUserStore } from "../stores/useUserStore"
+import { useUserStore } from "../stores/useUserStore";
 
 function UserLogin() {
   const [email, setEmail] = useState("");
@@ -53,7 +53,7 @@ function UserLogin() {
             className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
             required
           />
-          <div className="relative mb-4">
+          <div className="relative mb-2">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
@@ -71,6 +71,14 @@ function UserLogin() {
               </span>
             )}
           </div>
+
+          {/* Forgot Password Link */}
+          <div className="text-right mb-4">
+            <Link to="/forgot-password" className="text-blue-500 hover:underline">
+  Forgot Password?
+</Link>
+          </div>
+
           <button
             type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md"
@@ -79,7 +87,10 @@ function UserLogin() {
           </button>
         </form>
         <div className="mt-5 text-center">
-          Not registered? <Link to="/register" className="text-orange-600">Register</Link>
+          Not registered?{" "}
+          <Link to="/register" className="text-orange-600">
+            Register
+          </Link>
         </div>
       </div>
     </div>

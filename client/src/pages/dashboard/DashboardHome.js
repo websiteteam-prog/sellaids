@@ -1,42 +1,65 @@
 // src/pages/dashboard/DashboardHome.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
+import useWishlistStore from "../../stores/useWishlistStore";
+import axios from "axios";
 
-const DashboardHome = ({ userName = "User" }) => {
-  // Replace these with actual data fetched from your API or state
-  const totalOrders = 12;
-  const pendingDeliveries = 3;
-  const wishlistCount = 7;
-  const supportTickets = 1;
+const DashboardHome = () => {
+  const { user } = useWishlistStore();
+  const [dashboardData, setDashboardData] = useState({
+    totalOrders: 0,
+    pendingDeliveries: 0,
+    wishlistCount: 0,
+    supportTickets: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) fetchDashboardData();
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/user/${user.id}/dashboard`);
+      setDashboardData({
+        totalOrders: res.data.totalOrders || 0,
+        pendingDeliveries: res.data.pendingDeliveries || 0,
+        wishlistCount: res.data.wishlistCount || 0,
+        supportTickets: res.data.supportTickets || 0,
+      });
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <p className="p-6">Loading dashboard...</p>;
 
   return (
     <div className="p-6 bg-gray-50 min-h-full">
-    
-      {/* Dashboard Overview heading */}
       <h2 className="text-xl font-semibold mb-2">Dashboard Overview</h2>
-      <p className="text-gray-700 mb-6">
-        Welcome to your dashboard. Manage your account here.
-      </p>
+      <p className="text-gray-700 mb-6">Welcome, {user?.full_name || "User"}! Manage your account here.</p>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-700 font-semibold mb-2">Total Orders</h3>
-          <p className="text-2xl font-bold">{totalOrders}</p>
+          <p className="text-2xl font-bold">{dashboardData.totalOrders}</p>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-700 font-semibold mb-2">Pending Deliveries</h3>
-          <p className="text-2xl font-bold">{pendingDeliveries}</p>
+          <p className="text-2xl font-bold">{dashboardData.pendingDeliveries}</p>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-700 font-semibold mb-2">Wishlist Items</h3>
-          <p className="text-2xl font-bold">{wishlistCount}</p>
+          <p className="text-2xl font-bold">{dashboardData.wishlistCount}</p>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-700 font-semibold mb-2">Support Tickets</h3>
-          <p className="text-2xl font-bold">{supportTickets}</p>
+          <p className="text-2xl font-bold">{dashboardData.supportTickets}</p>
         </div>
       </div>
     </div>
