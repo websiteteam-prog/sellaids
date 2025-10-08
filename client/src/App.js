@@ -34,6 +34,8 @@ import Register from "./pages/vendor/MultiStepRegister";
 // ✅ User Auth Pages
 import UserLogin from "./pages/Userlogin";
 import UserRegister from "./pages/UserRegister";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // ✅ Vendor Dashboard Pages
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
@@ -94,6 +96,8 @@ const App = () => {
       {/* ✅ User Auth Routes */}
       <Route path="/UserLogin" element={<UserLogin />} />
       <Route path="/register" element={<UserRegister />} />
+       <Route path="/forgot-password" element={<ForgotPassword />} />
+         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* 🔐 User Dashboard Routes */}
       <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

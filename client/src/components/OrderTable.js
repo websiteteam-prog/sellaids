@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import useUserStore from "../stores/useUserStore";
+import useWishlistStore from "../stores/useWishlistStore";
 
 const OrderTable = () => {
-  const user = useUserStore(state => state.user); // Zustand user
+  const user = useWishlistStore(state => state.user); // Zustand user
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import useUserStore from "../../stores/useUserStore";
+import useWishlistStore from "../../stores/useWishlistStore";
 import axios from "axios";
 
 export default function Addresses() {
-  const { user } = useUserStore();
+  const { user } = useWishlistStore();
 
   const [addresses, setAddresses] = useState([]);
   const [form, setForm] = useState({ label: "", address: "", phone: "" });

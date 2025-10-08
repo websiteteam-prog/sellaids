@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import raiseTicket from "../../api/raiseTicket"; // ✅ use API
-import { useUserStore } from "../../stores/useUserStore";
+import  useWishlistStore  from "../../stores/useWishlistStore";
 
 export default function RaiseTicket() {
   const [form, setForm] = useState({
@@ -11,7 +11,7 @@ export default function RaiseTicket() {
   });
 
   const navigate = useNavigate();
-  const { user } = useUserStore()
+  const { user } = useWishlistStore()
   console.log(user?.id)
 
   const handleChange = (e) => {

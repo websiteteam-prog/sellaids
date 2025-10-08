@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import useUserStore from "../../stores/useUserStore";
+import useWishlistStore from "../../stores/useWishlistStore";
 import axios from "axios";
 
 export default function Payments() {
-  const { user } = useUserStore();
+  const { user } = useWishlistStore();
 
   const [payments, setPayments] = useState([]);
   const [showForm, setShowForm] = useState(false);

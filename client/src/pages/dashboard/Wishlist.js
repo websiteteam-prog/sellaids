@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import useUserStore from "../../stores/useUserStore";
+import useWishlistStore from "../../stores/useWishlistStore";
 import axios from "axios";
 
 export default function Wishlist() {
-  const { user, wishlist, setWishlist, removeFromWishlist } = useUserStore();
+  const { user, wishlist, setWishlist, removeFromWishlist } = useWishlistStore();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -44,7 +44,23 @@ export default function Wishlist() {
       <h1 className="text-2xl font-bold mb-4">My Wishlist</h1>
 
       {wishlist.length === 0 ? (
-        <p className="text-gray-500">Your wishlist is empty.</p>
+        <div className="flex flex-col items-center justify-center mt-10 text-gray-500">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-12 w-12 mb-2 text-red-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+          <p className="text-lg font-medium">No products added to your wishlist.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {wishlist.map((item) => (

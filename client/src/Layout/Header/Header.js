@@ -3,13 +3,38 @@ import { MegaMenu, MensMegaMenu, KidsMegaMenu } from "./MegaMenu";
 import { User, Heart, Search, ShoppingCart, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
+import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
 
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
 
+  // Logout handler with API call and toast
+  const handleLogout = async () => {
+    try {
+      // Call logout API
+      await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
+
+      // Clear frontend user state
+      logout();
+
+      // Show success toast
+      toast.success("You have successfully logged out");
+
+      // Redirect to login page after short delay
+      setTimeout(() => navigate("/UserLogin"), 1000);
+    } catch (err) {
+      console.error("Logout failed:", err);
+      toast.error("Logout failed, please try again.");
+    }
+  };
+
   return (
     <header className="bg-white shadow relative z-50">
+      {/* Toast container */}
+      <Toaster position="top-right" />
+
       <nav className="max-w-7xl mx-auto flex justify-between items-center py-0.5 px-6">
         {/* Logo */}
         <div className="flex items-center">
@@ -60,8 +85,10 @@ const Header = () => {
               </div>
               <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
                 <Link to="/dashboard" className="block px-4 py-2 hover:bg-orange-100">Dashboard</Link>
+
+                {/* Logout button with toast */}
                 <button
-                  onClick={() => { logout(); navigate("/UserLogin"); }}
+                  onClick={handleLogout}
                   className="w-full text-left px-4 py-2 hover:bg-orange-100"
                 >
                   Logout
