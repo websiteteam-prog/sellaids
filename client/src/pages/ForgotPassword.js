@@ -4,17 +4,34 @@ import axios from "axios";
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!email) {
+      alert("Please enter your email");
+      return;
+    }
+
     try {
+      setLoading(true);
       const res = await axios.post(
-        "http://localhost:5000/api/user/auth/forgot-password",
+        "http://localhost:5000/api/user/forgot-password",
         { email }
       );
-      setSuccessMsg(res.data.message);
+
+      if (res.data.success) {
+        setEmail("");
+        setSuccessMsg(res.data.message);
+        alert("Password reset link has been sent to your email ✅");
+      } else {
+        alert(res.data.message || "Request failed ❌");
+      }
     } catch (err) {
       alert(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -24,6 +41,7 @@ function ForgotPassword() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           Forgot Password
         </h2>
+
         {successMsg ? (
           <div className="text-green-600 text-center">{successMsg}</div>
         ) : (
@@ -38,9 +56,10 @@ function ForgotPassword() {
             />
             <button
               type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md disabled:opacity-50"
             >
-              Send Reset Link
+              {loading ? "Sending..." : "Send Reset Link"}
             </button>
           </form>
         )}

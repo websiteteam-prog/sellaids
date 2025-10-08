@@ -33,7 +33,7 @@ export const adminForgotPasswordController = async (req, res, next) => {
             [resetToken, tokenExpiry, email]
         );
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
         //  Send reset link to via email to
         await sendEmail(email, "Reset Your Password", `Click here to reset your password: ${resetLink}`)
