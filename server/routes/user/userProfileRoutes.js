@@ -6,7 +6,7 @@ import { isUserLoginIn } from "../../middlewares/authmiddlewares.js"
 const router = express.Router()
 
 // define all routes
-router.get('/:id', isUserLoginIn, getUserProfileController)
-router.put('/:id', isUserLoginIn, updateUserProfileController)
+router.get('/', isUserLoginIn, getUserProfileController)
+router.put('/', isUserLoginIn, updateUserProfileController)
 
 export default router

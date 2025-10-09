@@ -3,7 +3,7 @@ import { createVendorProductController, getAllVendorProductController, getSingle
 import { isVendorLoginIn } from "../../middlewares/authmiddlewares.js"
 import { uploadFields } from '../../middlewares/upload.js'
 
-// define router object
+// define router objects
 const router = express.Router();
 
 // define all routes

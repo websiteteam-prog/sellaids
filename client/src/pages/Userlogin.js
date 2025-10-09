@@ -30,7 +30,8 @@ function UserLogin() {
         setPassword("");
 
         alert("Login Successful ✅");
-        setTimeout(() => navigate("/user"), 1000);
+        navigate("/user")
+        // setTimeout(() => navigate("/user"), 1000);
       } else {
         alert("Login Failed ❌");
       }

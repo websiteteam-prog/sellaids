@@ -32,6 +32,9 @@ export const createVendorProductController = async (req, res, next) => {
         const wearingPhoto = req.files['wearingPhoto']?.[0]?.path || null;
         const invoicePhoto = req.files['invoicePhoto']?.[0]?.path || null;
         const repairPhoto = req.files['repairPhoto']?.[0]?.path || null;
+        const moreImages = req.files?.moreImages
+            ? JSON.stringify(req.files.moreImages.map(f => f.path))
+            : JSON.stringify([]);
 
         // Check if category exists
         if (!categoryId) {
@@ -41,9 +44,17 @@ export const createVendorProductController = async (req, res, next) => {
             })
         }
 
-        const sql = `INSERT INTO products (category_id, vendor_id, product_condition, fit, fit_other, size, size_other,invoice, invoice_photo, needs_repair, repair_details, repair_photo, original_box, dust_bag, additional_items,front_photo, back_photo, label_photo, inside_photo, button_photo, wearing_photo, more_images,purchase_price, selling_price, reason_to_sell, purchase_year, purchase_place, product_link, additional_info,agree) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        console.log(buttonPhoto)
+        console.log(moreImages)
 
-        const values = [group, category, type, condition, fit, fitOther, size, sizeOther,frontPhoto, backPhoto, labelPhoto, insidePhoto, buttonPhoto, wearingPhoto, invoicePhoto, repairPhoto, categoryId, invoice, needsRepair, repairDetails, originalBox, dustBag, additionalItems, purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink, additionalInfo, sellerInfo, agree]
+        const sql = `INSERT INTO products (category_id, vendor_id, product_group, product_category, product_type, product_condition, fit, fit_other, size, size_other, invoice, invoice_photo, needs_repair, repair_details, repair_photo, original_box, dust_bag, additional_items, front_photo, back_photo, label_photo, inside_photo, button_photo, wearing_photo, more_images, purchase_price, selling_price, reason_to_sell, purchase_year, purchase_place, product_link, additional_info, seller_info, agree) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+        const values = [
+            categoryId, vendorId, group, category, type, condition, fit, fitOther, size, sizeOther,
+            invoice, invoicePhoto, needsRepair, repairDetails, repairPhoto, originalBox, dustBag, additionalItems, frontPhoto, backPhoto, labelPhoto, insidePhoto,
+            buttonPhoto, wearingPhoto, moreImages, purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink,
+            additionalInfo, sellerInfo, agree ? 1 : 0
+        ]
         // add product
         const result = await connectToDb.promise().query(sql, values)
         if (result.affectedRows === 0) {
@@ -52,11 +63,79 @@ export const createVendorProductController = async (req, res, next) => {
                 message: 'product not found'
             })
         }
-        return successResponse(res, 201, "create product successfully", result)
+        return successResponse(res, 201, "create product successfully", result[0])
     } catch (error) {
         next(error)
     }
 }
+
+export const bulkAddProductController = async (req, res, next) => {
+    try {
+        // Extract vendor ID from session
+        const { vendorId } = req.session
+
+        // vendor id required
+        if (!vendorId) {
+            return res.status(400).json({
+                success: false,
+                message: "You are not authorized. Please login."
+            })
+        }
+
+        // fetch data from frontend
+        const {
+            group, category, type, condition, fit, fitOther, size, sizeOther, categoryId,
+            invoice, needsRepair, repairDetails, originalBox, dustBag, additionalItems,
+            purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink, additionalInfo, sellerInfo, agree
+        } = req.body;
+
+        console.log(req.files)
+
+        // Image paths
+        const frontPhoto = req.files['frontPhoto']?.[0]?.path || null;
+        const backPhoto = req.files['backPhoto']?.[0]?.path || null;
+        const labelPhoto = req.files['labelPhoto']?.[0]?.path || null;
+        const insidePhoto = req.files['insidePhoto']?.[0]?.path || null;
+        const buttonPhoto = req.files['buttonPhoto']?.[0]?.path || null;
+        const wearingPhoto = req.files['wearingPhoto']?.[0]?.path || null;
+        const invoicePhoto = req.files['invoicePhoto']?.[0]?.path || null;
+        const repairPhoto = req.files['repairPhoto']?.[0]?.path || null;
+        const moreImages = req.files?.moreImages
+            ? JSON.stringify(req.files.moreImages.map(f => f.path))
+            : JSON.stringify([]);
+
+        // Check if category exists
+        if (!categoryId) {
+            return res.status(400).json({
+                success: false,
+                message: "Category Id not found"
+            })
+        }
+
+        console.log(buttonPhoto)
+        console.log(moreImages)
+
+        const sql = `INSERT INTO products (category_id, vendor_id, product_group, product_category, product_type, product_condition, fit, fit_other, size, size_other, invoice, invoice_photo, needs_repair, repair_details, repair_photo, original_box, dust_bag, additional_items, front_photo, back_photo, label_photo, inside_photo, button_photo, wearing_photo, more_images, purchase_price, selling_price, reason_to_sell, purchase_year, purchase_place, product_link, additional_info, seller_info, agree) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+        const values = [
+            categoryId, vendorId, group, category, type, condition, fit, fitOther, size, sizeOther,
+            invoice, invoicePhoto, needsRepair, repairDetails, repairPhoto, originalBox, dustBag, additionalItems, frontPhoto, backPhoto, labelPhoto, insidePhoto,
+            buttonPhoto, wearingPhoto, moreImages, purchasePrice, sellingPrice, reasonToSell, purchaseYear, purchasePlace, productLink,
+            additionalInfo, sellerInfo, agree ? 1 : 0
+        ]
+        // add product
+        const result = await connectToDb.promise().query(sql, values)
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'product not found'
+            })
+        }
+        return successResponse(res, 201, "create product successfully", result[0])
+    } catch (error) {
+        next(error)
+    }
+} 
 
 export const getAllVendorProductController = async (req, res) => {
     try {

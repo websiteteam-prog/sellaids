@@ -6,7 +6,7 @@ import { isAdminLoginIn } from "../../middlewares/authmiddlewares.js"
 const router = express.Router()
 
 // define all routes
-router.get('/:id', isAdminLoginIn, getAdminProfileController)
-router.put('/:id', isAdminLoginIn, updateAdminProfileController)
+router.get('/', isAdminLoginIn, getAdminProfileController)
+router.put('/', isAdminLoginIn, updateAdminProfileController)
 
 export default router

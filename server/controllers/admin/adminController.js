@@ -3,9 +3,10 @@ import crypto from "crypto"
 import dotenv from "dotenv"
 import bcrypt from "bcryptjs"
 import { sendEmail } from "../../utils/mailer.js"
+import { successResponse } from "../../utils/apiResponse.js"
 dotenv.config()
 
-export const adminForgotPasswordController = async (req, res) => {
+export const adminForgotPasswordController = async (req, res, next) => {
     try {
         // fetch email from frontend
         const { email } = req.body;
@@ -24,7 +25,7 @@ export const adminForgotPasswordController = async (req, res) => {
 
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString("hex");
-        const tokenExpiry = new Date(Date.now() + 60000); // 5 min expiry
+        const tokenExpiry = new Date(Date.now() + 300000); // 5 min expiry
 
         // Save token to DB
         await connectToDb.promise().query(
@@ -32,26 +33,18 @@ export const adminForgotPasswordController = async (req, res) => {
             [resetToken, tokenExpiry, email]
         );
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
         //  Send reset link to via email to
         await sendEmail(email, "Reset Your Password", `Click here to reset your password: ${resetLink}`)
 
-        return res.status(200).json({
-            success: true,
-            message: "Reset link has been sent successfully",
-            resetLink  // In real app, you would email this instead of returning it
-        });
+        return successResponse(res, 200, "Reset link has been sent successfully", resetLink)
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Admin forgot password process failed",
-            error: error.message
-        })
+        next(error)
     }
 }
 
-export const adminResetPasswordController = async (req, res) => {
+export const adminResetPasswordController = async (req, res, next) => {
     try {
         // fetch email from frontend
         const { token, newPassword } = req.body;
@@ -92,15 +85,8 @@ export const adminResetPasswordController = async (req, res) => {
             `Best regards,\nYour App Team`
         );
         
-        return res.status(200).json({
-            success: true,
-            message: "Password reset successfully"
-        });
+        return successResponse(res, 200, "Password reset successfully")
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Admin reset password process failed",
-            error: error.message
-        })
+        next(error)
     }
 }

@@ -5,7 +5,7 @@ export const createUserTicketController = async (req, res) => {
     try {
         const { userId } = req.session
         if (!userId) {
-            return res.status(401).json({ success: false, message: "Unauthorized. Please log in." });
+            return res.status(401).json({ success: false, message: "Unauthorized. Please log in." })
         }
 
         // fetch data from frontend
@@ -17,16 +17,16 @@ export const createUserTicketController = async (req, res) => {
         }
 
         // Get user name & email from DB
-        const [userRows] = await connectToDb.promise().query(
+        const [rows] = await connectToDb.promise().query(
             "SELECT name, email FROM users WHERE id = ?",
             [userId]
         );
 
-        if (userRows.length === 0) {
+        if (rows.length === 0) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        const { name, email } = userRows[0];
+        const { name, email } = rows[0];
 
         // create a ticket
         const [result] = await connectToDb.promise().query(
