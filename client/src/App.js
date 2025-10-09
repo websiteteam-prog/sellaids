@@ -24,7 +24,7 @@ import AdviceSellers from "./pages/AdviceSellers";
 import Blogs from "./pages/Blogs";
 import Luxury from "./pages/Luxury";
 
-// User Aids
+// ✅ User Aids
 import Kidsaids from "./components/aids/Kidsaids";
 
 // ✅ Vendor Auth Pages
@@ -57,7 +57,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome";
 import RaiseTicket from "./pages/dashboard/RaiseTicket";
 
 // ✅ Admin Layout and Pages
-import AdminLayout from "./components/admindashboard/Layout"; 
+import AdminLayout from "./components/admindashboard/Layout";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminUsers from "./pages/Admin/Users";
 import AdminVendors from "./pages/Admin/Vendors";
@@ -65,11 +65,11 @@ import AdminProducts from "./pages/Admin/Products";
 import AdminOrders from "./pages/Admin/Orders";
 import AdminPayments from "./pages/Admin/Payments";
 import AdminReports from "./pages/Admin/Reports";
-import AdminNotifications from "./pages/Admin/Notifications";
-import AdminSettings from "./pages/Admin/Settings";
+import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
-
+import AdminLogin from "./pages/Admin/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
+
 const App = () => {
   return (
     <Routes>
@@ -96,8 +96,8 @@ const App = () => {
       {/* ✅ User Auth Routes */}
       <Route path="/UserLogin" element={<UserLogin />} />
       <Route path="/register" element={<UserRegister />} />
-       <Route path="/forgot-password" element={<ForgotPassword />} />
-         <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* 🔐 User Dashboard Routes */}
       <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
@@ -127,6 +127,9 @@ const App = () => {
         <Route path="profile" element={<ProfileVendor />} />
       </Route>
 
+      {/* ✅ Admin Login (layout ke bahar hona chahiye) */}
+      <Route path="/admin-login" element={<AdminLogin />} />
+
       {/* ✅ Admin Dashboard Routes */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
@@ -136,11 +139,9 @@ const App = () => {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="payments" element={<AdminPayments />} />
         <Route path="reports" element={<AdminReports />} />
-        <Route path="notifications" element={<AdminNotifications />} />
-        <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile-settings" element={<Profilesetting />} />
         <Route path="security" element={<AdminSecurity />} />
       </Route>
- 
     </Routes>
   );
 };

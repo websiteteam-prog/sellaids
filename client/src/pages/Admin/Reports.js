@@ -1,5 +1,5 @@
 // src/pages/ReportsDashboard.jsx
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FaDollarSign, FaShoppingCart, FaUsers, FaChartLine, FaDownload } from "react-icons/fa";
 import {
   BarChart,
@@ -12,51 +12,67 @@ import {
   Line,
   CartesianGrid,
 } from "recharts";
+import axios from "axios";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const ReportsDashboard = () => {
-  const salesData = [
-    { month: "Jan", sales: 450000 },
-    { month: "Feb", sales: 520000 },
-    { month: "Mar", sales: 480000 },
-    { month: "Apr", sales: 610000 },
-    { month: "May", sales: 550000 },
-    { month: "Jun", sales: 670000 },
-  ];
+  const [salesData, setSalesData] = useState([]);
+  const [usersData, setUsersData] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [stats, setStats] = useState({
+    revenue: 0,
+    orders: 0,
+    customers: 0,
+    avgOrderValue: 0,
+  });
 
-  const usersData = [
-    { month: "Jan", users: 1200 },
-    { month: "Feb", users: 1450 },
-    { month: "Mar", users: 1680 },
-    { month: "Apr", users: 1920 },
-    { month: "May", users: 2150 },
-    { month: "Jun", users: 2380 },
-  ];
+  const reportRef = useRef();
 
-  const vendors = [
-    { name: "Tech Store", owner: "Ahmad Ali", revenue: "Rs. 2,45,000", orders: 156, growth: "+15%" },
-    { name: "Mobile Zone", owner: "Zara Hussain", revenue: "Rs. 1,89,000", orders: 134, growth: "+12%" },
-    { name: "Electronics Plus", owner: "Hassan Ahmed", revenue: "Rs. 1,56,000", orders: 98, growth: "+8%" },
-    { name: "Fashion Hub", owner: "Fatima Khan", revenue: "Rs. 1,34,000", orders: 87, growth: "+5%" },
-    { name: "Sports World", owner: "Usman Shah", revenue: "Rs. 98,000", orders: 65, growth: "+3%" },
-  ];
+  // Fetch dashboard data from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get("/api/reports"); // Backend API
+        const { sales, users, vendors, categories, stats } = res.data;
+        setSalesData(sales);
+        setUsersData(users);
+        setVendors(vendors);
+        setCategories(categories);
+        setStats(stats);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const categories = [
-    { name: "Electronics", revenue: "Rs. 4,56,000", percent: 35, growth: "+18%" },
-    { name: "Fashion", revenue: "Rs. 3,21,000", percent: 25, growth: "+12%" },
-    { name: "Beauty", revenue: "Rs. 2,45,000", percent: 19, growth: "+8%" },
-    { name: "Sports", revenue: "Rs. 1,89,000", percent: 14, growth: "+5%" },
-    { name: "Books", revenue: "Rs. 89,000", percent: 7, growth: "+2%" },
-  ];
+  // Download PDF
+  const downloadPDF = async () => {
+    if (!reportRef.current) return;
+    const element = reportRef.current;
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("report.pdf");
+  };
 
   return (
-    <div className="container mx-auto my-5 px-4">
+    <div className="container mx-auto my-5 px-4" ref={reportRef}>
       {/* Top Title + Download Button */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold mb-1">Reports & Analytics</h2>
           <p className="text-gray-500 mb-4">Comprehensive insights and business analytics</p>
         </div>
-        <button className="mt-3 md:mt-0 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 flex items-center gap-2">
+        <button
+          onClick={downloadPDF}
+          className="mt-3 md:mt-0 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 flex items-center gap-2"
+        >
           <FaDownload /> Download Report
         </button>
       </div>
@@ -66,26 +82,22 @@ const ReportsDashboard = () => {
         <div className="bg-white rounded-lg shadow p-5 text-center">
           <FaDollarSign size={28} className="mx-auto text-blue-600 mb-2" />
           <p className="text-gray-500 text-sm">Total Revenue</p>
-          <h3 className="text-xl font-bold">Rs. 12.5M</h3>
-          <span className="text-green-500 text-sm">+15% vs last month</span>
+          <h3 className="text-xl font-bold">Rs. {stats.revenue.toLocaleString()}</h3>
         </div>
         <div className="bg-white rounded-lg shadow p-5 text-center">
           <FaShoppingCart size={28} className="mx-auto text-yellow-500 mb-2" />
           <p className="text-gray-500 text-sm">Total Orders</p>
-          <h3 className="text-xl font-bold">8,901</h3>
-          <span className="text-green-500 text-sm">+8% vs last month</span>
+          <h3 className="text-xl font-bold">{stats.orders.toLocaleString()}</h3>
         </div>
         <div className="bg-white rounded-lg shadow p-5 text-center">
           <FaUsers size={28} className="mx-auto text-green-500 mb-2" />
           <p className="text-gray-500 text-sm">New Customers</p>
-          <h3 className="text-xl font-bold">2,380</h3>
-          <span className="text-green-500 text-sm">+12% vs last month</span>
+          <h3 className="text-xl font-bold">{stats.customers.toLocaleString()}</h3>
         </div>
         <div className="bg-white rounded-lg shadow p-5 text-center">
           <FaChartLine size={28} className="mx-auto text-red-500 mb-2" />
           <p className="text-gray-500 text-sm">Avg Order Value</p>
-          <h3 className="text-xl font-bold">Rs. 1,405</h3>
-          <span className="text-green-500 text-sm">+5% vs last month</span>
+          <h3 className="text-xl font-bold">Rs. {stats.avgOrderValue.toLocaleString()}</h3>
         </div>
       </div>
 
@@ -150,9 +162,14 @@ const ReportsDashboard = () => {
                 <span>{c.percent}%</span>
               </div>
               <div className="w-full h-3 bg-gray-200 rounded-full mb-1">
-                <div className="h-3 bg-blue-600 rounded-full" style={{ width: `${c.percent}%` }}></div>
+                <div
+                  className="h-3 bg-blue-600 rounded-full"
+                  style={{ width: `${c.percent}%` }}
+                ></div>
               </div>
-              <small className="text-gray-500">{c.revenue} <span className="text-green-500">{c.growth}</span></small>
+              <small className="text-gray-500">
+                {c.revenue} <span className="text-green-500">{c.growth}</span>
+              </small>
             </div>
           ))}
         </div>

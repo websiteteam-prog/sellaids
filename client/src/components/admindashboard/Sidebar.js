@@ -1,6 +1,6 @@
 // src/components/admindashboard/Sidebar.js
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -10,9 +10,6 @@ import {
   FaShoppingCart,
   FaMoneyCheckAlt,
   FaChartBar,
-  FaBell,
-  FaCog,
-  FaShieldAlt,
   FaUserCircle,
 } from "react-icons/fa";
 
@@ -24,20 +21,26 @@ const menuItems = [
   { label: "Orders Management", path: "/admin/orders", icon: <FaShoppingCart /> },
   { label: "Payments", path: "/admin/payments", icon: <FaMoneyCheckAlt /> },
   { label: "Reports & Analytics", path: "/admin/reports", icon: <FaChartBar /> },
-  { label: "Notifications", path: "/admin/notifications", icon: <FaBell />, badge: 5 },
-  { label: "Settings", path: "/admin/settings", icon: <FaCog /> },
-  { label: "Security & Logs", path: "/admin/security", icon: <FaShieldAlt /> },
 ];
 
 const Sidebar = () => {
+  const [admin, setAdmin] = useState(null);
+
+  useEffect(() => {
+    const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
+    if (storedAdmin) setAdmin(storedAdmin);
+  }, []);
+
   return (
     <aside className="w-64 h-screen bg-black text-gray-300 flex flex-col justify-between fixed left-0 top-0 shadow-lg">
-      {/* Top Section */}
+      {/* Top Section - Logo */}
       <div>
-        <div className="p-6 text-2xl font-bold text-center border-b border-gray-700 text-[#FF6A00]">
-          Admin Panel
+        <div className="p-6 text-center border-b border-gray-700">
+          {/* Use public folder path directly */}
+          <img src="/site.png" alt="Logo" className="mx-auto w-32 h-auto" />
         </div>
 
+        {/* Menu Items */}
         <nav className="flex flex-col px-4 py-6 space-y-2">
           {menuItems.map((item) => (
             <NavLink
@@ -64,15 +67,19 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* Bottom Section */}
+      {/* Bottom Section - Admin Info */}
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center gap-3">
           <div className="bg-[#FF6A00] rounded-full p-2 text-white">
             <FaUserCircle size={24} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">Admin User</div>
-            <div className="text-xs text-gray-400">admin@example.com</div>
+            <div className="text-sm font-semibold text-white">
+              {admin?.username || "Admin User"}
+            </div>
+            <div className="text-xs text-gray-400">
+              {admin?.email || "admin@example.com"}
+            </div>
           </div>
         </div>
       </div>

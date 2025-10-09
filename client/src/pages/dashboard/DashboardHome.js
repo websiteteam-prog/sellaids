@@ -34,7 +34,13 @@ const DashboardHome = () => {
     }
   };
 
-  if (loading) return <p className="p-6">Loading dashboard...</p>;
+  // Cards array for easy mapping
+  const cards = [
+    { title: "Total Orders", value: dashboardData.totalOrders },
+    { title: "Pending Deliveries", value: dashboardData.pendingDeliveries },
+    { title: "Wishlist Items", value: dashboardData.wishlistCount },
+    { title: "Support Tickets", value: dashboardData.supportTickets },
+  ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-full">
@@ -42,25 +48,17 @@ const DashboardHome = () => {
       <p className="text-gray-700 mb-6">Welcome, {user?.full_name || "User"}! Manage your account here.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="bg-white p-4 rounded shadow">
-          <h3 className="text-gray-700 font-semibold mb-2">Total Orders</h3>
-          <p className="text-2xl font-bold">{dashboardData.totalOrders}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h3 className="text-gray-700 font-semibold mb-2">Pending Deliveries</h3>
-          <p className="text-2xl font-bold">{dashboardData.pendingDeliveries}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h3 className="text-gray-700 font-semibold mb-2">Wishlist Items</h3>
-          <p className="text-2xl font-bold">{dashboardData.wishlistCount}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h3 className="text-gray-700 font-semibold mb-2">Support Tickets</h3>
-          <p className="text-2xl font-bold">{dashboardData.supportTickets}</p>
-        </div>
+        {cards.map((card, index) => (
+          <div
+            key={index}
+            className="bg-white p-4 rounded shadow flex flex-col justify-between items-center"
+          >
+            <h3 className="text-gray-700 font-semibold mb-2">{card.title}</h3>
+            <p className="text-3xl font-bold">
+              {loading ? "0" : card.value}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,60 +1,127 @@
 // src/pages/Orders.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Download, Eye, Edit, Trash2, Truck } from "lucide-react";
+import axios from "axios";
+import * as XLSX from "xlsx";
 
 const Orders = () => {
-  const stats = [
-    { label: "Total Orders", value: "8,901", icon: "🛒", color: "bg-blue-100 text-blue-600" },
-    { label: "Pending", value: "234", icon: "⏱", color: "bg-yellow-100 text-yellow-600" },
-    { label: "Shipped", value: "1,456", icon: "🚚", color: "bg-purple-100 text-purple-600" },
-    { label: "Delivered", value: "6,789", icon: "✅", color: "bg-green-100 text-green-600" },
-    { label: "Cancelled", value: "422", icon: "❌", color: "bg-red-100 text-red-600" },
-  ];
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
+  const [exactDate, setExactDate] = useState("");
+  const [monthDate, setMonthDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
-  const orders = [
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await axios.get("/api/orders"); // backend API
+        setOrders(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  // Filter orders
+  const filteredOrders = orders.filter((o) => {
+    const matchesSearch = o.customer.toLowerCase().includes(search.toLowerCase());
+    const matchesExactDate = exactDate ? o.date === exactDate : true;
+    const matchesMonth = monthDate ? o.date.startsWith(monthDate) : true;
+    return matchesSearch && matchesExactDate && matchesMonth;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const currentOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // Export to Excel
+  const exportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredOrders);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+    XLSX.writeFile(workbook, "orders.xlsx");
+  };
+
+  // Actions
+  const viewOrder = (id) => {
+    const order = orders.find((o) => o.id === id);
+    alert(JSON.stringify(order, null, 2)); // replace with modal later
+  };
+
+  const editOrder = async (id) => {
+    const newStatus = prompt("Enter new status (Pending/Shipped/Completed/Cancelled):");
+    if (!newStatus) return;
+    try {
+      await axios.put(`/api/orders/${id}`, { status: newStatus });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteOrder = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this order?")) return;
+    try {
+      await axios.delete(`/api/orders/${id}`);
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const shipOrder = async (id) => {
+    try {
+      await axios.put(`/api/orders/${id}`, { status: "Shipped" });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, status: "Shipped" } : o))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Stats
+  const stats = [
     {
-      id: "#12345",
-      customer: "Ahmad Ali",
-      location: "Karachi, Pakistan",
-      vendor: "Tech Store",
-      products: "2 items",
-      amount: "Rs. 45,000",
-      status: "Completed",
-      payment: "Paid",
-      date: "2024-03-15",
+      label: "Total Orders",
+      value: orders.length,
+      color: "bg-blue-100 text-blue-600",
+      icon: "🛒",
     },
     {
-      id: "#12346",
-      customer: "Fatima Khan",
-      location: "Lahore, Pakistan",
-      vendor: "Fashion Hub",
-      products: "1 items",
-      amount: "Rs. 12,500",
-      status: "Pending",
-      payment: "Pending",
-      date: "2024-03-14",
+      label: "Pending",
+      value: orders.filter((o) => o.status === "Pending").length,
+      color: "bg-yellow-100 text-yellow-600",
+      icon: "⏱",
     },
     {
-      id: "#12347",
-      customer: "Hassan Ahmed",
-      location: "Islamabad, Pakistan",
-      vendor: "Electronics Plus",
-      products: "3 items",
-      amount: "Rs. 78,900",
-      status: "Processing",
-      payment: "Paid",
-      date: "2024-03-14",
+      label: "Shipped",
+      value: orders.filter((o) => o.status === "Shipped").length,
+      color: "bg-purple-100 text-purple-600",
+      icon: "🚚",
     },
     {
-      id: "#12348",
-      customer: "Ayesha Malik",
-      location: "Faisalabad, Pakistan",
-      vendor: "Beauty Corner",
-      products: "4 items",
-      amount: "Rs. 8,750",
-      status: "Shipped",
-      payment: "Paid",
-      date: "2024-03-13",
+      label: "Delivered",
+      value: orders.filter((o) => o.status === "Completed").length,
+      color: "bg-green-100 text-green-600",
+      icon: "✅",
+    },
+    {
+      label: "Cancelled",
+      value: orders.filter((o) => o.status === "Cancelled").length,
+      color: "bg-red-100 text-red-600",
+      icon: "❌",
     },
   ];
 
@@ -64,18 +131,20 @@ const Orders = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold">Orders Management</h2>
-          <p className="text-sm text-gray-500">Track and manage all orders on your platform</p>
+          <p className="text-sm text-gray-500">
+            Track and manage all orders on your platform
+          </p>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700">
-          Generate Report
-        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((s, i) => (
-          <div key={i} className="rounded-xl border bg-white shadow-sm p-4 flex flex-col items-center">
-            <div className={`text-2xl mb-2 ${s.color}`}>{s.icon}</div>
+          <div
+            key={i}
+            className="rounded-xl border bg-white shadow-sm p-4 flex flex-col items-center"
+          >
+            <div className="text-2xl mb-2">{s.icon}</div>
             <p className="text-lg font-bold">{s.value}</p>
             <p className="text-sm text-gray-500">{s.label}</p>
           </div>
@@ -88,19 +157,28 @@ const Orders = () => {
           type="text"
           placeholder="Search orders..."
           className="border rounded-lg px-3 py-2 w-64"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        <select className="border rounded-lg px-3 py-2">
-          <option>All Status</option>
-          <option>Pending</option>
-          <option>Completed</option>
-          <option>Shipped</option>
-        </select>
-        <input type="date" className="border rounded-lg px-3 py-2" />
+        {/* Exact date */}
+        <input
+          type="date"
+          className="border rounded-lg px-3 py-2"
+          value={exactDate}
+          onChange={(e) => setExactDate(e.target.value)}
+        />
+        {/* Month picker */}
+        <input
+          type="month"
+          className="border rounded-lg px-3 py-2"
+          value={monthDate}
+          onChange={(e) => setMonthDate(e.target.value)}
+        />
         <div className="ml-auto flex gap-2">
-          <button className="flex items-center px-4 py-2 rounded-lg border bg-white shadow-sm hover:bg-gray-100">
-            <Download className="h-4 w-4 mr-2" /> Export CSV
-          </button>
-          <button className="flex items-center px-4 py-2 rounded-lg border bg-white shadow-sm hover:bg-gray-100">
+          <button
+            onClick={exportExcel}
+            className="flex items-center px-4 py-2 rounded-lg border bg-white shadow-sm hover:bg-gray-100"
+          >
             <Download className="h-4 w-4 mr-2" /> Export Excel
           </button>
         </div>
@@ -111,7 +189,9 @@ const Orders = () => {
         <table className="w-full border-collapse">
           <thead className="bg-gray-100 text-left">
             <tr>
-              <th className="p-3"><input type="checkbox" /></th>
+              <th className="p-3">
+                <input type="checkbox" />
+              </th>
               <th className="p-3">Order ID</th>
               <th className="p-3">Customer</th>
               <th className="p-3">Vendor</th>
@@ -124,54 +204,105 @@ const Orders = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((o, i) => (
-              <tr key={i} className="border-b hover:bg-gray-50">
-                <td className="p-3"><input type="checkbox" /></td>
-                <td className="p-3 text-blue-600">{o.id}</td>
-                <td className="p-3">
-                  {o.customer}
-                  <div className="text-xs text-gray-500">{o.location}</div>
-                </td>
-                <td className="p-3">{o.vendor}</td>
-                <td className="p-3">{o.products}</td>
-                <td className="p-3 font-bold">{o.amount}</td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      o.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : o.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : o.status === "Processing"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-purple-100 text-purple-700"
-                    }`}
-                  >
-                    {o.status}
-                  </span>
-                </td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      o.payment === "Paid"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {o.payment}
-                  </span>
-                </td>
-                <td className="p-3">{o.date}</td>
-                <td className="p-3 flex gap-2">
-                  <Eye className="h-4 w-4 text-blue-600 cursor-pointer" />
-                  <Edit className="h-4 w-4 text-green-600 cursor-pointer" />
-                  <Truck className="h-4 w-4 text-purple-600 cursor-pointer" />
-                  <Trash2 className="h-4 w-4 text-red-600 cursor-pointer" />
+            {currentOrders.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="p-4 text-center text-gray-500">
+                  No Orders
                 </td>
               </tr>
-            ))}
+            ) : (
+              currentOrders.map((o, i) => (
+                <tr key={i} className="border-b hover:bg-gray-50">
+                  <td className="p-3">
+                    <input type="checkbox" />
+                  </td>
+                  <td className="p-3 text-blue-600">{o.id}</td>
+                  <td className="p-3">
+                    {o.customer}
+                    <div className="text-xs text-gray-500">{o.location}</div>
+                  </td>
+                  <td className="p-3">{o.vendor}</td>
+                  <td className="p-3">{o.products}</td>
+                  <td className="p-3 font-bold">{o.amount}</td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        o.status === "Completed"
+                          ? "bg-green-100 text-green-700"
+                          : o.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : o.status === "Processing"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
+                    >
+                      {o.status}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        o.payment === "Paid"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {o.payment}
+                    </span>
+                  </td>
+                  <td className="p-3">{o.date}</td>
+                  <td className="p-3 flex gap-2">
+                    <Eye
+                      className="h-4 w-4 text-blue-600 cursor-pointer"
+                      onClick={() => viewOrder(o.id)}
+                    />
+                    <Edit
+                      className="h-4 w-4 text-green-600 cursor-pointer"
+                      onClick={() => editOrder(o.id)}
+                    />
+                    <Truck
+                      className="h-4 w-4 text-purple-600 cursor-pointer"
+                      onClick={() => shipOrder(o.id)}
+                    />
+                    <Trash2
+                      className="h-4 w-4 text-red-600 cursor-pointer"
+                      onClick={() => deleteOrder(o.id)}
+                    />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+        >
+          Prev
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => goToPage(i + 1)}
+            className={`px-3 py-1 border rounded hover:bg-gray-100 ${
+              currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   );

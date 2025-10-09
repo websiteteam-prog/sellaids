@@ -1,109 +1,132 @@
 // src/pages/admin/ProductManagement.jsx
-import React, { useState } from "react";
-import { Eye, Edit, Trash2, Download } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Eye, Trash2, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const ProductManagement = () => {
-  const products = [
-    { id: 1, name: "iPhone 15 Pro Max", vendor: "Tech Store", category: "Electronics", price: "Rs. 2,49,000", stock: 25, sales: 145, status: "Active", image: "https://via.placeholder.com/40x40?text=📱" },
-    { id: 2, name: "Samsung Galaxy S24 Ultra", vendor: "Mobile Zone", category: "Electronics", price: "Rs. 1,89,000", stock: 18, sales: 98, status: "Active", image: "https://via.placeholder.com/40x40?text=📱" },
-    { id: 3, name: "MacBook Air M3", vendor: "Tech Store", category: "Computers", price: "Rs. 1,24,900", stock: 12, sales: 67, status: "Pending", image: "https://via.placeholder.com/40x40?text=💻" },
-    { id: 4, name: "Nike Air Jordan 1", vendor: "Sports World", category: "Fashion", price: "Rs. 18,500", stock: 45, sales: 234, status: "Active", image: "https://via.placeholder.com/40x40?text=👟" },
-    { id: 5, name: "Dell XPS 13", vendor: "Tech Store", category: "Computers", price: "Rs. 1,04,000", stock: 20, sales: 50, status: "Active", image: "https://via.placeholder.com/40x40?text=💻" },
-    { id: 6, name: "Adidas Ultraboost", vendor: "Sports World", category: "Fashion", price: "Rs. 14,500", stock: 30, sales: 150, status: "Pending", image: "https://via.placeholder.com/40x40?text=👟" },
-    { id: 7, name: "iPad Pro", vendor: "Tech Store", category: "Electronics", price: "Rs. 89,000", stock: 10, sales: 70, status: "Active", image: "https://via.placeholder.com/40x40?text=📱" },
-    { id: 8, name: "Sony WH-1000XM5", vendor: "Mobile Zone", category: "Electronics", price: "Rs. 27,500", stock: 40, sales: 120, status: "Active", image: "https://via.placeholder.com/40x40?text=🎧" },
-    { id: 9, name: "HP Spectre x360", vendor: "Tech Store", category: "Computers", price: "Rs. 1,10,000", stock: 15, sales: 35, status: "Pending", image: "https://via.placeholder.com/40x40?text=💻" },
-    { id: 10, name: "Puma Running Shoes", vendor: "Sports World", category: "Fashion", price: "Rs. 12,500", stock: 25, sales: 80, status: "Active", image: "https://via.placeholder.com/40x40?text=👟" },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [viewProduct, setViewProduct] = useState(null);
+  const [editProduct, setEditProduct] = useState(null);
 
-  // Pagination state
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
-  const currentProducts = products.slice(
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("http://localhost:5000/api/products");
+      setProducts(res.data || []);
+    } catch (err) {
+      console.error(err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  // Delete
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/products/${id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // View Product
+  const openViewModal = (product) => setViewProduct(product);
+  const closeViewModal = () => setViewProduct(null);
+
+  // Edit Product
+  const openEditModal = (product) => setEditProduct(product);
+  const closeEditModal = () => setEditProduct(null);
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditProduct((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const { id, ...data } = editProduct;
+      await axios.put(`http://localhost:5000/api/products/${id}`, data);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...data } : p))
+      );
+      closeEditModal();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Export Excel
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(products);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Products");
+    XLSX.writeFile(wb, "products.xlsx");
   };
 
   return (
-    <div>
+    <div className="p-6 bg-gray-50 min-h-screen text-gray-800">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Products Management</h2>
-          <p className="text-gray-500 text-sm">Manage all products across your platform</p>
-        </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 flex items-center gap-2">
-          + Add New Product
+        <h2 className="text-2xl font-bold text-gray-800">Products Management</h2>
+        <button
+          onClick={handleExportExcel}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 flex items-center gap-2"
+        >
+          <Download size={16} /> Export Excel
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-gray-500">Total Products</p>
-          <h3 className="text-2xl font-bold">45,678</h3>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-gray-500">Active Products</p>
-          <h3 className="text-2xl font-bold text-green-600">42,156</h3>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-gray-500">Out of Stock</p>
-          <h3 className="text-2xl font-bold text-red-600">1,234</h3>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-gray-500">Pending Approval</p>
-          <h3 className="text-2xl font-bold text-yellow-600">2,288</h3>
-        </div>
+      {/* Search */}
+      <div className="mb-4 flex gap-2">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200"
+        />
+        <button
+          onClick={() => setCurrentPage(1)}
+          className="px-4 py-2 bg-[#FF6A00] text-white rounded-lg hover:bg-orange-500"
+        >
+          Search
+        </button>
       </div>
 
-      {/* Search + Filters + Export */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-        <div className="flex gap-4 flex-1">
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="w-full md:w-1/2 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200"
-          />
-          <select className="px-4 py-2 border rounded-lg">
-            <option>All Categories</option>
-            <option>Electronics</option>
-            <option>Computers</option>
-            <option>Fashion</option>
-          </select>
-          <select className="px-4 py-2 border rounded-lg">
-            <option>All Status</option>
-            <option>Active</option>
-            <option>Pending</option>
-            <option>Out of Stock</option>
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 border rounded-lg flex items-center gap-2">
-            <Download size={16} /> Export CSV
-          </button>
-          <button className="px-4 py-2 border rounded-lg flex items-center gap-2">
-            <Download size={16} /> Export Excel
-          </button>
-        </div>
-      </div>
-
-      {/* Product Table */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="px-4 py-3 border">
-                <input type="checkbox" />
-              </th>
-              <th className="px-4 py-3 border">Product</th>
-              <th className="px-4 py-3 border">Vendor</th>
+              <th className="px-4 py-3 border">Image</th>
+              <th className="px-4 py-3 border">Name</th>
+              <th className="px-4 py-3 border">SKU</th>
               <th className="px-4 py-3 border">Category</th>
               <th className="px-4 py-3 border">Price</th>
               <th className="px-4 py-3 border">Stock</th>
@@ -113,51 +136,66 @@ const ProductManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {currentProducts.map((p) => (
-              <tr key={p.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 border">
-                  <input type="checkbox" />
-                </td>
-                <td className="px-4 py-3 border flex items-center gap-3">
-                  <img src={p.image} alt={p.name} className="w-10 h-10 rounded" />
-                  <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-sm text-gray-500">ID: #{p.id}</p>
-                  </div>
-                </td>
-                <td className="px-4 py-3 border">{p.vendor}</td>
-                <td className="px-4 py-3 border">
-                  <span className="px-2 py-1 text-xs rounded bg-gray-100">{p.category}</span>
-                </td>
-                <td className="px-4 py-3 border font-medium">{p.price}</td>
-                <td className="px-4 py-3 border text-green-600 font-semibold">{p.stock}</td>
-                <td className="px-4 py-3 border">{p.sales}</td>
-                <td className="px-4 py-3 border">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      p.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : p.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {p.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 border flex gap-2">
-                  <button className="text-blue-500 hover:text-blue-700">
-                    <Eye size={18} />
-                  </button>
-                  <button className="text-green-500 hover:text-green-700">
-                    <Edit size={18} />
-                  </button>
-                  <button className="text-red-500 hover:text-red-700">
-                    <Trash2 size={18} />
-                  </button>
+            {loading ? (
+              <tr>
+                <td colSpan={9} className="text-center py-6">
+                  No products
                 </td>
               </tr>
-            ))}
+            ) : currentProducts.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="text-center py-6">
+                  No matching products
+                </td>
+              </tr>
+            ) : (
+              currentProducts.map((p) => (
+                <tr key={p.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 border">
+                    <img src={p.image} alt={p.name} className="w-10 h-10 rounded" />
+                  </td>
+                  <td className="px-4 py-3 border font-medium">{p.name}</td>
+                  <td className="px-4 py-3 border">{p.sku || "-"}</td>
+                  <td className="px-4 py-3 border">{p.category}</td>
+                  <td className="px-4 py-3 border">{p.price}</td>
+                  <td className="px-4 py-3 border">{p.stock}</td>
+                  <td className="px-4 py-3 border">{p.sales}</td>
+                  <td className="px-4 py-3 border">
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        p.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : p.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 border flex gap-2">
+                    <button
+                      className="text-blue-500 hover:text-blue-700"
+                      onClick={() => openViewModal(p)}
+                    >
+                      <Eye size={18} />
+                    </button>
+                    <button
+                      className="text-green-500 hover:text-green-700"
+                      onClick={() => openEditModal(p)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -165,7 +203,7 @@ const ProductManagement = () => {
       {/* Pagination */}
       <div className="flex justify-end gap-2 mt-4">
         <button
-          onClick={() => goToPage(currentPage - 1)}
+          onClick={() => setCurrentPage(currentPage - 1)}
           disabled={currentPage === 1}
           className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
         >
@@ -174,7 +212,7 @@ const ProductManagement = () => {
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
-            onClick={() => goToPage(i + 1)}
+            onClick={() => setCurrentPage(i + 1)}
             className={`px-3 py-1 border rounded hover:bg-gray-100 ${
               currentPage === i + 1 ? "bg-blue-600 text-white" : ""
             }`}
@@ -183,13 +221,133 @@ const ProductManagement = () => {
           </button>
         ))}
         <button
-          onClick={() => goToPage(currentPage + 1)}
+          onClick={() => setCurrentPage(currentPage + 1)}
           disabled={currentPage === totalPages}
           className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
         >
           Next
         </button>
       </div>
+
+      {/* View Modal */}
+      {viewProduct && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              onClick={closeViewModal}
+            >
+              ✕
+            </button>
+            <img
+              src={viewProduct.image}
+              alt={viewProduct.name}
+              className="w-32 h-32 mx-auto rounded mb-4"
+            />
+            <h3 className="text-xl font-bold mb-2">{viewProduct.name}</h3>
+            <p><strong>SKU:</strong> {viewProduct.sku || "-"}</p>
+            <p><strong>Category:</strong> {viewProduct.category}</p>
+            <p><strong>Price:</strong> {viewProduct.price}</p>
+            <p><strong>Stock:</strong> {viewProduct.stock}</p>
+            <p><strong>Sales:</strong> {viewProduct.sales}</p>
+            <p>
+              <strong>Status:</strong>{" "}
+              <span
+                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  viewProduct.status === "Active"
+                    ? "bg-green-100 text-green-700"
+                    : viewProduct.status === "Pending"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {viewProduct.status}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editProduct && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              onClick={closeEditModal}
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-bold mb-4">Edit Product</h3>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                name="name"
+                value={editProduct.name}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+                placeholder="Product Name"
+              />
+              <input
+                type="text"
+                name="sku"
+                value={editProduct.sku || ""}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+                placeholder="SKU"
+              />
+              <input
+                type="text"
+                name="category"
+                value={editProduct.category}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+                placeholder="Category"
+              />
+              <input
+                type="text"
+                name="price"
+                value={editProduct.price}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+                placeholder="Price"
+              />
+              <input
+                type="number"
+                name="stock"
+                value={editProduct.stock}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+                placeholder="Stock"
+              />
+              <input
+                type="number"
+                name="sales"
+                value={editProduct.sales}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+                placeholder="Sales"
+              />
+              <select
+                name="status"
+                value={editProduct.status}
+                onChange={handleEditChange}
+                className="px-3 py-2 border rounded"
+              >
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+              <button
+                onClick={handleSaveEdit}
+                className="bg-[#FF6A00] text-white px-4 py-2 rounded hover:bg-orange-500"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
