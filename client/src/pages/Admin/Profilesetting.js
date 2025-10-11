@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const ProfileSettings = () => {
-  const [admin, setAdmin] = useState({ username: "", password: "" });
+  const [admin, setAdmin] = useState({ name: "", password: "" });
   const [message, setMessage] = useState("");
 
   // Fetch current admin info (you can store it in localStorage after login)
@@ -10,7 +10,7 @@ const ProfileSettings = () => {
     const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
     if (storedAdmin) {
       setAdmin({
-        username: storedAdmin.username,
+        name: storedAdmin.name,
         password: storedAdmin.password,
       });
     }
@@ -53,12 +53,12 @@ const ProfileSettings = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Username
+            Name
           </label>
           <input
             type="text"
-            name="username"
-            value={admin.username}
+            name="name"
+            value={admin.name}
             onChange={handleChange}
             className="w-full mt-1 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
@@ -79,7 +79,7 @@ const ProfileSettings = () => {
 
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+          className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition"
         >
           Save Changes
         </button>

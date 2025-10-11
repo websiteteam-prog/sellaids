@@ -7,6 +7,7 @@ const VendorManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); // status filter
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,12 +30,18 @@ const VendorManagement = () => {
   };
 
   const handleSearch = () => {
-    const filtered = vendors.filter(
+    let filtered = vendors.filter(
       (v) =>
         v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (statusFilter) {
+      filtered = filtered.filter((v) => v.status === statusFilter);
+    }
+
     setFilteredVendors(filtered);
+    setCurrentPage(1);
   };
 
   // Pagination
@@ -70,11 +77,15 @@ const VendorManagement = () => {
           </button>
         </div>
 
-        <select className="border border-gray-300 bg-white text-gray-700 rounded-lg px-3 py-2 w-full md:w-1/6 text-sm">
-          <option>All Status</option>
-          <option>Active</option>
-          <option>Pending</option>
-          <option>Suspended</option>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border border-gray-300 bg-white text-gray-700 rounded-lg px-3 py-2 w-full md:w-1/6 text-sm"
+        >
+          <option value="">Filter by Status</option>
+          <option value="Approved">Approved</option>
+          <option value="Pending">Pending</option>
+          <option value="Rejected">Rejected</option>
         </select>
       </div>
 
@@ -95,7 +106,7 @@ const VendorManagement = () => {
             {loading ? (
               <tr>
                 <td colSpan={6} className="text-center py-6 text-gray-500">
-                  No Vendors
+                  Loading Vendors...
                 </td>
               </tr>
             ) : currentVendors.length === 0 ? (
@@ -117,7 +128,7 @@ const VendorManagement = () => {
                   <td className="p-3">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        vendor.status === "Active"
+                        vendor.status === "Approved"
                           ? "bg-green-100 text-green-700"
                           : vendor.status === "Pending"
                           ? "bg-yellow-100 text-yellow-700"
@@ -158,9 +169,7 @@ const VendorManagement = () => {
               key={i + 1}
               onClick={() => setCurrentPage(i + 1)}
               className={`px-3 py-1 border rounded ${
-                currentPage === i + 1
-                  ? "bg-[#FF6A00] text-white"
-                  : "hover:bg-gray-100"
+                currentPage === i + 1 ? "bg-[#FF6A00] text-white" : "hover:bg-gray-100"
               }`}
             >
               {i + 1}

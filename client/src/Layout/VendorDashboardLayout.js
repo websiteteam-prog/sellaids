@@ -1,3 +1,4 @@
+// src/Layout/VendorDashboardLayout.js
 import { NavLink, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -6,11 +7,11 @@ import {
   ChevronRight,
   IndianRupee,
   User,
-  LogOut,
   Menu,
   X,
 } from "lucide-react";
 import { useState } from "react";
+import VendorLogout from "../components/vendor/vendorlogout"; // ✅ Import the logout component
 
 export default function VendorDashboardLayout() {
   const [productOpen, setProductOpen] = useState(true);
@@ -40,14 +41,14 @@ export default function VendorDashboardLayout() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div>
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
           {/* Logo */}
           <div className="flex items-center gap-2 p-4 border-b">
             <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-orange-600 text-white font-bold">
               V
             </div>
             <h2 className="text-lg font-bold text-gray-800">Vendor Panel</h2>
-            {/* Close button for mobile */}
             <button
               onClick={() => setSidebarOpen(false)}
               className="ml-auto md:hidden"
@@ -58,7 +59,6 @@ export default function VendorDashboardLayout() {
 
           {/* Navigation */}
           <nav className="mt-4 space-y-1">
-            {/* Dashboard */}
             <NavLink
               to="/vendor/dashboard"
               className={({ isActive }) =>
@@ -120,7 +120,6 @@ export default function VendorDashboardLayout() {
               )}
             </div>
 
-            {/* Earnings */}
             <NavLink
               to="/vendor/earnings"
               className={({ isActive }) =>
@@ -134,7 +133,6 @@ export default function VendorDashboardLayout() {
               <IndianRupee size={18} /> Earnings
             </NavLink>
 
-            {/* Profile */}
             <NavLink
               to="/vendor/profile"
               className={({ isActive }) =>
@@ -150,14 +148,9 @@ export default function VendorDashboardLayout() {
           </nav>
         </div>
 
-        {/* Logout */}
+        {/* Logout at bottom */}
         <div className="p-4 border-t">
-          <NavLink
-            to="/logout"
-            className="flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50"
-          >
-            <LogOut size={18} /> Logout
-          </NavLink>
+          <VendorLogout /> {/* ✅ Click pe logout hoga */}
         </div>
       </aside>
 

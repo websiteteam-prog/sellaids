@@ -161,28 +161,6 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg p-5">
-        <h3 className="text-gray-700 font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <button className="flex flex-col items-center justify-center p-4 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200">
-            <FaUserPlus className="mb-2" size={20} />
-            Add User
-          </button>
-          <button className="flex flex-col items-center justify-center p-4 rounded-lg bg-green-100 text-green-600 hover:bg-green-200">
-            <FaBuilding className="mb-2" size={20} />
-            Add Vendor
-          </button>
-          <button className="flex flex-col items-center justify-center p-4 rounded-lg bg-purple-100 text-purple-600 hover:bg-purple-200">
-            <FaPlusSquare className="mb-2" size={20} />
-            Add Product
-          </button>
-          <button className="flex flex-col items-center justify-center p-4 rounded-lg bg-yellow-100 text-yellow-600 hover:bg-yellow-200">
-            <FaDownload className="mb-2" size={20} />
-            Export Data
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

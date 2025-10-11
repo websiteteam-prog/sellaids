@@ -1,70 +1,87 @@
-import React, { useState } from 'react';
-import '../App.css';
-import popupImage from '../assets/images/popup-banner.webp';
-import { Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import popupImage from "../assets/images/popup-banner.webp";
+import { Eye, EyeOff } from "lucide-react";
+import { useUserStore } from "../stores/useUserStore";
 
 const Popup = ({ onClose }) => {
-  const [isClosing, setIsClosing] = useState(false);
+  // Zustand store
+  const { isAuthenticated, login } = useUserStore();
+
+  // ✅ Hooks at top-level
+  const [visible, setVisible] = useState(false);
+  const [fade, setFade] = useState(false);
+
   const [isLogin, setIsLogin] = useState(true);
 
-  // Login state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  // Login fields
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-  // Register state
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPhone, setRegPhone] = useState('');
-  const [regPassword, setRegPassword] = useState('');
+  // Register fields
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
 
+  // Show popup automatically if user not logged in
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setVisible(true);
+      setTimeout(() => setFade(true), 10); // fade in
+    }
+  }, [isAuthenticated]);
+
   const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(onClose, 300);
+    setFade(false);
+    setTimeout(() => {
+      setVisible(false);
+      if (onClose) onClose();
+    }, 300);
   };
 
   const handleLoginSubmit = () => {
     if (!loginEmail || !loginPassword) {
-      alert('Please fill all fields');
+      alert("Please fill all fields");
       return;
     }
-    // Call login API here
-    console.log('Login API called', { loginEmail, loginPassword });
+
+    const userData = { email: loginEmail };
+    login(userData); // Zustand login
     handleClose();
   };
 
   const handleRegisterSubmit = () => {
     if (!regName || !regEmail || !regPhone || !regPassword) {
-      alert('Please fill all fields');
+      alert("Please fill all fields");
       return;
     }
-    // Call register API here
-    console.log('Register API called', { regName, regEmail, regPhone, regPassword });
+
+    const newUser = { name: regName, email: regEmail, phone: regPhone };
+    login(newUser); // Zustand login after register
     handleClose();
   };
 
+  // Don't render if popup not visible
+  if (!visible || isAuthenticated) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
-      <div
-        className={`relative bg-white w-full max-w-4xl flex max-h-[500px] transition-all duration-300 ${
-          isClosing ? 'animate-zoom-out' : 'animate-zoom-in'
-        }`}
-      >
+    <div
+      className={`fixed inset-0 flex justify-center items-center bg-black/50 z-50 transition-opacity duration-300 ${
+        fade ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <div className="bg-white flex max-w-4xl w-full max-h-[500px] transition-all rounded-xl overflow-hidden">
         {/* Left Image */}
-        <div className="w-1/2 hidden md:block ">
-          <img
-            src={popupImage}
-            alt="Popup"
-            className="h-full w-full object-cover"
-          />
+        <div className="w-1/2 hidden md:block">
+          <img src={popupImage} alt="Popup" className="h-full w-full object-cover" />
         </div>
 
         {/* Right Form */}
         <div className="relative w-full md:w-1/2 p-6 overflow-y-auto">
           <button
             onClick={handleClose}
-            aria-label="Close popup"
             className="absolute top-4 right-4 text-gray-600 hover:text-black text-2xl font-bold"
           >
             &times;
@@ -75,7 +92,7 @@ const Popup = ({ onClose }) => {
             <button
               onClick={() => setIsLogin(true)}
               className={`w-1/2 py-2 text-center font-semibold transition-colors ${
-                isLogin ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600'
+                isLogin ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-600"
               }`}
             >
               Login
@@ -83,7 +100,7 @@ const Popup = ({ onClose }) => {
             <button
               onClick={() => setIsLogin(false)}
               className={`w-1/2 py-2 text-center font-semibold transition-colors ${
-                !isLogin ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-600'
+                !isLogin ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-600"
               }`}
             >
               Register
@@ -106,10 +123,10 @@ const Popup = ({ onClose }) => {
                   />
                 </label>
 
-                <label className="block mb-2 font-semibold relative">
+                <label className="block mb-4 font-semibold relative">
                   Password
                   <input
-                    type={showLoginPassword ? 'text' : 'password'}
+                    type={showLoginPassword ? "text" : "password"}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
@@ -124,12 +141,6 @@ const Popup = ({ onClose }) => {
                     {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </label>
-
-                <div className="text-right mb-4">
-                  <a href="/forgot-password" className="text-blue-500 hover:underline">
-  Forgot Password?
-</a>
-                </div>
 
                 <button
                   type="button"
@@ -179,7 +190,7 @@ const Popup = ({ onClose }) => {
                 <label className="block mb-4 font-semibold relative">
                   Password
                   <input
-                    type={showRegPassword ? 'text' : 'password'}
+                    type={showRegPassword ? "text" : "password"}
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     required

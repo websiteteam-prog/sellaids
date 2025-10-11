@@ -83,7 +83,7 @@ const Header = () => {
                 <span>{user.name}</span>
                 <ChevronDown size={16} />
               </div>
-              <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute right-[-30px] top-2 mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
                 <Link to="/dashboard" className="block px-4 py-2 hover:bg-orange-100">Dashboard</Link>
 
                 {/* Logout button with toast */}

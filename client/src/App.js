@@ -28,8 +28,10 @@ import Luxury from "./pages/Luxury";
 import Kidsaids from "./components/aids/Kidsaids";
 
 // ✅ Vendor Auth Pages
-import Login from "./pages/vendor/Login";
-import Register from "./pages/vendor/MultiStepRegister";
+import Login from "./components/vendor/Login";
+import Register from "./components/vendor/MultiStepRegister";
+import VendorForgot from "./components/vendor/VendorForgot";
+import VendorReset from "./components/vendor/VendorReset";
 
 // ✅ User Auth Pages
 import UserLogin from "./pages/Userlogin";
@@ -45,6 +47,7 @@ import EditProduct from "./pages/vendor/EditProduct";
 import OrdersVendor from "./pages/vendor/Orders";
 import Earnings from "./pages/vendor/Earnings";
 import ProfileVendor from "./pages/vendor/Profile";
+import EditProducts from "./pages/vendor/EditProducts";
 
 // ✅ User Dashboard Pages
 import Orders from "./pages/dashboard/Orders";
@@ -74,7 +77,7 @@ const App = () => {
   return (
     <Routes>
 
-      {/* ✅ Public Routes */}
+      {/* ===================== Public Routes ===================== */}
       <Route path="/" element={<Layout><LandingPage /></Layout>} />
       <Route path="/landingpage" element={<Layout><LandingPage /></Layout>} />
       <Route path="/about" element={<Layout><About /></Layout>} />
@@ -93,13 +96,13 @@ const App = () => {
       <Route path="/Designeraids" element={<Layout><Luxury /></Layout>} />
       <Route path="/kidsaids" element={<Layout><Kidsaids /></Layout>} />
 
-      {/* ✅ User Auth Routes */}
+      {/* ===================== User Auth Routes ===================== */}
       <Route path="/UserLogin" element={<UserLogin />} />
       <Route path="/register" element={<UserRegister />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-      {/* 🔐 User Dashboard Routes */}
+      {/* ===================== User Dashboard Routes ===================== */}
       <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardHome />} />
         <Route path="orders" element={<Orders />} />
@@ -111,11 +114,14 @@ const App = () => {
         <Route path="raise-ticket" element={<RaiseTicket />} />
       </Route>
 
-      {/* ✅ Vendor Auth Routes */}
+      {/* ===================== Vendor Auth Routes ===================== */}
       <Route path="/vendor/login" element={<Login />} />
       <Route path="/vendor/register" element={<Register />} />
+      <Route path="/vendor/forgot-password" element={<VendorForgot />} />
+      <Route path="/vendor/reset-password/:token" element={<VendorReset />} />
+      
 
-      {/* ✅ Vendor Dashboard Routes */}
+      {/* ===================== Vendor Dashboard Routes ===================== */}
       <Route path="/vendor" element={<VendorDashboardLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardHomeVendor />} />
@@ -125,12 +131,13 @@ const App = () => {
         <Route path="orders" element={<OrdersVendor />} />
         <Route path="earnings" element={<Earnings />} />
         <Route path="profile" element={<ProfileVendor />} />
+        <Route path="edit-product/:id" element={<EditProducts />} />
       </Route>
 
-      {/* ✅ Admin Login (layout ke bahar hona chahiye) */}
+      {/* ===================== Admin Login ===================== */}
       <Route path="/admin-login" element={<AdminLogin />} />
 
-      {/* ✅ Admin Dashboard Routes */}
+      {/* ===================== Admin Dashboard Routes ===================== */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
@@ -142,6 +149,7 @@ const App = () => {
         <Route path="profile-settings" element={<Profilesetting />} />
         <Route path="security" element={<AdminSecurity />} />
       </Route>
+
     </Routes>
   );
 };

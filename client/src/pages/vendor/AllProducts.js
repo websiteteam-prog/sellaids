@@ -1,23 +1,47 @@
-import React, { useState } from "react";
+// src/pages/vendor/Products.js
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-const productsData = [
-  { id: 1, image: "https://via.placeholder.com/50?text=Headphones", name: "Wireless Bluetooth Headphones", sku: "WBH001", category: "Electronics", price: 2999, stock: 24, featured: true, status: "Active" },
-  { id: 2, image: "https://via.placeholder.com/50?text=Watch", name: "Smart Watch Pro", sku: "SWP002", category: "Electronics", price: 8999, stock: 15, featured: true, status: "Active" },
-  { id: 3, image: "https://via.placeholder.com/50?text=Speaker", name: "Portable Bluetooth Speaker", sku: "PBS003", category: "Electronics", price: 1599, stock: 32, featured: false, status: "Active" },
-  { id: 4, image: "https://via.placeholder.com/50?text=Charging", name: "Wireless Charging Pad", sku: "WCP004", category: "Electronics", price: 899, stock: 18, featured: false, status: "Active" },
-  { id: 5, image: "https://via.placeholder.com/50?text=Case", name: "Premium Phone Case", sku: "PPC005", category: "Electronics", price: 599, stock: 45, featured: true, status: "Active" },
-];
+import axios from "axios";
 
 export default function Products() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(["All Categories"]);
   const [category, setCategory] = useState("All Categories");
   const [searchName, setSearchName] = useState("");
   const [searchSKU, setSearchSKU] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const categories = ["All Categories", "Electronics"];
+  const vendorInfo = JSON.parse(localStorage.getItem("vendorInfo"));
+  const vendorId = vendorInfo?.id;
 
-  const filteredProducts = productsData.filter((product) => {
-    const matchCategory = category === "All Categories" || product.category === category;
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`/api/vendor/products/${vendorId}`); // backend endpoint
+        setProducts(res.data);
+
+        // Extract unique categories for dropdown
+        const uniqueCategories = [
+          "All Categories",
+          ...new Set(res.data.map((p) => p.category)),
+        ];
+        setCategories(uniqueCategories);
+
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [vendorId]);
+
+  // Filter products
+  const filteredProducts = products.filter((product) => {
+    const matchCategory =
+      category === "All Categories" || product.category === category;
     const matchName = product.name.toLowerCase().includes(searchName.toLowerCase());
     const matchSKU = product.sku.toLowerCase().includes(searchSKU.toLowerCase());
     return matchCategory && matchName && matchSKU;
@@ -31,7 +55,7 @@ export default function Products() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6">
-      <h1 className="text-2xl font-bold mb-3">Products</h1>
+      <h1 className="text-2xl font-bold mb-3">My Products</h1>
       <nav className="text-sm mb-4 text-gray-600">
         Home &gt; <span className="text-orange-600 cursor-pointer">Products</span>
       </nav>
@@ -74,60 +98,79 @@ export default function Products() {
         </div>
 
         <div className="flex space-x-2 mt-4 sm:mt-6 flex-wrap">
-          <button className="bg-orange-600 text-white px-5 py-2 rounded hover:bg-orange-700 flex items-center mb-2 sm:mb-0">
+          <button className="bg-orange-600 text-white px-5 py-2 rounded hover:bg-orange-700 mb-2 sm:mb-0">
             Search
           </button>
           <button
             onClick={resetFilters}
-            className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 flex items-center mb-2 sm:mb-0"
+            className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 mb-2 sm:mb-0"
           >
             Reset
           </button>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Products Table */}
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-        <table className="min-w-[900px] w-full border-collapse text-sm">
-          <thead>
-            <tr className="bg-orange-600 text-white">
-              <th className="py-3 px-4 text-left">SR.</th>
-              <th className="py-3 px-4 text-left">IMAGE</th>
-              <th className="py-3 px-4 text-left">NAME</th>
-              <th className="py-3 px-4 text-left">SKU</th>
-              <th className="py-3 px-4 text-left">CATEGORY</th>
-              <th className="py-3 px-4 text-left">PRICE</th>
-              <th className="py-3 px-4 text-left">STOCK</th>
-              <th className="py-3 px-4 text-left">FEATURED</th>
-              <th className="py-3 px-4 text-left">STATUS</th>
-              <th className="py-3 px-4 text-left">EDIT</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.map((product, index) => (
-              <tr key={product.id} className={index % 2 === 1 ? "bg-gray-50" : ""}>
-                <td className="py-4 px-4 font-semibold">{index + 1}</td>
-                <td className="py-4 px-4">
-                  <img src={product.image} alt={product.name} className="w-12 h-12 rounded" />
-                </td>
-                <td className="py-4 px-4 font-semibold">{product.name}</td>
-                <td className="py-4 px-4 text-orange-600 cursor-pointer">{product.sku}</td>
-                <td className="py-4 px-4">{product.category}</td>
-                <td className="py-4 px-4 font-bold">₹{product.price.toLocaleString()}</td>
-                <td className="py-4 px-4">{product.stock}</td>
-                <td className="py-4 px-4">{product.featured ? "Yes" : "No"}</td>
-                <td className="py-4 px-4">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">{product.status}</span>
-                </td>
-                <td className="py-4 px-4">
-                  <Link to={`/edit-product/${product.id}`} className="text-orange-600 hover:text-orange-800 cursor-pointer p-1 rounded">
-                    Edit
-                  </Link>
-                </td>
+        {loading ? (
+          <p className="text-center py-10 text-gray-500">Loading products...</p>
+        ) : filteredProducts.length > 0 ? (
+          <table className="min-w-[900px] w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-orange-600 text-white">
+                <th className="py-3 px-4 text-left">SR.</th>
+                <th className="py-3 px-4 text-left">IMAGE</th>
+                <th className="py-3 px-4 text-left">NAME</th>
+                <th className="py-3 px-4 text-left">SKU</th>
+                <th className="py-3 px-4 text-left">CATEGORY</th>
+                <th className="py-3 px-4 text-left">PRICE</th>
+                <th className="py-3 px-4 text-left">STOCK</th>
+                <th className="py-3 px-4 text-left">FEATURED</th>
+                <th className="py-3 px-4 text-left">STATUS</th>
+                <th className="py-3 px-4 text-left">EDIT</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredProducts.map((product, index) => (
+                <tr key={product._id || product.id} className={index % 2 === 1 ? "bg-gray-50" : ""}>
+                  <td className="py-4 px-4 font-semibold">{index + 1}</td>
+                  <td className="py-4 px-4">
+                    <img src={product.image} alt={product.name} className="w-12 h-12 rounded" />
+                  </td>
+                  <td className="py-4 px-4 font-semibold">{product.name}</td>
+                  <td className="py-4 px-4 text-orange-600 cursor-pointer">{product.sku}</td>
+                  <td className="py-4 px-4">{product.category}</td>
+                  <td className="py-4 px-4 font-bold">₹{product.price.toLocaleString()}</td>
+                  <td className="py-4 px-4">{product.stock}</td>
+                  <td className="py-4 px-4">{product.featured ? "Yes" : "No"}</td>
+                  <td className="py-4 px-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs ${
+                        product.status === "Approved"
+                          ? "bg-green-100 text-green-700"
+                          : product.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {product.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <Link
+                      to={`/vendor/edit-product/${product._id || product.id}`}
+                      className="text-orange-600 hover:text-orange-800 cursor-pointer p-1 rounded"
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-center py-10 text-gray-500">No products found.</p>
+        )}
       </div>
     </div>
   );

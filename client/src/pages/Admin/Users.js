@@ -53,8 +53,6 @@ const UsersManagement = () => {
       Name: user.name,
       Email: user.email,
       Contact: user.contact,
-      Status: user.status,
-      "Join Date": user.joinDate,
       Orders: user.orders,
       "Total Spent": user.spent,
     }));
@@ -101,7 +99,7 @@ const UsersManagement = () => {
         <h2 className="text-lg font-semibold">Users Management</h2>
       </div>
 
-      {/* Search + Filter + Export */}
+      {/* Search + Export */}
       <div className="flex flex-col md:flex-row gap-3 mb-4 items-center">
         <div className="flex w-full md:w-1/3">
           <input
@@ -118,12 +116,6 @@ const UsersManagement = () => {
             <FaSearch />
           </button>
         </div>
-
-        <select className="border border-gray-300 bg-white text-gray-700 rounded-lg px-3 py-2 w-full md:w-1/6 text-sm">
-          <option>All Status</option>
-          <option>Active</option>
-          <option>Inactive</option>
-        </select>
 
         <button
           onClick={exportExcel}
@@ -147,8 +139,6 @@ const UsersManagement = () => {
               </th>
               <th className="p-3">User</th>
               <th className="p-3">Contact</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Join Date</th>
               <th className="p-3">Orders</th>
               <th className="p-3">Total Spent</th>
               <th className="p-3">Actions</th>
@@ -157,13 +147,13 @@ const UsersManagement = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-gray-500">
+                <td colSpan={6} className="text-center py-6 text-gray-500">
                   No Users
                 </td>
               </tr>
             ) : currentUsers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-gray-500">
+                <td colSpan={6} className="text-center py-6 text-gray-500">
                   No Users Found
                 </td>
               </tr>
@@ -187,18 +177,6 @@ const UsersManagement = () => {
                     </div>
                   </td>
                   <td className="p-3">{user.contact}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-semibold ${
-                        user.status === "Active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="p-3">{user.joinDate}</td>
                   <td className="p-3">{user.orders}</td>
                   <td className="p-3">Rs. {user.spent}</td>
                   <td className="p-3 flex gap-3">
