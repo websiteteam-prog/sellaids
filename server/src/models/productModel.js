@@ -56,7 +56,6 @@ export const Product = sequelize.define(
       type: DataTypes.ENUM("Yes", "No"),
       defaultValue: "No",
     },
-    repair_details: DataTypes.TEXT,
     repair_photo: DataTypes.STRING(255),
     original_box: {
       type: DataTypes.ENUM("Yes", "No"),

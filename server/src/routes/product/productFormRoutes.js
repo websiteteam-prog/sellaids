@@ -17,7 +17,6 @@ const uploadFields = upload.fields([
   { name: "more_images", maxCount: 10 },
 ]);
 
-// Route order: auth → multer → controller
 router.post("/add", isVendorLoginIn, uploadFields, addProductController);
 
 export default router;
