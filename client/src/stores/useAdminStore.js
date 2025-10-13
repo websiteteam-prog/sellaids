@@ -2,18 +2,18 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 export const useAdminStore = create(persist((set) => ({
-    user: null,
+    admin: null,
     isAuthenticated: false,
     loading: false,
 
-    login: (userData) =>
+    login: (adminData) =>
         set(() => ({
-            user: userData,
+            admin: adminData,
             isAuthenticated: true
         })),
     logout: () =>
         set(() => ({
-            user: null,
+            admin: null,
             isAuthenticated: false
         }))
 })))

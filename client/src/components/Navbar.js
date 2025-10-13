@@ -7,7 +7,7 @@ import axios from "axios";
 export default function Navbar() {
   // const user = useUserStore((s) => s.user); // ✅ get user from store
   // const logout = useUserStore((s) => s.logout); // ✅ logout function
-  const {user, logout} = useUserStore()
+  const { user, logout } = useUserStore()
   const navigate = useNavigate();
   console.log(user)
 
@@ -23,10 +23,14 @@ export default function Navbar() {
       const { success } = res.data;
       console.log(res.data)
       if (success) {
+        localStorage.clear();
+        sessionStorage.clear();
         logout();
 
+
         alert("Logout Successful ✅");
-        setTimeout(() => navigate("/UserLogin"), 1000);
+        navigate("/UserLogin")
+        // setTimeout(() => navigate("/UserLogin"), 1000);
       } else {
         alert("Logout Failed ❌");
       }
