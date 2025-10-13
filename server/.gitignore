@@ -16,32 +16,43 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
-# OS files
+# Build and output directories
+dist/
+build/
+coverage/
+.tmp/
+.cache/
+
+# OS-specific files
 .DS_Store
 Thumbs.db
 
-# Build output
-dist/
-build/
-out/
-
-# Database files (अगर local sqlite आदि use करते हो)
-*.sqlite
-*.sqlite3
-
-# Coverage
-coverage/
-.nyc_output/
-
-# IDE / Editor
+# Editor / IDE folders
 .vscode/
 .idea/
 *.swp
 
-# Optional npm cache / debug
-.npm
-.eslintcache
+# Uploads (optional - if you store uploads locally)
+uploads/
+public/uploads/
+temp/
+tmp/
 
-# XAMPP / MySQL dump files (local backups)
+# PM2 process logs (if using PM2 for deployment)
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Database dumps / backups (optional)
 *.sql
 *.bak
+*.db
+
+# Optional: Ignore test coverage reports
+coverage/
+
+# Optional: Ignore package-lock if using yarn/pnpm
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml

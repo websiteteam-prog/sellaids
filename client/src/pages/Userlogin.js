@@ -17,12 +17,12 @@ function UserLogin() {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "https://nonsuccessional-darrell-nondichotomously.ngrok-free.dev/api/user/auth/login",
+        `${process.env.REACT_APP_API_URL}/api/user/auth/login`,
         { email, password },
         { withCredentials: true }
       );
 
-      const { success, data } = res.data;
+      const { success, data, message } = res.data;
       console.log(res.data)
       if (success) {
         login(data);
@@ -31,9 +31,8 @@ function UserLogin() {
 
         alert("Login Successful ✅");
         navigate("/user")
-        // setTimeout(() => navigate("/user"), 1000);
       } else {
-        alert("Login Failed ❌");
+        alert(message || "Login Failed ❌");
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
@@ -76,8 +75,8 @@ function UserLogin() {
           {/* Forgot Password Link */}
           <div className="text-right mb-4">
             <Link to="/forgot-password" className="text-blue-500 hover:underline">
-  Forgot Password?
-</Link>
+              Forgot Password?
+            </Link>
           </div>
 
           <button
