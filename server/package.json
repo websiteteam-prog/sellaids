@@ -1,31 +1,43 @@
 {
-  "name": "try",
+  "name": "ecommerce-platform",
   "version": "1.0.0",
+  "description": "e-commerce platform with user, vendor and admin panels",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "[\"ecommerce\"",
+    "\"nodejs\"",
+    "\"express\"",
+    "\"mysql\"",
+    "\"sequelize\"]"
+  ],
+  "author": "Piyush",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
-    "google-auth-library": "^10.3.0",
+    "google-auth-library": "^10.4.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "mysql2": "^3.14.5",
-    "nodemailer": "^7.0.6",
-    "nodemon": "^3.1.10",
+    "mysql2": "^3.15.2",
+    "nodemailer": "^7.0.9",
     "razorpay": "^2.9.6",
-    "uuid": "^13.0.0"
+    "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
