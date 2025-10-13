@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
-import { Vendor } from "./Vendor.js";
-import { Category } from "./Category.js";
+import { Vendor } from "./vendorModel.js";
+import { Category } from "./categoryModel.js";
 
 export const Product = sequelize.define(
   "Product",
@@ -30,7 +30,6 @@ export const Product = sequelize.define(
       onDelete: "CASCADE",
     },
     product_group: DataTypes.STRING(100),
-    product_category: DataTypes.STRING(100),
     product_type: DataTypes.STRING(100),
     product_condition: {
       type: DataTypes.ENUM("new", "like_new", "used", "damaged"),
@@ -40,12 +39,14 @@ export const Product = sequelize.define(
       type: DataTypes.ENUM("Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"),
       defaultValue: "Regular",
     },
-    fit_other: DataTypes.STRING(100),
     size: {
       type: DataTypes.ENUM("XS", "S", "M", "L", "XL", "XXL", "Other"),
       defaultValue: "M",
     },
     size_other: DataTypes.STRING(100),
+    product_color: DataTypes.STRING(100),
+    brand: DataTypes.STRING(100),
+    model_name: DataTypes.STRING(100),
     invoice: {
       type: DataTypes.ENUM("Yes", "No"),
       defaultValue: "No",
@@ -80,15 +81,6 @@ export const Product = sequelize.define(
     purchase_place: DataTypes.STRING(100),
     product_link: DataTypes.STRING(255),
     additional_info: DataTypes.TEXT,
-    seller_info: DataTypes.TEXT,
-    stock: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1,
-    },
-    agree: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
     status: {
       type: DataTypes.ENUM("pending","approved","rejected"),
       defaultValue: "pending",

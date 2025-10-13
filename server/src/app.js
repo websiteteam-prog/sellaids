@@ -7,6 +7,7 @@ import config from "./config/config.js"
 import userIndexRoutes from "./routes/user/userIndexRoutes.js"
 import vendorIndexRoutes from "./routes/vendor/vendorIndexRoutes.js"
 import adminIndexRoutes from "./routes/admin/adminIndexRoutes.js"
+import productFormRoutes from "./routes/product/productFormRoutes.js"
 
 const app = express()
 
@@ -21,7 +22,8 @@ app.use(cookieParser())
 // app.use(errorHandler)
 
 // Serve uploaded files statically
-app.use('/uploads', express.static('uploads'))
+// app.js
+app.use('/uploads', express.static('public/image'));
 
 // session setup
 app.use(session({
@@ -45,6 +47,9 @@ app.use('/api/vendor', vendorIndexRoutes)
 
 // admin Routes
 app.use('/api/admin', adminIndexRoutes)
+
+// Add Products
+app.use('/api/product', productFormRoutes)
 
 app.get('/', (req, res) => {
     res.json({

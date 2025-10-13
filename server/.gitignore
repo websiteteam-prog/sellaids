@@ -37,6 +37,7 @@ uploads/
 public/uploads/
 temp/
 tmp/
+src/public/
 
 # PM2 process logs (if using PM2 for deployment)
 pids
