@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config(); // dotenv ko sirf yaha import karke configure karenge
 
 const config = {
+  env: process.env.NODE_ENV || "development",
   server: {
     port: process.env.PORT || 5000,
   },
@@ -11,6 +12,7 @@ const config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     name: process.env.DB_NAME,
+    port: process.env.DB_PORT,
   },
   auth: {
     jwtSecret: process.env.JWT_SECRET,

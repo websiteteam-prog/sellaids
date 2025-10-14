@@ -1,8 +1,8 @@
 import express from "express"
-import session from "express-session"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import config from "./config/config.js"
+import sessionMiddleware from "./config/sessionConfig.js"
 // import { errorHandler } from "./middlewares/errorHandler.js"
 import userIndexRoutes from "./routes/user/userIndexRoutes.js"
 import vendorIndexRoutes from "./routes/vendor/vendorIndexRoutes.js"
@@ -23,19 +23,8 @@ app.use(cookieParser())
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'))
 
-// session setup
-app.use(session({
-    secret: config.auth.sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        maxAge: 30 * 60 * 1000, // 30 minute inactivity
-        httpOnly: true,
-        sameSite: 'strict',
-        // secure: true
-    },
-    rolling: true // being activity then expiry session refresh 
-}))
+// session middleware
+app.use(sessionMiddleware)
 
 // user Routes
 app.use('/api/user', userIndexRoutes)
