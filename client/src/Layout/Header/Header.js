@@ -1,29 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { MegaMenu, MensMegaMenu, KidsMegaMenu } from "./MegaMenu";
 import { User, Heart, Search, ShoppingCart, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import SearchOverlay from "../../components/SearchOverlay";
 
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Logout handler with API call and toast
   const handleLogout = async () => {
     try {
-      // Call logout API
-      await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
-
-      // Clear frontend user state
+      await axios.post(`${process.env.REACT_APP_API_URL}/auth/logout`, {}, { withCredentials: true });
       logout();
-
-      // Show success toast
       toast.success("You have successfully logged out");
-
-      // Redirect to login page after short delay
-      setTimeout(() => navigate("/UserLogin"), 1000);
+      setTimeout(() => navigate("/UserLogin"), 1500);
     } catch (err) {
       console.error("Logout failed:", err);
       toast.error("Logout failed, please try again.");
@@ -31,20 +26,19 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow relative z-50">
-      {/* Toast container */}
+    <header className="bg-white shadow relative z-40">
       <Toaster position="top-right" />
 
-      <nav className="max-w-7xl mx-auto flex justify-between items-center py-0.5 px-6">
+      <nav className="max-w-7xl mx-auto flex justify-between items-center py-2 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <div className="flex items-center">
           <Link to="/landingpage">
-            <img src="/logo.webp" alt="Logo" className="h-[100px] w-auto" />
+            <img src="/logo.webp" alt="Logo" className="h-[80px] sm:h-[100px] w-auto" />
           </Link>
         </div>
 
-        {/* Navigation menu */}
-        <ul className="flex space-x-6 font-medium text-gray-700 items-center h-[60px]">
+        {/* Navigation menu (hidden on mobile, shown on sm+) */}
+        <ul className="hidden sm:flex space-x-4 md:space-x-6 font-medium text-gray-700 items-center h-[60px]">
           <li className="relative group flex h-full items-center cursor-pointer">
             <div className="flex items-center hover:text-orange-500 space-x-1">
               <span>WOMEN</span>
@@ -75,22 +69,28 @@ const Header = () => {
           </li>
         </ul>
 
+        {/* Mobile Menu Button */}
+        <div className="sm:hidden flex items-center">
+          <button
+            className="text-gray-700 hover:text-orange-500 mr-4"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+          </button>
+        </div>
+
         {/* Icons & User */}
-        <div className="flex space-x-4 text-gray-600 items-center relative">
+        <div className="flex space-x-3 sm:space-x-4 text-gray-600 items-center relative">
           {user ? (
             <div className="relative group">
-              <div className="flex items-center cursor-pointer hover:text-orange-500 space-x-1">
-                <span>{user.name}</span>
-                <ChevronDown size={16} />
+              <div className="flex items-center cursor-pointer hover:text-orange-500">
+                <User className="w-5 h-5" />
               </div>
-              <div className="absolute right-[-30px] top-2 mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute right-0 top-full mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
                 <Link to="/dashboard" className="block px-4 py-2 hover:bg-orange-100">Dashboard</Link>
-
-                {/* Logout button with toast */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 hover:bg-orange-100"
-                >
+                <button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-orange-100">
                   Logout
                 </button>
               </div>
@@ -101,13 +101,59 @@ const Header = () => {
             </Link>
           )}
 
-          <Link to="/wishlist"><Heart className="w-5 h-5 hover:text-orange-500 cursor-pointer" /></Link>
-          <Link to="/search"><Search className="w-5 h-5 hover:text-orange-500 cursor-pointer" /></Link>
-          <Link to="/cart"><ShoppingCart className="w-5 h-5 hover:text-orange-500 cursor-pointer" /></Link>
+          <Link to="/wishlist">
+            <Heart className="w-5 h-5 hover:text-orange-500 cursor-pointer" />
+          </Link>
+          
+          <Search
+            className="w-5 h-5 hover:text-orange-500 cursor-pointer"
+            onClick={() => setIsSearchOpen(true)}
+          />
+
+          <Link to="/cart">
+            <ShoppingCart className="w-5 h-5 hover:text-orange-500 cursor-pointer" />
+          </Link>
         </div>
       </nav>
+
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && (
+        <ul className="sm:hidden flex flex-col space-y-4 font-medium text-gray-700 px-4 py-2 bg-white shadow-md">
+          <li className="relative group">
+            <div className="flex items-center hover:text-orange-500 space-x-1">
+              <span>WOMEN</span>
+              <ChevronDown size={16} />
+            </div>
+            <MegaMenu />
+          </li>
+          <li className="relative group">
+            <div className="flex items-center hover:text-orange-500 space-x-1">
+              <span>MEN</span>
+              <ChevronDown size={16} />
+            </div>
+            <div className="mt-2">
+              <MensMegaMenu />
+            </div>
+          </li>
+          <li className="relative group">
+            <div className="flex items-center hover:text-orange-500 space-x-1">
+              <span>KIDS</span>
+              <ChevronDown size={16} />
+            </div>
+            <div className="mt-2">
+              <KidsMegaMenu />
+            </div>
+          </li>
+          <li>
+            <Link to="/sellwithus" className="hover:text-orange-500">SELL WITH US</Link>
+          </li>
+        </ul>
+      )}
+
+      {/* Search Overlay */}
+      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 };
 
-export default Header
+export default Header;

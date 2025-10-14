@@ -11,8 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import VendorLogout from "../components/vendor/vendorlogout"; // ✅ Import the logout component
-
+import VendorLogout from "../components/vendor/vendorlogout"; 
 export default function VendorDashboardLayout() {
   const [productOpen, setProductOpen] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);

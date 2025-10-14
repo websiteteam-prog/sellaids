@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import useWishlistStore from "../../stores/useWishlistStore";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Profile() {
   const { user, setUser } = useWishlistStore();
@@ -8,17 +9,30 @@ export default function Profile() {
     full_name: "",
     email: "",
     phone: "",
-    password: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
 
+  // Fetch user profile
   useEffect(() => {
     if (user?.id) {
       axios
         .get(`http://localhost:5000/api/user/profile/${user.id}`)
         .then((res) => {
-          setFormData({ ...res.data, password: "" });
+          setFormData({
+            ...formData,
+            full_name: res.data.full_name,
+            email: res.data.email,
+            phone: res.data.phone,
+          });
         })
         .catch((err) => console.error("Error fetching profile:", err));
     }
@@ -32,21 +46,36 @@ export default function Profile() {
     setLoading(true);
 
     try {
-      const data = {
+      const updateData = {
         full_name: formData.full_name,
         phone: formData.phone,
       };
-      if (formData.password) data.password = formData.password;
+
+      // Validate password fields
+      if (formData.newPassword || formData.confirmPassword || formData.currentPassword) {
+        if (formData.newPassword !== formData.confirmPassword) {
+          alert("New password and confirm password do not match!");
+          setLoading(false);
+          return;
+        }
+        updateData.currentPassword = formData.currentPassword;
+        updateData.newPassword = formData.newPassword;
+      }
 
       const res = await axios.put(
         `http://localhost:5000/api/user/profile/${user.id}`,
-        data
+        updateData
       );
 
       setUser(res.data);
-      setIsEditing(false);
-      setFormData({ ...res.data, password: "" });
       alert("Profile updated successfully!");
+      setIsEditing(false);
+      setFormData({
+        ...formData,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error) {
       console.error(error.response?.data || error.message);
       alert("Failed to update profile");
@@ -54,6 +83,9 @@ export default function Profile() {
       setLoading(false);
     }
   };
+
+  const togglePassword = (field) =>
+    setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
@@ -108,25 +140,80 @@ export default function Profile() {
           />
         </div>
 
-        {/* Password */}
+        {/* Password Section */}
         {isEditing && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              New Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password || ""}
-              onChange={handleChange}
-              placeholder="Enter new password"
-              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
-            />
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+              Change Password
+            </h2>
+
+            {/* Current Password */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Current Password
+              </label>
+              <input
+                type={showPassword.current ? "text" : "password"}
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                placeholder="Enter current password"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+              />
+              <span
+                onClick={() => togglePassword("current")}
+                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+              >
+                {showPassword.current ? <EyeOff size={18} /> : <Eye size={18} />}
+              </span>
+            </div>
+
+            {/* New Password */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                New Password
+              </label>
+              <input
+                type={showPassword.new ? "text" : "password"}
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                placeholder="Enter new password"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+              />
+              <span
+                onClick={() => togglePassword("new")}
+                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+              >
+                {showPassword.new ? <EyeOff size={18} /> : <Eye size={18} />}
+              </span>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                type={showPassword.confirm ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm new password"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+              />
+              <span
+                onClick={() => togglePassword("confirm")}
+                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+              >
+                {showPassword.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </span>
+            </div>
           </div>
         )}
 
         {/* Buttons */}
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-6 gap-3">
           {!isEditing ? (
             <button
               type="button"
@@ -136,13 +223,22 @@ export default function Profile() {
               Edit Profile
             </button>
           ) : (
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="bg-gray-400 text-white px-6 py-3 rounded-lg hover:bg-gray-500 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </>
           )}
         </div>
       </form>

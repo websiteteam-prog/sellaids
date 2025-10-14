@@ -69,7 +69,7 @@ function VogueSection() {
             <div className="w-full md:w-[45%] text-center md:text-left mt-8 md:mt-0 px-2 sm:px-4 md:px-8">
                 <p className="text-sm sm:text-base tracking-widest uppercase text-gray-500">Royal Reverie</p>
                 <h2 className="text-3xl sm:text-4xl md:text-6xl font-heading text-black leading-snug sm:leading-tight mt-3">
-                    Vogue that Speak of <br className="hidden sm:block" /> Opulence
+                    Vogue that Speak of Opulence
                 </h2>
                 <p className="text-gray-600 mt-4 text-base sm:text-lg">
                     Curating a better world of luxury and affordability

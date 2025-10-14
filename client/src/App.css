@@ -707,74 +707,82 @@
 
 /* ------------------- Register Form ------------------- */
 .form-container {
-  max-width: 550px;
-  margin: 50px auto;
-  padding: 30px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
 }
 
-form h2 {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
-  border-bottom: 2px solid #f1f1f1;
-  padding-bottom: 8px;
+.input-group {
+    margin-bottom: 15px;
 }
 
-form input,
-form select {
-  display: block;
-  width: 100%;
-  margin-bottom: 15px;
-  padding: 12px 14px;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  background: #fafafa;
-  font-size: 15px;
-  color: #333;
-  transition: all 0.3s ease;
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
 }
 
-form input:focus,
-form select:focus {
-  border-color: #007bff;
-  background: #fff;
-  outline: none;
-  box-shadow: 0 0 6px rgba(0, 123, 255, 0.2);
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-form button {
-  padding: 10px 18px;
-  margin: 5px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease;
+.password-group {
+    position: relative;
 }
 
-form button:hover {
-  background: #0056b3;
-  transform: translateY(-1px);
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 68%;
+    transform: translateY(-50%);
+    cursor: pointer;
 }
 
-form button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+.review-details table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.review-details td {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.terms-container {
+    margin-top: 20px;
+    text-align: center;
 }
 
 .form-navigation {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
 }
 
+.form-navigation button {
+    padding: 10px 20px;
+    background: orange;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-navigation button:disabled {
+    background: #ccc;
+}
+
+.message {
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+}
 p {
   margin-top: 15px;
   font-size: 14px;
@@ -810,7 +818,7 @@ p.error {
 }
 
 .step-circle.active {
-  background: #007bff;
+  background: orange;
 }
 
 .review-details table {
