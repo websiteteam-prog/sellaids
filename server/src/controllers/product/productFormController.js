@@ -1,11 +1,11 @@
 import { productSchema } from "../../validations/productFormValidation.js";
-import { createProductService } from "../../services/product/productFormService.js";
+import { createProductService, fetchCategories, fetchProductTypesByCategory } from "../../services/product/productFormService.js";
+
 
 export const addProductController = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
 
-    // Validate all fields with context for vendorId (for duplicate check)
     await productSchema.validate(req.body, { abortEarly: false, context: { vendorId } });
 
     const baseUrl = process.env.BASE_URL || "http://localhost:5000";
@@ -35,5 +35,33 @@ export const addProductController = async (req, res) => {
     }
     console.error(error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+export const getCategories = async (req, res) => {
+  try {
+    const { search = "" } = req.query;
+    const categories = await fetchCategories(search);
+    res.json({ success: true, data: categories });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getProductTypes = async (req, res) => {
+  try {
+    const { category_id, search = "" } = req.query;
+
+    if (!category_id) {
+      return res.status(400).json({ success: false, message: "category_id is required" });
+    }
+
+    const productTypes = await fetchProductTypesByCategory(category_id, search);
+
+    res.json({ success: true, data: productTypes });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

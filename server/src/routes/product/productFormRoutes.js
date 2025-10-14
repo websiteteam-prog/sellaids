@@ -1,5 +1,5 @@
 import express from "express";
-import { addProductController } from "../../controllers/product/productFormController.js";
+import { addProductController, getCategories, getProductTypes } from "../../controllers/product/productFormController.js";
 import { isVendorLoginIn } from "../../middlewares/authMiddlewares.js";
 import { upload } from "../../middlewares/productUpload.js";
 
@@ -18,5 +18,7 @@ const uploadFields = upload.fields([
 ]);
 
 router.post("/add", isVendorLoginIn, uploadFields, addProductController);
+router.get("/categories-list", getCategories);
+router.get("/", getProductTypes);
 
 export default router;

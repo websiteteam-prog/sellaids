@@ -1,4 +1,7 @@
+import { Op } from "sequelize";
 import { Product } from "../../models/productModel.js";
+import { Category } from "../../models/categoryModel.js";
+import ProductType from "../../models/productType.js";
 
 export const createProductService = async (vendorId, data, images) => {
   try {
@@ -21,4 +24,25 @@ export const createProductService = async (vendorId, data, images) => {
   } catch (err) {
     throw new Error(err.message);
   }
+};
+
+export const fetchCategories = async (search = "") => {
+  return await Category.findAll({
+    where: {
+      // status: "active",
+      name: { [Op.like]: `%${search}%` },
+    },
+    order: [["name", "ASC"]],
+  });
+};
+
+export const fetchProductTypesByCategory = async (category_id, search = "") => {
+  return await ProductType.findAll({
+    where: {
+      category_id,
+      status: "active",
+      type_name: { [Op.like]: `%${search}%` },
+    },
+    order: [["type_name", "ASC"]],
+  });
 };
