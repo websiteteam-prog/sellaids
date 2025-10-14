@@ -61,7 +61,7 @@ export const productSchema = yup.object().shape({
   reason_to_sell: yup.string().required("Reason to sell is required"),
   purchase_year: yup.number().required("Purchase year is required"),
   purchase_place: yup.string().required("Purchase place is required"),
-  additional_items: yup.string().nullable(),
-  product_link: yup.string().url().nullable(),
-  additional_info: yup.string().nullable(),
+  additional_items: yup.string().required(),
+  product_link: yup.string().url().required(),
+  additional_info: yup.string().required(),
 });

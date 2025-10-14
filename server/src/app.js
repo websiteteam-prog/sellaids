@@ -3,6 +3,7 @@ import session from "express-session"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import config from "./config/config.js"
+import path from "path"
 // import { errorHandler } from "./middlewares/errorHandler.js"
 import userIndexRoutes from "./routes/user/userIndexRoutes.js"
 import vendorIndexRoutes from "./routes/vendor/vendorIndexRoutes.js"
@@ -24,6 +25,7 @@ app.use(cookieParser())
 // Serve uploaded files statically
 // app.js
 app.use('/uploads', express.static('public/image'));
+app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'public', 'uploads')));
 
 // session setup
 app.use(session({
