@@ -1,4 +1,13 @@
 {
+  "name": "ecommerce-fullstack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fullstack project with client and server running together",
+  "scripts": {
+    "start": "npm-run-all --parallel start:client start:server",
+    "start:client": "npm --prefix client start",
+    "start:server": "npm --prefix server run dev"
+  },
   "dependencies": {
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
@@ -6,5 +15,8 @@
     "react-fast-marquee": "^1.6.5",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
   }
 }

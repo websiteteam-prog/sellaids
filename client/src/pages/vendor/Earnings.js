@@ -32,11 +32,11 @@ const Earnings = () => {
       try {
         setLoading(true);
         const statsRes = await axios.get("http://localhost:5000/api/vendor/earnings");
-        const txnRes = await axios.get("http://localhost:5000/api/vendor/transactions");
+        // const txnRes = await axios.get("http://localhost:5000/api/vendor/transactions");
 
         setStats(statsRes.data);
         setMonthlyEarnings(statsRes.data.monthlyData || []);
-        setTransactions(txnRes.data || []);
+        // setTransactions(txnRes.data || []);
       } catch (err) {
         console.error("Error fetching earnings data:", err);
       } finally {
@@ -58,22 +58,22 @@ const Earnings = () => {
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-gray-500">Total Earnings</h3>
           <p className="text-2xl font-bold">₹{stats.totalEarnings}</p>
-          <p className="text-green-600 text-sm">Growth will reflect here</p>
+         
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-gray-500">This Month</h3>
           <p className="text-2xl font-bold">₹{stats.thisMonth}</p>
-          <p className="text-green-600 text-sm">Growth will reflect here</p>
+          
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-gray-500">Pending Payouts</h3>
           <p className="text-2xl font-bold">₹{stats.pendingPayouts}</p>
-          <p className="text-yellow-600 text-sm">Processing</p>
+        
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-gray-500">Completed Payouts</h3>
           <p className="text-2xl font-bold">₹{stats.completedPayouts}</p>
-          <p className="text-green-600 text-sm">Completed</p>
+         
         </div>
       </div>
 
@@ -94,7 +94,8 @@ const Earnings = () => {
         )}
       </div>
 
-      {/* Recent Transactions Table */}
+      {/* Recent Transactions Table - Hidden for now */}
+      {/*
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold">Recent Transactions</h2>
@@ -157,7 +158,6 @@ const Earnings = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {transactions.length > 0 && (
           <div className="flex justify-between items-center p-4 border-t">
             <span className="text-sm text-gray-500">
@@ -182,6 +182,7 @@ const Earnings = () => {
           </div>
         )}
       </div>
+      */}
     </div>
   );
 };

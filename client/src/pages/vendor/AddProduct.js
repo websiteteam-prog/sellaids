@@ -8,6 +8,7 @@ const AddProductForm = () => {
   const [formData, setFormData] = useState({
     group: "",
     productCategory: "",
+    categoryId: "",
     productType: "",
     productCondition: "",
     fit: "",
@@ -52,6 +53,9 @@ const AddProductForm = () => {
   const [errors, setErrors] = useState({});
   const [categories, setCategories] = useState([]);
   const [types, setTypes] = useState([]);
+  const [apiError, setApiError] = useState(null);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(false);
 
   useEffect(() => {
     if (vendorInfo && step === 5) {
@@ -69,53 +73,93 @@ const AddProductForm = () => {
     }
   }, [vendorInfo, step]);
 
-  // Fetch categories and types from API
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/categories`);
-        setCategories(response.data || []);
+        setIsLoadingCategories(true);
+        setApiError(null);
+        console.log("Fetching categories from:", `${process.env.REACT_APP_API_URL}/product/categories-list`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/product/categories-list`, {
+          withCredentials: true,
+        });
+        console.log("Categories response:", response.data);
+        setCategories(response.data && Array.isArray(response.data) ? response.data : []);
+        if (!response.data || !Array.isArray(response.data)) {
+          console.warn("Categories API returned unexpected data:", response.data);
+        }
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching categories:", error.message, error.response?.data);
+        setApiError("Failed to load product categories. Please check the backend or try again later.");
+        setCategories([]);
+      } finally {
+        setIsLoadingCategories(false);
       }
     };
-
-    const fetchTypes = async () => {
-      try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/types`);
-        setTypes(response.data || []);
-      } catch (error) {
-        console.error("Error fetching types:", error);
-      }
-    };
-
     fetchCategories();
-    fetchTypes();
   }, []);
+
+  // Fetch product types when category changes
+  useEffect(() => {
+    const fetchTypes = async () => {
+      if (!formData.categoryId) {
+        setTypes([]);
+        setFormData((prev) => ({ ...prev, productType: "" }));
+        return;
+      }
+      try {
+        setIsLoadingTypes(true);
+        setApiError(null);
+        console.log("Fetching types from:", `${process.env.REACT_APP_API_URL}/product?category_id=${formData.categoryId}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/product?category_id=${formData.categoryId}`, {
+          withCredentials: true,
+        });
+        console.log("Types response:", response.data);
+        setTypes(response.data && Array.isArray(response.data) ? response.data : []);
+        if (!response.data || !Array.isArray(response.data)) {
+          console.warn("Types API returned unexpected data:", response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching types:", error.message, error.response?.data);
+        setApiError("Failed to load product types. Please check the backend or try again later.");
+        setTypes([]);
+      } finally {
+        setIsLoadingTypes(false);
+      }
+    };
+    fetchTypes();
+  }, [formData.categoryId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     if (type === "file") {
       if (name === "moreImages") {
-        setFormData({ ...formData, [name]: Array.from(files) });
+        setFormData((prev) => ({ ...prev, [name]: Array.from(files) }));
       } else {
-        setFormData({ ...formData, [name]: files[0] });
+        setFormData((prev) => ({ ...prev, [name]: files[0] }));
       }
     } else if (type === "checkbox") {
-      setFormData({ ...formData, [name]: checked });
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else if (name === "productCategory") {
+      const selectedCategory = categories.find(cat => cat.name === value);
+      setFormData((prev) => ({
+        ...prev,
+        productCategory: value,
+        categoryId: selectedCategory ? selectedCategory.id : "",
+        productType: "", // Reset product type when category changes
+      }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const validateStep = () => {
     const newErrors = {};
     const requiredFields = {
-      1: ["group", "productCategory", "productType", "brand"],
-      2: ["invoice", "needsRepair", "originalBox", "dustBag"],
-      3: ["frontPhoto", "backPhoto", "labelPhoto", "insidePhoto", "buttonPhoto", "wearingPhoto"],
-      4: ["purchasePrice", "sellingPrice", "purchaseYear"],
-      5: ["name", "email", "phone", "address", "apartment", "city", "state", "zip", "agree"],
+      2: ["group", "productCategory", "productType", "brand"],
+      3: ["invoice", "needsRepair", "originalBox", "dustBag"],
+      4: ["frontPhoto", "backPhoto", "labelPhoto", "insidePhoto", "buttonPhoto", "wearingPhoto"],
+      5: ["purchasePrice", "sellingPrice", "purchaseYear"],
     };
 
     if (requiredFields[step]) {
@@ -126,10 +170,10 @@ const AddProductForm = () => {
       });
     }
 
-    if (step === 2 && formData.invoice === "Yes" && !formData.invoicePhoto) {
+    if (step === 3 && formData.invoice === "Yes" && !formData.invoicePhoto) {
       newErrors.invoicePhoto = "Please upload the invoice photo";
     }
-    if (step === 2 && formData.needsRepair === "Yes" && !formData.repairPhoto) {
+    if (step === 3 && formData.needsRepair === "Yes" && !formData.repairPhoto) {
       newErrors.repairPhoto = "Please upload the repair photo";
     }
 
@@ -138,7 +182,7 @@ const AddProductForm = () => {
   };
 
   const nextStep = () => {
-    if (validateStep()) {
+    if (step === 1 || validateStep()) {
       setStep(step + 1);
       setErrors({});
     }
@@ -168,21 +212,23 @@ const AddProductForm = () => {
         } else {
           if (key === "sellingPrice") {
             data.append("price", value);
-          } else {
+          } else if (key !== "categoryId") {
             data.append(key, value);
           }
         }
       });
       data.append("vendorId", vendorInfo.id);
 
-      await axios.post("http://localhost:3000/api/products/add", data, {
+      await axios.post(`${process.env.REACT_APP_API_URL}/product/add`, data, {
         headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
       });
 
       alert("✅ Product added successfully!");
       setFormData({
         group: "",
         productCategory: "",
+        categoryId: "",
         productType: "",
         productCondition: "",
         fit: "",
@@ -226,16 +272,23 @@ const AddProductForm = () => {
       });
       setStep(1);
     } catch (error) {
-      console.error("Error adding product:", error);
+      console.error("Error adding product:", error.message, error.response?.data);
       alert("❌ Failed to add product.");
     }
   };
 
-  const steps = ["Product", "Condition", "Image", "Price", "Contact"];
+  const steps = ["Guidelines", "Product", "Condition", "Image", "Price"];
 
   return (
     <div className="min-h-screen bg-gray-100 px-2 sm:px-4 py-4 sm:py-6">
       <div className="w-full sm:max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-2 sm:p-4 md:p-6">
+        {/* API Error Message */}
+        {apiError && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {apiError}
+          </div>
+        )}
+
         <div className="mb-6">
           <h2 className="text-xl sm:text-2xl font-semibold text-center text-gray-800 mb-3 sm:mb-4">
             Add New Product
@@ -280,12 +333,41 @@ const AddProductForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {step === 1 && (
+            <div className="grid grid-cols-1 gap-2 sm:gap-4">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Guidelines</h3>
+              <div className="sm:col-span-full">
+                <p className="text-sm text-gray-600 mb-4">
+                  <strong>Guidelines for Adding a Product:</strong><br />
+                  1. Ensure all required fields (marked with *) are filled accurately.<br />
+                  2. Select the appropriate group and category to help buyers find your product.<br />
+                  3. Provide a clear and specific brand and model name for authenticity.<br />
+                  4. Use the "Other Size" field if the standard size options do not apply.<br />
+                  5. Be precise with product color to avoid confusion for buyers.<br />
+                  6. Upload high-quality images to showcase the product’s condition clearly.<br />
+                  7. Provide accurate pricing details to reflect the product’s value.<br />
+                  8. Include any additional items or accessories to enhance the listing’s appeal.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Product</h3>
               {[
                 { name: "group", label: "Group *", options: ["", "Men", "Women", "Girl", "Boy"] },
-                { name: "productCategory", label: "Product Category *", options: categories },
-                { name: "productType", label: "Product Type *", options: types },
+                {
+                  name: "productCategory",
+                  label: "Product Category *",
+                  options: isLoadingCategories ? ["Loading..."] : categories.length ? categories.map(cat => cat.name || "Unnamed Category") : ["No categories available"],
+                  disabled: isLoadingCategories || !categories.length,
+                },
+                {
+                  name: "productType",
+                  label: "Product Type *",
+                  options: isLoadingTypes ? ["Loading..."] : types.length ? types.map(type => type.name || "Unnamed Type") : ["Select a category first"],
+                  disabled: isLoadingTypes || !types.length || !formData.categoryId,
+                },
                 { name: "productCondition", label: "Product Condition", options: ["", "New", "Almost New", "Hardly Ever Used", "Good", "Satisfactory"] },
                 { name: "fit", label: "Fit", options: ["", "Comfort Fit", "Slim Fit", "Regular Fit", "Others"] },
                 { name: "size", label: "Size", options: ["", "XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "4xl", "5xl", "6xl", "Kids-Upto 3 Months", "Kids-Upto 6 Months", "Kids- 6-9 Months", "Kids- 9-12 Months", "Kids- 1-2 Years", "Kids- 3-4 Years", "Kids- 5-6 Years", "Kids- 7-8 Years", "Kids- 9-10 Years", "Kids- 10-12 Years", "Kids- 13-14 Years", "K 15-16 Years", "Kids- 17-18 Years"] },
@@ -317,10 +399,11 @@ const AddProductForm = () => {
                         errors[field.name] ? "border-red-500" : "border-gray-300"
                       }`}
                       required={field.label.includes("*")}
+                      disabled={field.disabled}
                     >
-                      {field.options.map((option) => (
-                        <option key={option} value={option}>
-                          {option || `Select ${field.label.replace("*", "").toLowerCase()}`}
+                      {field.options.map((option, index) => (
+                        <option key={index} value={option}>
+                          {option}
                         </option>
                       ))}
                     </select>
@@ -333,7 +416,7 @@ const AddProductForm = () => {
             </div>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Condition</h3>
               {[
@@ -405,7 +488,7 @@ const AddProductForm = () => {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Image</h3>
               {[
@@ -438,7 +521,7 @@ const AddProductForm = () => {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Price</h3>
               {[
@@ -479,73 +562,6 @@ const AddProductForm = () => {
                   )}
                 </div>
               ))}
-            </div>
-          )}
-
-          {step === 5 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Contact</h3>
-              {[
-                { name: "name", label: "Name *", type: "text", disabled: true },
-                { name: "email", label: "Email Address *", type: "email", disabled: true },
-                { name: "phone", label: "Phone Number *", type: "tel", disabled: true },
-                { name: "address", label: "Pick-up Address *", type: "text", disabled: true },
-                { name: "apartment", label: "Apartment, suite, etc *", type: "text" },
-                { name: "city", label: "City *", type: "text", disabled: true },
-                { name: "state", label: "State/Province *", type: "text", disabled: true },
-                { name: "zip", label: "ZIP / Postal Code *", type: "text", disabled: true },
-                { name: "sellerInfo", label: "Additional Information", type: "textarea" },
-              ].map((field) => (
-                <div key={field.name} className={field.type === "textarea" ? "sm:col-span-full" : ""}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
-                  {field.type === "textarea" ? (
-                    <textarea
-                      name={field.name}
-                      value={formData[field.name]}
-                      onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition duration-200"
-                      placeholder="Enter additional info"
-                      rows="4"
-                    />
-                  ) : (
-                    <input
-                      type={field.type}
-                      name={field.name}
-                      value={formData[field.name]}
-                      onChange={handleChange}
-                      disabled={field.disabled}
-                      className={`w-full border rounded-lg px-2 sm:px-3 py-1 sm:py-2 focus:outline-none transition duration-200 ${
-                        field.disabled
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : "focus:ring-2 focus:ring-orange-400"
-                      } ${errors[field.name] ? "border-red-500" : "border-gray-300"}`}
-                      placeholder={`Enter ${field.label.toLowerCase()}`}
-                      required={!field.disabled && field.label.includes("*")}
-                    />
-                  )}
-                  {errors[field.name] && (
-                    <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
-                  )}
-                </div>
-              ))}
-              <div className="sm:col-span-full">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="agree"
-                    checked={formData.agree}
-                    onChange={handleChange}
-                    className={`h-4 w-4 text-orange-600 focus:ring-orange-400 border-gray-300 rounded transition duration-200 ${
-                      errors.agree ? "border-red-500" : ""
-                    }`}
-                    required
-                  />
-                  <span className="text-sm text-gray-600">By submitting this form, I agree to abide by our policies, terms and conditions, and seller declaration guidelines.</span>
-                </label>
-                {errors.agree && (
-                  <p className="text-red-500 text-xs mt-1">{errors.agree}</p>
-                )}
-              </div>
             </div>
           )}
 

@@ -7,7 +7,7 @@ const DashboardHome = () => {
   const { user } = useWishlistStore();
   const [dashboardData, setDashboardData] = useState({
     totalOrders: 0,
-    pendingDeliveries: 0,
+    pendingorders: 0,
     wishlistCount: 0,
     supportTickets: 0,
   });
@@ -23,7 +23,7 @@ const DashboardHome = () => {
       const res = await axios.get(`http://localhost:5000/api/user/${user.id}/dashboard`);
       setDashboardData({
         totalOrders: res.data.totalOrders || 0,
-        pendingDeliveries: res.data.pendingDeliveries || 0,
+        pendingorders: res.data.pendingorders || 0,
         wishlistCount: res.data.wishlistCount || 0,
         supportTickets: res.data.supportTickets || 0,
       });
@@ -37,7 +37,7 @@ const DashboardHome = () => {
   // Cards array for easy mapping
   const cards = [
     { title: "Total Orders", value: dashboardData.totalOrders },
-    { title: "Pending Deliveries", value: dashboardData.pendingDeliveries },
+    { title: "Pending Orders", value: dashboardData.pendingorders },
     { title: "Wishlist Items", value: dashboardData.wishlistCount },
     { title: "Support Tickets", value: dashboardData.supportTickets },
   ];
