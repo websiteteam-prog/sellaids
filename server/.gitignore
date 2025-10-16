@@ -1,5 +1,16 @@
-# Node modules
+# Node modules (root)
 node_modules/
+
+# Ignore client/node_modules and client build output
+client/node_modules/
+client/build/
+
+# client envs / logs
+client/.env
+client/.env.local
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
 
 # Logs
 logs
