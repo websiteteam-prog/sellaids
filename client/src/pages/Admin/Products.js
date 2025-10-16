@@ -1,14 +1,14 @@
-// src/pages/admin/ProductManagement.jsx
+
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Added for navigation
 import axios from "axios";
-import { Eye, Trash2, Download } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [viewProduct, setViewProduct] = useState(null);
   const [editProduct, setEditProduct] = useState(null);
 
   // Pagination
@@ -22,10 +22,12 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/products");
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/products`, {
+        withCredentials: true,
+      });
       setProducts(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching products:", err);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -34,7 +36,7 @@ const ProductManagement = () => {
 
   const filteredProducts = products.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.modelName.toLowerCase().includes(search.toLowerCase()) ||
       p.sku?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -48,16 +50,14 @@ const ProductManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/products/${id}`, {
+        withCredentials: true,
+      });
       setProducts((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting product:", err);
     }
   };
-
-  // View Product
-  const openViewModal = (product) => setViewProduct(product);
-  const closeViewModal = () => setViewProduct(null);
 
   // Edit Product
   const openEditModal = (product) => setEditProduct(product);
@@ -71,19 +71,30 @@ const ProductManagement = () => {
   const handleSaveEdit = async () => {
     try {
       const { id, ...data } = editProduct;
-      await axios.put(`http://localhost:5000/api/products/${id}`, data);
+      await axios.put(`${process.env.REACT_APP_API_URL}/products/${id}`, data, {
+        withCredentials: true,
+      });
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, ...data } : p))
       );
       closeEditModal();
     } catch (err) {
-      console.error(err);
+      console.error("Error updating product:", err);
     }
   };
 
   // Export Excel
   const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(products);
+    const ws = XLSX.utils.json_to_sheet(
+      products.map((p) => ({
+        SR_No: products.indexOf(p) + 1,
+        SKU: p.sku,
+        Model: p.modelName,
+        Brand: p.brand,
+        Price: p.price,
+        Status: p.status,
+      }))
+    );
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Products");
     XLSX.writeFile(wb, "products.xlsx");
@@ -106,7 +117,7 @@ const ProductManagement = () => {
       <div className="mb-4 flex gap-2">
         <input
           type="text"
-          placeholder="Search products..."
+          placeholder="Search by model name or SKU..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200"
@@ -124,13 +135,11 @@ const ProductManagement = () => {
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="px-4 py-3 border">Image</th>
-              <th className="px-4 py-3 border">Name</th>
+              <th className="px-4 py-3 border">SR.</th>
               <th className="px-4 py-3 border">SKU</th>
-              <th className="px-4 py-3 border">Category</th>
+              <th className="px-4 py-3 border">Model</th>
+              <th className="px-4 py-3 border">Brand</th>
               <th className="px-4 py-3 border">Price</th>
-              <th className="px-4 py-3 border">Stock</th>
-              <th className="px-4 py-3 border">Sales</th>
               <th className="px-4 py-3 border">Status</th>
               <th className="px-4 py-3 border">Actions</th>
             </tr>
@@ -138,28 +147,26 @@ const ProductManagement = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="text-center py-6">
-                  No products
+                <td colSpan={7} className="text-center py-6">
+                  Loading products...
                 </td>
               </tr>
             ) : currentProducts.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-6">
+                <td colSpan={7} className="text-center py-6">
                   No matching products
                 </td>
               </tr>
             ) : (
-              currentProducts.map((p) => (
+              currentProducts.map((p, index) => (
                 <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 border">
-                    <img src={p.image} alt={p.name} className="w-10 h-10 rounded" />
+                  <td className="px-4 py-3 border font-medium">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
-                  <td className="px-4 py-3 border font-medium">{p.name}</td>
                   <td className="px-4 py-3 border">{p.sku || "-"}</td>
-                  <td className="px-4 py-3 border">{p.category}</td>
-                  <td className="px-4 py-3 border">{p.price}</td>
-                  <td className="px-4 py-3 border">{p.stock}</td>
-                  <td className="px-4 py-3 border">{p.sales}</td>
+                  <td className="px-4 py-3 border font-medium">{p.modelName}</td>
+                  <td className="px-4 py-3 border">{p.brand}</td>
+                  <td className="px-4 py-3 border">₹{p.price.toLocaleString()}</td>
                   <td className="px-4 py-3 border">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -174,12 +181,12 @@ const ProductManagement = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 border flex gap-2">
-                    <button
+                    <Link
+                      to={`/vendor/view-product/${p.id}`}
                       className="text-blue-500 hover:text-blue-700"
-                      onClick={() => openViewModal(p)}
                     >
-                      <Eye size={18} />
-                    </button>
+                      View
+                    </Link>
                     <button
                       className="text-green-500 hover:text-green-700"
                       onClick={() => openEditModal(p)}
@@ -229,45 +236,6 @@ const ProductManagement = () => {
         </button>
       </div>
 
-      {/* View Modal */}
-      {viewProduct && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-              onClick={closeViewModal}
-            >
-              ✕
-            </button>
-            <img
-              src={viewProduct.image}
-              alt={viewProduct.name}
-              className="w-32 h-32 mx-auto rounded mb-4"
-            />
-            <h3 className="text-xl font-bold mb-2">{viewProduct.name}</h3>
-            <p><strong>SKU:</strong> {viewProduct.sku || "-"}</p>
-            <p><strong>Category:</strong> {viewProduct.category}</p>
-            <p><strong>Price:</strong> {viewProduct.price}</p>
-            <p><strong>Stock:</strong> {viewProduct.stock}</p>
-            <p><strong>Sales:</strong> {viewProduct.sales}</p>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  viewProduct.status === "Active"
-                    ? "bg-green-100 text-green-700"
-                    : viewProduct.status === "Pending"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                {viewProduct.status}
-              </span>
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Edit Modal */}
       {editProduct && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
@@ -282,11 +250,11 @@ const ProductManagement = () => {
             <div className="flex flex-col gap-3">
               <input
                 type="text"
-                name="name"
-                value={editProduct.name}
+                name="modelName"
+                value={editProduct.modelName}
                 onChange={handleEditChange}
                 className="px-3 py-2 border rounded"
-                placeholder="Product Name"
+                placeholder="Model Name"
               />
               <input
                 type="text"
@@ -298,35 +266,19 @@ const ProductManagement = () => {
               />
               <input
                 type="text"
-                name="category"
-                value={editProduct.category}
+                name="brand"
+                value={editProduct.brand}
                 onChange={handleEditChange}
                 className="px-3 py-2 border rounded"
-                placeholder="Category"
+                placeholder="Brand"
               />
               <input
-                type="text"
+                type="number"
                 name="price"
                 value={editProduct.price}
                 onChange={handleEditChange}
                 className="px-3 py-2 border rounded"
                 placeholder="Price"
-              />
-              <input
-                type="number"
-                name="stock"
-                value={editProduct.stock}
-                onChange={handleEditChange}
-                className="px-3 py-2 border rounded"
-                placeholder="Stock"
-              />
-              <input
-                type="number"
-                name="sales"
-                value={editProduct.sales}
-                onChange={handleEditChange}
-                className="px-3 py-2 border rounded"
-                placeholder="Sales"
               />
               <select
                 name="status"
