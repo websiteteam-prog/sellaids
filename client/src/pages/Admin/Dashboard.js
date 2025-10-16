@@ -1,4 +1,3 @@
-// src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -6,11 +5,11 @@ import {
   FaStore,
   FaBoxOpen,
   FaShoppingCart,
-  FaUserPlus,
-  FaBuilding,
-  FaPlusSquare,
-  FaDownload,
 } from "react-icons/fa";
+
+// Admin Dashboard Overview:
+// Displays key metrics (total users, vendors, products, orders),
+// top selling products, and recent orders for admin monitoring.
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -20,10 +19,8 @@ const AdminDashboard = () => {
     totalOrders: 0,
   });
 
-  const [monthlySales, setMonthlySales] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,10 +39,8 @@ const AdminDashboard = () => {
         totalOrders: res.data.totalOrders || 0,
       });
 
-      setMonthlySales(res.data.monthlySales || []);
       setTopProducts(res.data.topProducts || []);
       setRecentOrders(res.data.recentOrders || []);
-      setRecentActivity(res.data.recentActivity || []);
     } catch (err) {
       console.error("Error fetching admin dashboard:", err.response?.data || err.message);
     } finally {
@@ -54,10 +49,10 @@ const AdminDashboard = () => {
   };
 
   const topStats = [
-    { title: "Total Users", value: stats.totalUsers, icon: <FaUsers size={20} />, color: "#FF6A00", trend: "↑ 12% vs last month", trendColor: "green" },
-    { title: "Total Vendors", value: stats.totalVendors, icon: <FaStore size={20} />, color: "#22C55E", trend: "↑ 8% vs last month", trendColor: "green" },
-    { title: "Total Products", value: stats.totalProducts, icon: <FaBoxOpen size={20} />, color: "#8B5CF6", trend: "↑ 15% vs last month", trendColor: "green" },
-    { title: "Total Orders", value: stats.totalOrders, icon: <FaShoppingCart size={20} />, color: "#FACC15", trend: "↓ 5% vs last month", trendColor: "red" },
+    { title: "Total Users", value: stats.totalUsers, icon: <FaUsers size={20} />, color: "#FF6A00" },
+    { title: "Total Vendors", value: stats.totalVendors, icon: <FaStore size={20} />, color: "#22C55E" },
+    { title: "Total Products", value: stats.totalProducts, icon: <FaBoxOpen size={20} />, color: "#8B5CF6" },
+    { title: "Total Orders", value: stats.totalOrders, icon: <FaShoppingCart size={20} />, color: "#FACC15" },
   ];
 
   return (
@@ -81,21 +76,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Middle Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Monthly Sales */}
-        <div className="bg-white shadow rounded-lg p-5">
-          <h3 className="text-gray-700 font-semibold mb-4">Monthly Sales Revenue</h3>
-          {(monthlySales.length > 0 ? monthlySales : Array(6).fill({ month: "-", value: 0 })).map((item, i) => (
-            <div key={i} className="flex items-center justify-between mb-3">
-              <span className="w-12 text-sm">{item.month}</span>
-              <div className="flex-1 mx-3 bg-gray-200 rounded-full h-3">
-                <div className="bg-[#FF6A00] h-3 rounded-full" style={{ width: `${(item.value / 70000) * 100}%` }}></div>
-              </div>
-              <span className="text-sm font-medium text-gray-700">{item.value.toLocaleString()}</span>
-            </div>
-          ))}
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         {/* Top Selling Products */}
         <div className="bg-white shadow rounded-lg p-5">
           <h3 className="text-gray-700 font-semibold mb-4">Top Selling Products</h3>
@@ -112,7 +93,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         {/* Recent Orders */}
         <div className="bg-white shadow rounded-lg p-5">
           <div className="flex justify-between items-center mb-4">
@@ -139,28 +120,7 @@ const AdminDashboard = () => {
             ))
           )}
         </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white shadow rounded-lg p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-gray-700 font-semibold">Recent Activity</h3>
-            <button className="text-sm text-[#FF6A00] font-medium">View All</button>
-          </div>
-          {recentActivity.length === 0 ? (
-            <p className="text-center text-gray-500 py-6">No Activity</p>
-          ) : (
-            <ul className="space-y-3 text-sm text-gray-700">
-              {recentActivity.map((act, i) => (
-                <li key={i}>
-                  {act.icon} <span className="font-medium">{act.text}</span>
-                  <span className="block text-xs text-gray-400">{act.time}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
-
     </div>
   );
 };

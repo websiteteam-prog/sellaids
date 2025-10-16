@@ -1,6 +1,5 @@
-// src/pages/vendor/Products.js
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 
 export default function Products() {
@@ -10,39 +9,50 @@ export default function Products() {
   const [searchName, setSearchName] = useState("");
   const [searchSKU, setSearchSKU] = useState("");
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   const vendorInfo = JSON.parse(localStorage.getItem("vendorInfo"));
   const vendorId = vendorInfo?.id;
 
   // Fetch products from backend
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/vendor/products/${vendorId}`, {
+        withCredentials: true,
+      });
+      setProducts(res.data);
+
+      // Extract unique categories for dropdown
+      const uniqueCategories = [
+        "All Categories",
+        ...new Set(res.data.map((p) => p.productCategory)),
+      ];
+      setCategories(uniqueCategories);
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`/api/vendor/products/${vendorId}`); // backend endpoint
-        setProducts(res.data);
-
-        // Extract unique categories for dropdown
-        const uniqueCategories = [
-          "All Categories",
-          ...new Set(res.data.map((p) => p.category)),
-        ];
-        setCategories(uniqueCategories);
-
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, [vendorId]);
+
+  // Refresh products when navigating back from AddProductForm
+  useEffect(() => {
+    if (location.state?.refresh) {
+      fetchProducts();
+    }
+  }, [location.state]);
 
   // Filter products
   const filteredProducts = products.filter((product) => {
     const matchCategory =
-      category === "All Categories" || product.category === category;
-    const matchName = product.name.toLowerCase().includes(searchName.toLowerCase());
+      category === "All Categories" || product.productCategory === category;
+    const matchName = product.modelName.toLowerCase().includes(searchName.toLowerCase());
     const matchSKU = product.sku.toLowerCase().includes(searchSKU.toLowerCase());
     return matchCategory && matchName && matchSKU;
   });
@@ -76,10 +86,10 @@ export default function Products() {
         </div>
 
         <div className="flex-1 min-w-[150px]">
-          <label className="block font-semibold mb-1">Product Name</label>
+          <label className="block font-semibold mb-1">Model Name</label>
           <input
             type="text"
-            placeholder="Product Name"
+            placeholder="Model Name"
             className="border border-gray-300 rounded px-3 py-2 w-full"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
@@ -119,30 +129,22 @@ export default function Products() {
             <thead>
               <tr className="bg-orange-600 text-white">
                 <th className="py-3 px-4 text-left">SR.</th>
-                <th className="py-3 px-4 text-left">IMAGE</th>
-                <th className="py-3 px-4 text-left">NAME</th>
                 <th className="py-3 px-4 text-left">SKU</th>
-                <th className="py-3 px-4 text-left">CATEGORY</th>
+                <th className="py-3 px-4 text-left">MODEL</th>
+                <th className="py-3 px-4 text-left">BRAND</th>
                 <th className="py-3 px-4 text-left">PRICE</th>
-                <th className="py-3 px-4 text-left">STOCK</th>
-                <th className="py-3 px-4 text-left">FEATURED</th>
                 <th className="py-3 px-4 text-left">STATUS</th>
-                <th className="py-3 px-4 text-left">EDIT</th>
+                <th className="py-3 px-4 text-left">VIEW</th>
               </tr>
             </thead>
             <tbody>
               {filteredProducts.map((product, index) => (
                 <tr key={product._id || product.id} className={index % 2 === 1 ? "bg-gray-50" : ""}>
                   <td className="py-4 px-4 font-semibold">{index + 1}</td>
-                  <td className="py-4 px-4">
-                    <img src={product.image} alt={product.name} className="w-12 h-12 rounded" />
-                  </td>
-                  <td className="py-4 px-4 font-semibold">{product.name}</td>
                   <td className="py-4 px-4 text-orange-600 cursor-pointer">{product.sku}</td>
-                  <td className="py-4 px-4">{product.category}</td>
+                  <td className="py-4 px-4 font-semibold">{product.modelName}</td>
+                  <td className="py-4 px-4">{product.brand}</td>
                   <td className="py-4 px-4 font-bold">₹{product.price.toLocaleString()}</td>
-                  <td className="py-4 px-4">{product.stock}</td>
-                  <td className="py-4 px-4">{product.featured ? "Yes" : "No"}</td>
                   <td className="py-4 px-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs ${
@@ -158,10 +160,10 @@ export default function Products() {
                   </td>
                   <td className="py-4 px-4">
                     <Link
-                      to={`/vendor/edit-product/${product._id || product.id}`}
+                      to={`/vendor/view-product/${product._id || product.id}`}
                       className="text-orange-600 hover:text-orange-800 cursor-pointer p-1 rounded"
                     >
-                      Edit
+                      View
                     </Link>
                   </td>
                 </tr>

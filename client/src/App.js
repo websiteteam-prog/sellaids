@@ -47,7 +47,7 @@ import EditProduct from "./pages/vendor/EditProduct";
 import OrdersVendor from "./pages/vendor/Orders";
 import Earnings from "./pages/vendor/Earnings";
 import ProfileVendor from "./pages/vendor/Profile";
-import EditProducts from "./pages/vendor/EditProducts";
+import VendorView from "./pages/vendor/VendorView";
 
 // ✅ User Dashboard Pages
 import Orders from "./pages/dashboard/Orders";
@@ -55,6 +55,8 @@ import Profile from "./pages/dashboard/Profile";
 import Addresses from "./pages/dashboard/Addresses";
 import Payments from "./pages/dashboard/Payments";
 import Wishlist from "./pages/dashboard/Wishlist";
+
+
 import Support from "./pages/dashboard/Support";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import RaiseTicket from "./pages/dashboard/RaiseTicket";
@@ -131,7 +133,7 @@ const App = () => {
         <Route path="orders" element={<OrdersVendor />} />
         <Route path="earnings" element={<Earnings />} />
         <Route path="profile" element={<ProfileVendor />} />
-        <Route path="edit-product/:id" element={<EditProducts />} />
+   <Route path="/vendor/view-product/:productId" element={<VendorView />} />
       </Route>
 
       {/* ===================== Admin Login ===================== */}

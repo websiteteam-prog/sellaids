@@ -1,4 +1,3 @@
-// src/stores/useVendorStore.js
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -6,23 +5,25 @@ export const useVendorStore = create(
   persist(
     (set) => ({
       vendor: null,
-      isAuthenticated: false,
-      loading: false,
+      token: null,
+      isLoggedIn: false,
 
-      login: (vendorData) =>
-        set(() => ({
-          vendor: vendorData,
-          isAuthenticated: true,
-        })),
+      setVendorData: (vendor, token) =>
+        set({
+          vendor,
+          token,
+          isLoggedIn: true,
+        }),
 
       logout: () =>
-        set(() => ({
+        set({
           vendor: null,
-          isAuthenticated: false,
-        })),
+          token: null,
+          isLoggedIn: false,
+        }),
     }),
     {
-      name: "vendor-storage", // localStorage me key
+      name: "vendor-store", // localStorage key name
     }
   )
 );

@@ -49,7 +49,7 @@ export default function Navbar() {
       </h1>
 
       {/* Right: Icon Buttons */}
-      <div className="flex items-center gap-4">
+      {/* <div className="flex items-center gap-4">
         <button
           className="text-gray-600 hover:text-red-600 transition-colors"
           title="Logout"
@@ -57,7 +57,7 @@ export default function Navbar() {
         >
           <LogOut size={20} />
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }

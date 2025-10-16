@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   User,
   MapPin,
-  CreditCard,
   Heart,
   HelpCircle,
   Menu,
@@ -18,7 +17,6 @@ const menuItems = [
   { path: "/user/orders", label: "My Orders", icon: <ShoppingBag size={18} /> },
   { path: "/user/profile", label: "Profile", icon: <User size={18} /> },
   { path: "/user/addresses", label: "Address", icon: <MapPin size={18} /> },
-  { path: "/user/payments", label: "Payments", icon: <CreditCard size={18} /> },
   { path: "/user/wishlist", label: "Wishlist", icon: <Heart size={18} /> },
   { path: "/user/support", label: "Support", icon: <HelpCircle size={18} /> },
 ];
@@ -34,7 +32,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     // Clear session/token
     localStorage.removeItem("token"); // example
-    navigate("/login");
+    navigate("/UserLogin");
   };
 
   const renderMenuItems = () =>

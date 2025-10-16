@@ -1,61 +1,67 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import useWishlistStore from "../stores/useWishlistStore";
+import React, { useState, useEffect } from "react";
 
-const OrderTable = () => {
-  const user = useWishlistStore(state => state.user); // Zustand user
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const OrderTable = ({ orders }) => {
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!user) return;
+    setFilteredOrders(orders); // initialize
+  }, [orders]);
 
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/orders/${user.id}`);
-        setOrders(response.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch orders");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleSearch = () => {
+    const filtered = orders.filter(order =>
+      order.product_name.toLowerCase().includes(search.toLowerCase())
+    );
+    setFilteredOrders(filtered);
+  };
 
-    fetchOrders();
-  }, [user]);
-
-  if (loading) return <p className="p-4">Loading orders...</p>;
-  if (error) return <p className="p-4 text-red-500">{error}</p>;
-  if (orders.length === 0) return <p className="p-4">No orders found.</p>;
+  if (!filteredOrders.length) return <p className="p-4">No orders found.</p>;
 
   return (
-    <table className="min-w-full text-sm text-left border border-gray-200">
-      <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-        <tr>
-          <th className="px-4 py-2 border">orderId</th>
-          <th className="px-4 py-2 border">productName</th>
-          <th className="px-4 py-2 border">price</th>
-          <th className="px-4 py-2 border">quantity</th>
-          <th className="px-4 py-2 border">status</th>
-          <th className="px-4 py-2 border">date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {orders?.map(order => (
-          <tr key={order?.id} className="hover:bg-gray-50">
-            <td className="px-4 py-2 border">{order?.id}</td>
-            <td className="px-4 py-2 border">{order?.product_name}</td>
-            <td className="px-4 py-2 border">₹{order?.price}</td>
-            <td className="px-4 py-2 border">{order?.quantity}</td>
-            <td className="px-4 py-2 border font-semibold text-blue-600">{order?.status}</td>
-            <td className="px-4 py-2 border">{new Date(order?.created_at).toLocaleDateString()}</td>
+    <div className="p-4">
+      {/* Search Bar */}
+      <div className="mb-4 flex gap-2">
+        <input
+          type="text"
+          placeholder="Search by product name..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-red-500"
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+        >
+          Search
+        </button>
+      </div>
+
+      {/* Orders Table */}
+      <table className="min-w-full text-sm text-left border border-gray-200">
+        <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+          <tr>
+            <th className="px-4 py-2 border">orderId</th>
+            <th className="px-4 py-2 border">productName</th>
+            <th className="px-4 py-2 border">price</th>
+            <th className="px-4 py-2 border">quantity</th>
+            <th className="px-4 py-2 border">status</th>
+            <th className="px-4 py-2 border">date</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {filteredOrders.map(order => (
+            <tr key={order.id} className="hover:bg-gray-50">
+              <td className="px-4 py-2 border">{order.id}</td>
+              <td className="px-4 py-2 border">{order.product_name}</td>
+              <td className="px-4 py-2 border">₹{order.price}</td>
+              <td className="px-4 py-2 border">{order.quantity}</td>
+              <td className="px-4 py-2 border font-semibold text-blue-600">{order.status}</td>
+              <td className="px-4 py-2 border">{new Date(order.created_at).toLocaleDateString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
