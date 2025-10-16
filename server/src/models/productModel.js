@@ -73,17 +73,27 @@ export const Product = sequelize.define(
     button_photo: DataTypes.TEXT,
     wearing_photo: DataTypes.TEXT,
     more_images: DataTypes.JSON,
-    purchase_price: DataTypes.DECIMAL(10,2),
-    selling_price: DataTypes.DECIMAL(10,2),
+    purchase_price: DataTypes.INTEGER,
+    selling_price: DataTypes.INTEGER,
     reason_to_sell: DataTypes.TEXT,
     purchase_year: DataTypes.INTEGER,
     purchase_place: DataTypes.STRING(100),
     product_link: DataTypes.STRING(255),
     additional_info: DataTypes.TEXT,
     status: {
-      type: DataTypes.ENUM("pending","approved","rejected"),
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
       defaultValue: "pending",
     },
+    sku: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true, 
+    },
+
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

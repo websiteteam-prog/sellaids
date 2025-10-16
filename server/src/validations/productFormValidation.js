@@ -8,14 +8,6 @@ const categoryExists = async (category_id) => {
   return !!category;
 };
 
-// Custom async validation to check duplicate product (by model_name + brand + vendor)
-const productUnique = async (value, vendorId) => {
-  const existing = await Product.findOne({
-    where: { vendor_id: vendorId, model_name: value.model_name, brand: value.brand },
-  });
-  return !existing;
-};
-
 export const productSchema = yup.object().shape({
   category_id: yup
     .number()
@@ -47,7 +39,7 @@ export const productSchema = yup.object().shape({
       async function (value) {
         const vendorId = this.options.context.vendorId;
         const existing = await Product.findOne({
-          where: { vendor_id: vendorId, model_name: value, brand: this.parent.brand },
+          where: { vendor_id: vendorId, model_name: value, brand: this.parent.brand, is_active: true },
         });
         return !existing;
       }

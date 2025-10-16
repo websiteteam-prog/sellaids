@@ -1,5 +1,5 @@
 import { productSchema } from "../../validations/productFormValidation.js";
-import { createProductService, fetchCategories, fetchProductTypesByCategory } from "../../services/product/productFormService.js";
+import { createProductService, fetchCategories, fetchProductTypesByCategory, getAllProductsService, getProductByIdService, getDashboardStatsService, getEarningsStatsService } from "../../services/product/productFormService.js";
 
 
 export const addProductController = async (req, res) => {
@@ -42,10 +42,18 @@ export const getCategories = async (req, res) => {
   try {
     const { search = "" } = req.query;
     const categories = await fetchCategories(search);
-    res.json({ success: true, data: categories });
+    res.json({
+      success: true,
+      message: "Categories fetched successfully",
+      data: categories,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch categories",
+      error: error.message,
+    });
   }
 };
 
@@ -54,14 +62,91 @@ export const getProductTypes = async (req, res) => {
     const { category_id, search = "" } = req.query;
 
     if (!category_id) {
-      return res.status(400).json({ success: false, message: "category_id is required" });
+      return res.status(400).json({
+        success: false,
+        message: "category_id is required",
+      });
     }
 
     const productTypes = await fetchProductTypesByCategory(category_id, search);
 
-    res.json({ success: true, data: productTypes });
+    res.json({
+      success: true,
+      message: "Product types fetched successfully",
+      data: productTypes,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch product types",
+      error: error.message,
+    });
+  }
+};
+
+export const getAllProductsController = async (req, res) => {
+  try {
+    const data = await getAllProductsService(req.query);
+
+    res.status(200).json({
+      success: true,
+      message: "Product list fetched successfully",
+      ...data,
+    });
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch product list",
+      error: err.message,
+    });
+  }
+};
+
+export const getProductByIdController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await getProductByIdService(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product details fetched successfully",
+      product,
+    });
+  } catch (err) {
+    console.error("Error fetching product:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch product details",
+      error: err.message,
+    });
+  }
+};
+
+export const getDashboardController = async (req, res) => {
+  try {
+    const vendorId = req.session.vendor?.vendorId;
+    const data = await getDashboardStatsService(vendorId);
+    res.status(200).json({ success: true, msg: "Dashboard data fetched successfully", data });
+  } catch (error) {
+    res.status(500).json({ success: false, msg: error.message });
+  }
+};
+
+export const getEarningsController = async (req, res) => {
+  try {
+    const vendorId = req.session.vendor?.vendorId;
+    const data = await getEarningsStatsService(vendorId);
+    res.status(200).json({ success: true, msg: "Earnings data fetched successfully", data });
+  } catch (error) {
+    res.status(500).json({ success: false, msg: error.message });
   }
 };
