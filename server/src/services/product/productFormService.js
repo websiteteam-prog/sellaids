@@ -5,6 +5,7 @@ import { Category } from "../../models/categoryModel.js";
 import ProductType from "../../models/productType.js";
 import { Order } from "../../models/orderModel.js";
 import { Payment } from "../../models/paymentModel.js";
+import { Vendor } from "../../models/vendorModel.js";
 
 export const createProductService = async (vendorId, data, images) => {
   try {
@@ -85,11 +86,9 @@ export const fetchProductTypesByCategory = async (category_id, search = "") => {
 export const getAllProductsService = async (query, vendorId, isAdmin) => {
   const { search, category_id, page = 1, limit = 10 } = query;
 
-  const where = {
-    is_active: true,
-  };
+  const where = { is_active: true };
 
-  // Vendor filter: only if not admin
+  // Vendor filter for non-admin users
   if (vendorId && !isAdmin) {
     where.vendor_id = vendorId;
   }
@@ -100,7 +99,7 @@ export const getAllProductsService = async (query, vendorId, isAdmin) => {
 
   if (search) {
     where[Op.or] = [
-      { product_type: { [Op.like]: `%${search}%` } },
+      { model_name: { [Op.like]: `%${search}%` } },
       { sku: { [Op.like]: `%${search}%` } },
     ];
   }
@@ -121,6 +120,18 @@ export const getAllProductsService = async (query, vendorId, isAdmin) => {
       "selling_price",
       "status",
       "front_photo",
+    ],
+    include: [
+      {
+        model: Category,
+        as: "category",
+        attributes: ["id", "name"], 
+      },
+      {
+        model: Vendor,
+        as: "vendor",
+        attributes: ["id", "name"], 
+      },
     ],
   });
 

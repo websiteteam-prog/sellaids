@@ -107,7 +107,6 @@ export const getAllProductsController = async (req, res) => {
   }
 };
 
-
 export const getProductByIdController = async (req, res) => {
   try {
     const { id } = req.params;

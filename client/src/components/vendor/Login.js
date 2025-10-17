@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { useVendorStore } from '../../stores/useVendorStore'; 
+import { useVendorStore } from '../../stores/useVendorStore';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,22 +22,35 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/vendor/login`,
+        `http://localhost:5000/api/vendor/auth/login`,
         { email, password },
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { 'Content-Type': 'application/json' },
+        withCredentials: true 
+      }
+        
       );
+      const { success, data } = response.data
+      if (success) {
+        setVendorData(data)
+        setEmail('');
+        setPassword('');
+        // localStorage.setItem('token', token);
+        // localStorage.setItem('vendorInfo', JSON.stringify(vendor));
+        // localStorage.setItem('vendorId', vendor.id);
+        toast.success('Vendor login Successful');
+        navigate('/vendor');
+      } else {
+        toast.error('Login Failed');
+      }
 
-      const { token, vendor } = response.data;
+      // const { token, vendor } = response.data;
 
-      // ✅ Save to Zustand store
-      setVendorData(vendor, token);
+      // // ✅ Save to Zustand store
+      // setVendorData(vendor, token);
 
       // ✅ Save to localStorage for persistence
-      localStorage.setItem('token', token);
-      localStorage.setItem('vendorInfo', JSON.stringify(vendor));
-      localStorage.setItem('vendorId', vendor.id);
 
-      navigate('/vendor/my-products');
+      // navigate('/vendor/my-products');
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Login failed. Please try again.');
