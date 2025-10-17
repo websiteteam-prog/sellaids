@@ -87,7 +87,10 @@ export const getProductTypes = async (req, res) => {
 
 export const getAllProductsController = async (req, res) => {
   try {
-    const data = await getAllProductsService(req.query);
+    const vendorId = req.session.vendor?.vendorId;
+    const isAdmin = !!req.session.admin?.adminId;
+
+    const data = await getAllProductsService(req.query, vendorId, isAdmin);
 
     res.status(200).json({
       success: true,
@@ -103,6 +106,7 @@ export const getAllProductsController = async (req, res) => {
     });
   }
 };
+
 
 export const getProductByIdController = async (req, res) => {
   try {

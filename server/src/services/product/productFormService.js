@@ -82,12 +82,18 @@ export const fetchProductTypesByCategory = async (category_id, search = "") => {
   });
 };
 
-export const getAllProductsService = async (query) => {
+export const getAllProductsService = async (query, vendorId, isAdmin) => {
   const { search, category_id, page = 1, limit = 10 } = query;
 
   const where = {
-    is_active: true, 
+    is_active: true,
   };
+
+  // Vendor filter: only if not admin
+  if (vendorId && !isAdmin) {
+    where.vendor_id = vendorId;
+  }
+
   if (category_id) {
     where.category_id = category_id;
   }
