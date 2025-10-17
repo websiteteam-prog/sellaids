@@ -9,8 +9,8 @@ server/node_modules/
 .pnp.js
 
 # Ignore all client files and folders
-/client/
-/client/src/
+# /client/
+# /client/src/
 
 /client/package-lock.json
 /server/package-lock.json
