@@ -15,6 +15,6 @@ router.use("/address", userAddressRoutes)
 // router.use("/wishlist", userWishlistRoutes)
 // router.use("/order", userOrderRoutes)
 router.use("/support", userSupportRoutes)
-router.use("/", userRoutes)
+router.use("/profile", userRoutes)
 
 export default router

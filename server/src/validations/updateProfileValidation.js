@@ -11,7 +11,7 @@ export const updateUserProfile = yup.object().shape({
 
     phone: yup
         .string()
-        .matches(/^\+?[1-9]\d{1,14}$/, "Phone must be valid")
+        .matches(/^\d{10}$/, "Phone must be 10 digits")
         .required("Phone number is required"),
     currentPassword: yup
         .string()
@@ -48,7 +48,7 @@ export const personalInfoSchema = yup.object().shape({
 
     phone: yup
         .string()
-        .matches(/^\+?[1-9]\d{1,14}$/, "Phone must be valid")
+        .matches(/^\d{10}$/, "Phone must be 10 digits")
         .required("Phone number is required")
 });
 
