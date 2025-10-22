@@ -1,23 +1,51 @@
 import React from "react";
-import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useVendorStore } from "../../stores/useVendorStore";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useVendorStore } from "../../stores/useVendorStore";
 
-export default function VendorLogout() {
-  const navigate = useNavigate();
+const VendorLogout = () => {
   const { logout } = useVendorStore();
+  const navigate = useNavigate();
+
+  const clearCookies = () => {
+    // 🔹 Clear all cookies by expiring them
+    document.cookie.split(";").forEach((cookie) => {
+      const name = cookie.split("=")[0].trim();
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+    });
+  };
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/vendor/logout"); // backend logout endpoint
-      logout(); // clear vendor store
-      navigate("/vendor/login"); // redirect to login
+      // 🔹 Call backend logout API
+      await axios.post(
+        "http://localhost:5000/api/vendor/auth/logout",
+        {},
+        { withCredentials: true }
+      );
+
+      // 🔹 Clear Zustand store
+      logout();
+
+      // 🔹 Clear localStorage and cookies
+      localStorage.clear();
+      sessionStorage.clear();
+      clearCookies();
+
       toast.success("Logged out successfully!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Logout failed. Please try again.");
+      navigate("/vendor/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed, redirecting to login");
+
+      // Even if API fails — force clear everything
+      logout();
+      localStorage.clear();
+      sessionStorage.clear();
+      clearCookies();
+
+      navigate("/vendor/login");
     }
   };
 
@@ -26,7 +54,9 @@ export default function VendorLogout() {
       onClick={handleLogout}
       className="flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50 w-full"
     >
-      <LogOut size={18} /> Logout
+      Logout
     </button>
   );
-}
+};
+
+export default VendorLogout;
