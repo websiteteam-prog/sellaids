@@ -1,5 +1,3 @@
-import logger from "../../config/logger.js";
-import { Cart } from "../../models/cartModel.js";
 import { User } from "../../models/userModel.js";
 import { userAddressSchema } from "../../validations/addressValidation.js";
 
@@ -30,33 +28,3 @@ export const updateAddressService = async (userId, addressData) => {
     return updatedData;
 };
 
-export const addToCartService = async (userId, productId) => {
-  try {
-    logger.info(`Adding product ${productId} to cart for user ${userId}`);
-
-    // Check if the item already exists in the cart
-    const existingCartItem = await Cart.findOne({
-      where: { user_id: userId, product_id: productId },
-    });
-
-    if (existingCartItem) {
-      // Update quantity if item exists
-      existingCartItem.quantity += 1;
-      await existingCartItem.save();
-      logger.info(`Updated quantity for product ${productId} in cart`);
-      return { status: true, data: existingCartItem };
-    }
-
-    // Add new item if it doesn't exist
-    const newCartItem = await Cart.create({
-      user_id: userId,
-      product_id: productId,
-    });
-
-    logger.info(`Product ${productId} successfully added to cart`);
-    return { status: true, data: newCartItem };
-  } catch (error) {
-    logger.error(`Error in addToCartService: ${error.message}`);
-    throw new Error("Failed to add product to cart");
-  }
-};

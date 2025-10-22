@@ -1,12 +1,8 @@
-import express from "express"
-import { userAddAddressController, userGetAddressController, userChangeAddressController } from "../../controllers/user/userAddressController.js"
-// import { sessionMiddleware } from "../../config/session.js"
-import { isUserLoginIn } from "../../middlewares/authMiddlewares.js"
+import express from "express";
+import { getOrderController } from "../../controllers/user/userOrderController.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.put("/register", isUserLoginIn, userAddAddressController)
-router.get("/login", isUserLoginIn, userGetAddressController)
-router.put("/logout", isUserLoginIn, userChangeAddressController)
+router.get("/list", getOrderController);
 
-export default router
+export default router;

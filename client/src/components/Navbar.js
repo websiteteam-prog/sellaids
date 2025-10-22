@@ -1,45 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
-import { useUserStore } from "../stores/useUserStore"; // ✅ zustand store
-import axios from "axios";
+import { ShoppingCart } from "lucide-react";
+import { useUserStore } from "../stores/useUserStore";
+import useCartStore from "../stores/useCartStore";
+
 
 export default function Navbar() {
-  // const user = useUserStore((s) => s.user); // ✅ get user from store
-  // const logout = useUserStore((s) => s.logout); // ✅ logout function
-  const { user, logout } = useUserStore()
+  const { user } = useUserStore();
+  const { cart, fetchCart } = useCartStore();
   const navigate = useNavigate();
-  console.log(user)
 
-  const handleLogout = async () => {
-    navigate("/UserLogin"); // redirect to login page
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/user/auth/logout",
-        {},
-        { withCredentials: true }
-      );
-
-      const { success } = res.data;
-      console.log(res.data)
-      if (success) {
-        localStorage.clear();
-        sessionStorage.clear();
-        logout();
-
-
-        alert("Logout Successful ✅");
-        navigate("/UserLogin")
-        // setTimeout(() => navigate("/UserLogin"), 1000);
-      } else {
-        alert("Logout Failed ❌");
-      }
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert("Invalid Credentials ❌");
+  // Fetch cart items when component mounts or user changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchCart();
     }
-  };
+  }, [user, fetchCart]);
 
+  // Calculate total cart item count based on quantity
+  const cartItemCount = cart.reduce((total, item) => total + (item.quantity || 0), 0);
 
   return (
     <div className="flex justify-between items-center px-6 py-3 bg-white shadow border-b">
@@ -48,16 +27,21 @@ export default function Navbar() {
         Welcome, <span className="text-red-600">{user?.name || "User"}</span>
       </h1>
 
-      {/* Right: Icon Buttons */}
-      {/* <div className="flex items-center gap-4">
+      {/* Right: Cart Icon with Count */}
+      <div className="flex items-center gap-4">
         <button
-          className="text-gray-600 hover:text-red-600 transition-colors"
-          title="Logout"
-          onClick={handleLogout} // ✅ logout
+          onClick={() => navigate("/user/cart")}
+          className="relative text-gray-600 hover:text-blue-600 transition-colors"
+          title="Cart"
         >
-          <LogOut size={20} />
+          <ShoppingCart size={20} />
+          {cartItemCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {cartItemCount}
+            </span>
+          )}
         </button>
-      </div> */}
+      </div>
     </div>
   );
 }

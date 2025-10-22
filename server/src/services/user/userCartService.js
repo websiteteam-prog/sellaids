@@ -1,0 +1,117 @@
+import logger from "../../config/logger.js";
+import { Cart } from "../../models/cartModel.js";
+import { Product } from "../../models/productModel.js";
+
+
+export const addToCartService = async (userId, productId) => {
+  try {
+    logger.info(`Adding product ${productId} to cart for user ${userId}`);
+
+    const existingCartItem = await Cart.findOne({
+      where: { user_id: userId, product_id: productId },
+    });
+
+    if (existingCartItem) {
+      existingCartItem.quantity += 1;
+      await existingCartItem.save();
+      logger.info(`Updated quantity for product ${productId} in cart`);
+      return { status: true, data: existingCartItem };
+    }
+
+    const newCartItem = await Cart.create({
+      user_id: userId,
+      product_id: productId,
+    });
+
+    logger.info(`Product ${productId} successfully added to cart`);
+    return { status: true, data: newCartItem };
+  } catch (error) {
+    logger.error(`Error in addToCartService: ${error.message}`);
+    throw new Error("Failed to add product to cart");
+  }
+};
+
+
+export const getCartService = async (userId) => {
+  try {
+    logger.info(`Fetching cart for user ${userId}`);
+
+    const cartItems = await Cart.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Product,
+          as: "product",
+          attributes: ['id', 'product_type', 'purchase_price'],
+        },
+      ],
+    });
+
+    const formattedCart = cartItems.map((item) => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+      product: {
+        id: item.product?.id,
+        name: item.product?.product_type || 'Unknown Product', // Fallback if product_type is missing
+        price: item.product?.purchase_price || 'N/A', // Fallback if purchase_price is missing
+      },
+    }));
+
+    logger.info(`Cart fetched successfully for user ${userId}`);
+    return { status: true, data: formattedCart };
+  } catch (error) {
+    logger.error(`Error in getCartService: ${error.message}`);
+    throw new Error("Failed to fetch cart");
+  }
+};
+
+export const updateCartQuantityService = async (userId, productId, quantity) => {
+  try {
+    logger.info(`Updating quantity for product ${productId} to ${quantity} for user ${userId}`);
+
+    const cartItem = await Cart.findOne({
+      where: { user_id: userId, product_id: productId },
+    });
+
+    if (!cartItem) {
+      logger.warn(`Cart item not found for user ${userId}, product ${productId}`);
+      return { status: false, message: "Cart item not found" };
+    }
+
+    if (quantity === 0) {
+      await cartItem.destroy();
+      logger.info(`Removed product ${productId} from cart for user ${userId}`);
+      return { status: true, data: null };
+    }
+
+    cartItem.quantity = quantity;
+    await cartItem.save();
+    logger.info(`Updated quantity for product ${productId} in cart`);
+    return { status: true, data: cartItem };
+  } catch (error) {
+    logger.error(`Error in updateCartQuantityService: ${error.message}`);
+    throw new Error("Failed to update cart quantity");
+  }
+};
+
+export const removeFromCartService = async (userId, productId) => {
+  try {
+    logger.info(`Removing product ${productId} from cart for user ${userId}`);
+
+    const cartItem = await Cart.findOne({
+      where: { user_id: userId, product_id: productId },
+    });
+
+    if (!cartItem) {
+      logger.warn(`Cart item not found for user ${userId}, product ${productId}`);
+      return { status: false, message: "Cart item not found" };
+    }
+
+    await cartItem.destroy();
+    logger.info(`Removed product ${productId} from cart for user ${userId}`);
+    return { status: true, data: null };
+  } catch (error) {
+    logger.error(`Error in removeFromCartService: ${error.message}`);
+    throw new Error("Failed to remove from cart");
+  }
+};
