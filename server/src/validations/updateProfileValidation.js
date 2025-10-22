@@ -13,6 +13,30 @@ export const updateUserProfile = yup.object().shape({
         .string()
         .matches(/^\d{10}$/, "Phone must be 10 digits")
         .required("Phone number is required"),
+
+    address_line: yup
+        .string()
+        .trim()
+        .max(200)
+        .required("Address line is required"),
+
+    city: yup
+        .string()
+        .trim()
+        .max(100)
+        .required("City is required"),
+
+    state: yup
+        .string()
+        .trim()
+        .max(100)
+        .required("State is required"),
+
+    pincode: yup
+        .string()
+        .matches(/^\d{6}$/, "Pincode must be 6 digits")
+        .required("Pincode is required"),
+
     currentPassword: yup
         .string()
         .required("Current password is required")

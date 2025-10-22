@@ -1,9 +1,15 @@
-import { Wishlist } from "../../models/wishlistModel.js";
+import { Wishlist } from "../../models/userWishlistModel.js";
 import logger from "../../config/logger.js";
+import { Product } from "../../models/productModel.js";
+import { User } from "../../models/userModel.js";
 
 export const addToWishlistService = async (userId, productId) => {
     try {
-        logger.info(`Adding product ${productId} to wishlist for user ${userId}`);
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            logger.warn(`Product ${productId} not found`);
+            return { status: false, message: "Product not found" };
+        }
 
         const existing = await Wishlist.findOne({
             where: { user_id: userId, product_id: productId },
@@ -21,6 +27,7 @@ export const addToWishlistService = async (userId, productId) => {
 
         logger.info(`Product ${productId} successfully added to wishlist`);
         return { status: true, data: newItem };
+
     } catch (error) {
         logger.error(`Error in addToWishlistService: ${error.message}`);
         throw new Error("Failed to add product to wishlist");
@@ -29,8 +36,6 @@ export const addToWishlistService = async (userId, productId) => {
 
 export const removeFromWishlistService = async (userId, productId) => {
     try {
-        logger.info(`Removing product ${productId} from wishlist for user ${userId}`);
-
         const deleted = await Wishlist.destroy({
             where: { user_id: userId, product_id: productId },
         });
@@ -49,14 +54,43 @@ export const removeFromWishlistService = async (userId, productId) => {
 };
 
 export const getAllWishlistService = async (userId) => {
-    try {
-        logger.info(`Fetching wishlist for user ${userId}`);
-        const items = await Wishlist.findAll({ where: { user_id: userId } });
+  try {
+    logger.info(`Fetching wishlist for user ${userId}`);
+    const items = await Wishlist.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Product,
+          attributes: ['id', 'product_type', 'purchase_price'],
+        },
+        {
+          model: User,
+          attributes: ['id', 'name'], 
+        },
+      ],
+    });
 
-        logger.info(`Fetched ${items.length} items from wishlist`);
-        return { status: true, data: items };
-    } catch (error) {
-        logger.error(`Error in getAllWishlistService: ${error.message}`);
-        throw new Error("Failed to fetch wishlist");
-    }
+    logger.info(`Fetched ${items.length} items from wishlist`);
+    return {
+      status: true,
+      data: items.map((item) => ({
+        id: item.id,
+        user_id: item.user_id,
+        product_id: item.product_id,
+        created_at: item.created_at,
+        product: item.Product ? {
+          id: item.Product.id,
+          name: item.Product.product_type,
+          price: item.Product.purchase_price,
+        } : null,
+        user: item.User ? {
+          id: item.User.id,
+          name: item.User.name,
+        } : null,
+      })),
+    };
+  } catch (error) {
+    logger.error(`Error in getAllWishlistService: ${error.message}`);
+    throw new Error("Failed to fetch wishlist");
+  }
 };

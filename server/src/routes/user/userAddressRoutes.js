@@ -8,5 +8,8 @@ const router = express.Router()
 router.put("/add", isUserLoginIn, userAddAddressController)
 router.get("/", isUserLoginIn, userGetAddressController)
 router.put("/update", isUserLoginIn, userChangeAddressController)
+router.put("/register", isUserLoginIn, userAddAddressController)
+router.get("/login", isUserLoginIn, userGetAddressController)
+router.put("/logout", isUserLoginIn, userChangeAddressController)
 
 export default router

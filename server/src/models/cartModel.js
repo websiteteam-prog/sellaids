@@ -1,26 +1,40 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
-import { Product } from "./Product.js";
+import { Product } from "./productModel.js";
+import { User } from "./userModel.js"; 
 
-export const ProductCard = sequelize.define(
-  "ProductCard",
+export const Cart = sequelize.define(
+  "Cart",
   {
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    product_id: { 
-      type: DataTypes.INTEGER, 
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: User, key: "id" },
+      onDelete: "CASCADE",
+    },
+    product_id: {
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: Product, key: "id" },
       onDelete: "CASCADE",
     },
-    title: { type: DataTypes.STRING(255), allowNull: false },
-    main_image: DataTypes.STRING(255),
-    selling_price: DataTypes.DECIMAL(10,2),
-    rating: { type: DataTypes.DECIMAL(2,1), defaultValue: 0 },
-    stock: { type: DataTypes.INTEGER, defaultValue: 1 },
-    created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
-    updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
   },
-  { tableName: "product_cards", timestamps: false }
+  { tableName: "carts", timestamps: false }
 );
 
-ProductCard.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+Cart.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+Cart.belongsTo(User, { foreignKey: "user_id", as: "user" });
