@@ -51,7 +51,7 @@ const DashboardHome = () => {
   // Cards array for easy mapping
   const cards = [
     { title: "Total Orders", value: dashboardData.totalOrders },
-    { title: "Pending Orders", value: dashboardData.pendingOrders }, // Fixed typo
+    { title: "Pending Orders", value: dashboardData.pendingOrders },
     { title: "Wishlist Items", value: dashboardData.wishlistCount },
     { title: "Support Tickets", value: dashboardData.supportTickets },
   ];

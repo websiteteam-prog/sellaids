@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useWishlistStore from '../../stores/useWishlistStore';
+import useCartStore from '../../stores/useCartStore'; // Added to access fetchCart
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../../stores/useUserStore';
@@ -7,6 +8,7 @@ import { useUserStore } from '../../stores/useUserStore';
 export default function Wishlist() {
   const { wishlist, setWishlist, removeFromWishlist } = useWishlistStore();
   const { user, isAuthenticated, isUserLoading } = useUserStore();
+  const { fetchCart } = useCartStore(); // Added to fetch cart after adding item
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -84,6 +86,7 @@ export default function Wishlist() {
         { withCredentials: true }
       );
       alert(res.data.message || 'Item added to cart!');
+      await fetchCart(); // Fetch updated cart data to reflect in Navbar
     } catch (err) {
       console.error('Failed to add to cart:', err);
       alert(err.response?.data?.message || 'Failed to add item to cart');
