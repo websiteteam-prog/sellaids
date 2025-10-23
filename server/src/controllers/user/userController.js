@@ -28,8 +28,8 @@ export const userUpdateProfile = async (req, res) => {
     }
     try {
         await updateUserProfile.validate(req.body, { abortEarly: false });
-        const { name, phone, currentPassword, newPassword } = req.body;
-        await updateProfile(userId, name, phone, currentPassword, newPassword);
+        const { name, phone, address_line, city, state, pincode, currentPassword, newPassword } = req.body;
+        await updateProfile(userId, name, phone, address_line, city, state, pincode, currentPassword, newPassword);
         logger.info(`Profile updated for user ${userId}`);
         return res.status(200).json({ success: true, message: "Profile updated successfully" });
     } catch (error) {

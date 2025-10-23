@@ -16,7 +16,7 @@ const menuItems = [
   { path: "/user", label: "Dashboard", icon: <Home size={18} /> },
   { path: "/user/orders", label: "My Orders", icon: <ShoppingBag size={18} /> },
   { path: "/user/profile", label: "Profile", icon: <User size={18} /> },
-  { path: "/user/addresses", label: "Address", icon: <MapPin size={18} /> },
+  // { path: "/user/addresses", label: "Address", icon: <MapPin size={18} /> },
   { path: "/user/wishlist", label: "Wishlist", icon: <Heart size={18} /> },
   { path: "/user/support", label: "Support", icon: <HelpCircle size={18} /> },
 ];

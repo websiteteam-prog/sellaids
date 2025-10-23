@@ -55,6 +55,7 @@ import Profile from "./pages/dashboard/Profile";
 import Addresses from "./pages/dashboard/Addresses";
 import Payments from "./pages/dashboard/Payments";
 import Wishlist from "./pages/dashboard/Wishlist";
+import Cart from "./pages/dashboard/Cart";
 
 
 import Support from "./pages/dashboard/Support";
@@ -112,6 +113,7 @@ const App = () => {
         <Route path="addresses" element={<Addresses />} />
         <Route path="payments" element={<Payments />} />
         <Route path="wishlist" element={<Wishlist />} />
+        <Route path="cart" element={<Cart />} />
         <Route path="support" element={<Support />} />
         <Route path="raise-ticket" element={<RaiseTicket />} />
       </Route>

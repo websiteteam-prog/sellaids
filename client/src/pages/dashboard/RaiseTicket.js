@@ -1,21 +1,22 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import raiseTicket from "../../api/raiseTicket"; // ✅ use API
-import  useWishlistStore  from "../../stores/useWishlistStore";
+import useWishlistStore from "../../stores/useWishlistStore";
 
 export default function RaiseTicket() {
   const [form, setForm] = useState({
-    subject: "",
-    message: "",
+    title: "", 
+    message: "", 
   });
-
+  const [error, setError] = useState(""); 
   const navigate = useNavigate();
-  const { user } = useWishlistStore()
-  console.log(user?.id)
+  const { user } = useWishlistStore();
+
+  console.log(user?.id);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError(""); 
   };
 
   const handleSubmit = async (e) => {
@@ -23,40 +24,46 @@ export default function RaiseTicket() {
 
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/user/support/tickets`,
+        `${process.env.REACT_APP_API_URL}/api/user/support`,
         {
-          subject: form.subject,
-          description: form.message,
+          title: form.title, 
+          message: form.message, 
         },
         { withCredentials: true }
-      );;
-      alert(res.message || "Ticket submitted successfully!");
+      );
 
-      const { success, data } = res.data;
-      console.log(res.data)
+      const { success, message, error } = res.data;
+
       if (success) {
-        setForm({ subject: "", message: "" });
-        alert("Ticket rased Successful ✅");
-        navigate("/user/support"); // redirect after success
+        setForm({ title: "", message: "" });
+        alert("Ticket raised successfully ✅");
+        navigate("/user/support"); 
       } else {
-        alert("Ticket rased Failed ❌");
+        setError(error?.join(", ") || message || "Failed to raise ticket ❌");
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Invalid Credentials ❌");
+      const errorMessage = err.response?.data?.error?.join(", ") || 
+                         err.response?.data?.message || 
+                         "Failed to raise ticket. Please try again.";
+      setError(errorMessage);
     }
   };
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
       <h2 className="text-2xl font-bold mb-6">Raise a Support Ticket</h2>
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+          {error}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-5">
-
         <input
           type="text"
-          name="subject"
-          placeholder="Subject"
-          value={form.subject}
+          name="title" 
+          placeholder="Title"
+          value={form.title}
           onChange={handleChange}
           className="w-full border px-4 py-2 rounded"
           required
@@ -79,4 +86,3 @@ export default function RaiseTicket() {
     </div>
   );
 }
-

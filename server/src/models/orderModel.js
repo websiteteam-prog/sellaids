@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
 import { User } from "./userModel.js";
+import { Product } from "./productModel.js";
 
 export const Order = sequelize.define(
   "Order",
@@ -18,6 +19,20 @@ export const Order = sequelize.define(
         key: "id",
       },
       onDelete: "CASCADE",
+    },
+    product_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Product,
+        key: "id",
+      },
+      onDelete: "CASCADE",
+    },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
     },
     total_amount: {
       type: DataTypes.DECIMAL(10, 2),
@@ -62,4 +77,5 @@ export const Order = sequelize.define(
 );
 
 // Associations
-Order.belongsTo(User, { foreignKey: "user_id", as: "user" });
+Order.belongsTo(User, { foreignKey: "user_id"});
+Order.belongsTo(Product, { foreignKey: "product_id", as: "product" });

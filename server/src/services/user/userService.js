@@ -5,7 +5,7 @@ export const getUserById = async (userId) => {
     return await User.findByPk(userId);
 };
 
-export const updateProfile = async (userId, name, phone, currentPassword, newPassword) => {
+export const updateProfile = async (userId, name, phone, address_line, city, state, pincode, currentPassword, newPassword) => {
     try {
         const user = await User.findByPk(userId);
         if (!user) {
@@ -14,6 +14,10 @@ export const updateProfile = async (userId, name, phone, currentPassword, newPas
 
         user.name = name;
         user.phone = phone;
+        user.address_line = address_line;
+        user.city = city;
+        user.state = state;
+        user.pincode = pincode;
 
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {

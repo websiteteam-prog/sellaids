@@ -149,7 +149,7 @@ export default function VendorDashboardLayout() {
 
         {/* Logout at bottom */}
         <div className="p-4 border-t">
-          <VendorLogout /> {/* ✅ Click pe logout hoga */}
+          <VendorLogout /> 
         </div>
       </aside>
 
