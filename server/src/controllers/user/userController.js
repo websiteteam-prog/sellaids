@@ -22,21 +22,21 @@ export const userGetProfile = async (req, res) => {
 };
 
 export const userUpdateProfile = async (req, res) => {
-    const userId = req.session?.user?.userId;
-    if (!userId) {
-        return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
+  const userId = req.session?.user?.userId;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
+  }
+  try {
+    await updateUserProfile.validate(req.body, { abortEarly: false });
+    const { name, phone, address_line, city, state, pincode, currentPassword, newPassword } = req.body;
+    await updateProfile(userId, name, phone, address_line, city, state, pincode, currentPassword, newPassword);
+    logger.info(`Profile updated for user ${userId}`);
+    return res.status(200).json({ success: true, message: "Profile updated successfully" });
+  } catch (error) {
+    logger.error(error.message);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ success: false, message: "Validation failed", errors: error.errors });
     }
-    try {
-        await updateUserProfile.validate(req.body, { abortEarly: false });
-        const { name, phone, address_line, city, state, pincode, currentPassword, newPassword } = req.body;
-        await updateProfile(userId, name, phone, address_line, city, state, pincode, currentPassword, newPassword);
-        logger.info(`Profile updated for user ${userId}`);
-        return res.status(200).json({ success: true, message: "Profile updated successfully" });
-    } catch (error) {
-        logger.error(error.message);
-        if (error.name === "ValidationError") {
-            return res.status(400).json({ success: false, message: "Validation failed", errors: error.errors });
-        }
-        return res.status(500).json({ success: false, message: "Server error", error: error.message });
-    }
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
 };
