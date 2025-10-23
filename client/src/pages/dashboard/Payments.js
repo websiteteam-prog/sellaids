@@ -1,171 +1,194 @@
 import React, { useEffect, useState } from "react";
-import useWishlistStore from "../../stores/useWishlistStore";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useUserStore } from "../../stores/useUserStore";
+import useCartStore from "../../stores/useCartStore";
 import axios from "axios";
 
 export default function Payments() {
-  const { user } = useWishlistStore();
+  const { user, isAuthenticated, fetchUser } = useUserStore();
+  const { clearCart } = useCartStore();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const [payments, setPayments] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const initialForm = { type: "", details: "", expiry: "" };
-  const [form, setForm] = useState(initialForm);
-  const [loading, setLoading] = useState(false);
+  const savedOrder = sessionStorage.getItem("orderData");
+  const [orderData, setOrderData] = useState(
+    location.state?.orderData || (savedOrder ? JSON.parse(savedOrder) : null)
+  );
+  const [loading, setLoading] = useState(true);
 
-  // Fetch user payments on load
   useEffect(() => {
-    if (user?.id) fetchPayments();
-  }, [user]);
-
-  const fetchPayments = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/user/${user.id}/payments`);
-      setPayments(res.data);
-    } catch (err) {
-      console.error("Failed to fetch payments:", err);
-    } finally {
-      setLoading(false);
+    if (orderData) {
+      sessionStorage.setItem("orderData", JSON.stringify(orderData));
     }
-  };
+  }, [orderData]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => {
+    const fetchOrderData = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/user/${user.id}/latest-order`,
+          { withCredentials: true }
+        );
+        setOrderData(response.data.data);
+      } catch (err) {
+        console.error("Failed to fetch order data:", err);
+        navigate("/user");
+      }
+    };
 
-  const openEditForm = (payment) => {
-    setEditingId(payment.id);
-    setForm({ type: payment.type, details: payment.details, expiry: payment.expiry || "" });
-    setShowForm(true);
-  };
+    const validateUser = async () => {
+      if (!isAuthenticated || !user?.id) {
+        try {
+          // Attempt to fetch user profile to restore session
+          await fetchUser();
+          if (!user?.id) {
+            console.warn("User still not authenticated after fetch");
+            navigate("/UserLogin", { state: { from: "/user/user-payments" } });
+          }
+        } catch (err) {
+          console.error("Failed to fetch user:", err);
+          navigate("/UserLogin", { state: { from: "/user/user-payments" } });
+        }
+      }
+    };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.type.trim() || !form.details.trim()) {
-      alert("All required fields must be filled");
+    console.log("orderData:", orderData);
+    console.log("user:", user);
+    validateUser().then(() => {
+      if (!orderData) {
+        console.warn("No order data found, attempting to fetch...");
+        fetchOrderData();
+      } else if (
+        !orderData.key ||
+        !orderData.razorpayOrderId ||
+        !orderData.amount ||
+        !orderData.currency ||
+        !orderData.orderIds
+      ) {
+        console.warn("Invalid orderData:", orderData);
+        navigate("/user");
+      } else {
+        loadRazorpay();
+      }
+    });
+  }, [user, isAuthenticated, fetchUser, orderData, navigate]);
+
+  const loadRazorpay = async () => {
+    if (window.Razorpay) {
+      setLoading(false);
+      openPayment();
       return;
     }
 
-    try {
-      const res = await axios.put(
-        `http://localhost:5000/api/user/${user.id}/payments/${editingId}`,
-        form
-      );
-      setPayments(res.data);
-      setShowForm(false);
-      setEditingId(null);
-      setForm(initialForm);
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert("Failed to update payment method");
-    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      setLoading(false);
+      openPayment();
+    };
+
+    script.onerror = () => {
+      setLoading(false);
+      alert("Failed to load Razorpay. Please try again.");
+      navigate("/user");
+    };
   };
 
-  const handleRemove = async (id) => {
-    if (!window.confirm("Are you sure to remove this payment method?")) return;
-
-    try {
-      const res = await axios.delete(`http://localhost:5000/api/user/${user.id}/payments/${id}`);
-      setPayments(res.data);
-      if (editingId === id) {
-        setShowForm(false);
-        setEditingId(null);
-        setForm(initialForm);
-      }
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert("Failed to remove payment method");
+  const openPayment = async () => {
+    if (!window.Razorpay) {
+      alert("Razorpay not loaded yet. Please try again.");
+      navigate("/user");
+      return;
     }
+
+    const options = {
+      key: orderData.key,
+      order_id: orderData.razorpayOrderId,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: "Sellaids",
+      description: "Payment for your order",
+      handler: async function (response) {
+        try {
+          const verifyRes = await axios.post(
+            `${process.env.REACT_APP_API_URL}/api/payment/verify`,
+            {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderIds: orderData.orderIds,
+            },
+            { withCredentials: true }
+          );
+          if (verifyRes.data.success) {
+            alert("Payment Successful!");
+            await clearCart();
+            sessionStorage.removeItem("orderData");
+            setOrderData(null);
+            navigate("/user");
+          } else {
+            alert("Payment verification failed!");
+            navigate("/user");
+          }
+        } catch (err) {
+          console.error("Verification error:", err);
+          alert("Payment verification failed!");
+          navigate("/user");
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          console.warn("Payment modal closed by user");
+          alert("Payment was cancelled. Please try again.");
+          navigate("/user");
+        },
+      },
+      prefill: {
+        name: user?.name || "",
+        email: user?.email || "",
+        contact: user?.mobile || "",
+      },
+      theme: {
+        color: "#2563eb",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
-  if (loading) return <p>Loading payments...</p>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-gray-600 text-lg">Loading payment gateway...</p>
+      </div>
+    );
+  }
+
+  if (!orderData || !orderData.key || !orderData.razorpayOrderId || !orderData.amount || !orderData.currency || !orderData.orderIds) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-red-600 text-lg">Invalid order data. Redirecting to dashboard...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow max-w-lg">
-      <h1 className="text-2xl font-bold mb-4">Payment Methods</h1>
-
-      <div className="space-y-3 mb-4">
-        {payments.map((payment) => (
-          <div key={payment.id} className="border p-3 rounded flex justify-between items-center">
-            <div>
-              <p className="font-medium">
-                {payment.type}{" "}
-                {payment.type.toLowerCase().includes("card") && payment.details.length >= 4
-                  ? payment.details
-                  : payment.details}
-              </p>
-              {payment.expiry && <p className="text-sm text-gray-500">Expiry: {payment.expiry}</p>}
-            </div>
-            <div className="flex gap-3">
-              {!showForm && (
-                <button
-                  onClick={() => openEditForm(payment)}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Edit
-                </button>
-              )}
-              {showForm && editingId === payment.id && (
-                <button
-                  className="text-red-600 hover:text-red-800"
-                  onClick={() => handleRemove(payment.id)}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+    <div className="flex justify-center items-center h-screen bg-gray-50">
+      <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+        <h1 className="text-2xl font-bold mb-4 text-gray-800">
+          Redirecting to Razorpay...
+        </h1>
+        <p className="text-gray-600 mb-4">
+          Please wait while we open the secure payment window.
+        </p>
+        <div className="animate-pulse text-blue-600 font-medium">
+          Initializing Payment...
+        </div>
       </div>
-
-      {showForm && editingId && (
-        <form onSubmit={handleSubmit} className="space-y-3 border p-4 rounded">
-          <input
-            type="text"
-            name="type"
-            value={form.type}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded w-full"
-            required
-            disabled
-          />
-          <input
-            type="text"
-            name="details"
-            value={form.details}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded w-full"
-            required
-          />
-          <input
-            type="text"
-            name="expiry"
-            value={form.expiry}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded w-full"
-          />
-          <div className="flex gap-3 mt-2">
-            <button
-              type="submit"
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              Save Changes
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false);
-                setEditingId(null);
-                setForm(initialForm);
-              }}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
     </div>
   );
 }

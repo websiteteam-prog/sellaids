@@ -10,6 +10,7 @@ import userIndexRoutes from "./routes/user/userIndexRoutes.js";
 import vendorIndexRoutes from "./routes/vendor/vendorIndexRoutes.js";
 import adminIndexRoutes from "./routes/admin/adminIndexRoutes.js";
 import productFormRoutes from "./routes/product/productFormRoutes.js";
+import paymentRoutes from "./routes/payment/paymentRoutes.js";
 
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/user", userIndexRoutes);
 app.use("/api/vendor", vendorIndexRoutes);
 app.use("/api/admin", adminIndexRoutes);
 app.use("/api/product", productFormRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // 🧠 Health Check Route-
 app.get("/", (req, res) => {

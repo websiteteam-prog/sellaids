@@ -4,48 +4,33 @@ import { sequelize } from "../config/db.js";
 export const Payment = sequelize.define(
   "Payment",
   {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    order_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    vendor_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    payment_method: {
-      type: DataTypes.STRING(50),
-    },
-    transaction_id: {
-      type: DataTypes.STRING(100),
-    },
-    amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    vendor_earning: {
-      type: DataTypes.DECIMAL(10, 2),
-      defaultValue: 0,
-    },
-    platform_fee: {
-      type: DataTypes.DECIMAL(10, 2),
-      defaultValue: 0,
-    },
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    order_id: { type: DataTypes.INTEGER, allowNull: false },
+    user_id: { type: DataTypes.INTEGER, allowNull: false },
+    vendor_id: { type: DataTypes.INTEGER, allowNull: false },
+
+    payment_method: { type: DataTypes.STRING(50), defaultValue: "razorpay" },
+    razorpay_order_id: { type: DataTypes.STRING(100), allowNull: true },
+    razorpay_payment_id: { type: DataTypes.STRING(100), allowNull: true },
+    razorpay_signature: { type: DataTypes.STRING(200), allowNull: true },
+    transaction_id: { type: DataTypes.STRING(100), allowNull: true },
+
+    amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+    vendor_earning: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    platform_fee: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    currency: { type: DataTypes.STRING(10), defaultValue: "INR" },
+
     status: {
-      type: DataTypes.ENUM("success", "failed", "pending"),
+      type: DataTypes.ENUM("pending", "success", "failed", "refunded"),
       defaultValue: "pending",
     },
-    payment_date: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    payment_info: {
-      type: DataTypes.JSON,
-    },
+
+    refund_status: { type: DataTypes.STRING(50), defaultValue: "none" },
+    refund_amount: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    failure_reason: { type: DataTypes.STRING(255), allowNull: true },
+
+    payment_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    payment_info: { type: DataTypes.JSON, allowNull: true },
   },
   {
     tableName: "payments",
