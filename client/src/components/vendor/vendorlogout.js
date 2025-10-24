@@ -15,25 +15,57 @@ const VendorLogout = () => {
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
     });
   };
+// const handleLogout = async () => {
+//     try {
+//       // Backend logout API call
+//       const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/admin/auth/logout`, {},{ withCredentials: true });
 
+//       const { success, message } = res.data
+
+//       console.log(res.data)
+
+//       if (success) {
+//         console.log(success)
+//         logout()
+//         localStorage.removeItem("admin-store")
+//         toast.success(message);
+//         // navigate("/admin-login", { replace: true });
+//         window.location.replace("/admin-login");
+//       }
+//     } catch (error) {
+//       console.error("Logout failed:", error);
+//       toast.error("Logout failed, redirecting to login");
+//     }
+//   };
   const handleLogout = async () => {
     try {
       // 🔹 Call backend logout API
-      await axios.post(
+      const res = await axios.post(
         "http://localhost:5000/api/vendor/auth/logout",
         {},
         { withCredentials: true }
       );
+const { success, message } = res.data
 
+      console.log(res.data)
+
+      if (success) {
+        console.log(success)
+        logout()
+        localStorage.removeItem("vendor-store")
+        toast.success("Logged out successfully!");
+        // navigate("/admin-login", { replace: true });
+        window.location.replace("/vendor/login");
+      }
       // 🔹 Clear Zustand store
-      logout();
+      // logout();
 
-      // 🔹 Clear localStorage and cookies
-      localStorage.clear();
-      sessionStorage.clear();
-      clearCookies();
+      // // 🔹 Clear localStorage and cookies
+      // localStorage.clear();
+      // sessionStorage.clear();
+      // clearCookies();
 
-      toast.success("Logged out successfully!");
+      // toast.success("Logged out successfully!");
       navigate("/vendor/login");
     } catch (error) {
       console.error("Logout failed:", error);

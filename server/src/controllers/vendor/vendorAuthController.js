@@ -66,7 +66,7 @@ export const vendorForgotPasswordController = async (req, res) => {
 
         // Generate reset token
         const token = await forgotPasswordService(email);
-        const resetLink = `${config.frontend.url}/reset-password/${token}`;
+        const resetLink = `${config.frontend.url}/vendor/reset-password/${token}`;
 
         // Send email
         await sendEmail(email, "Reset Your Password", `Click here to reset your password: ${resetLink}`);

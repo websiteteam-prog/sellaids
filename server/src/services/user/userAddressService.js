@@ -27,3 +27,4 @@ export const updateAddressService = async (userId, addressData) => {
     await User.update(updatedData, { where: { id: userId } });
     return updatedData;
 };
+

@@ -55,6 +55,7 @@ import Profile from "./pages/dashboard/Profile";
 import Addresses from "./pages/dashboard/Addresses";
 import Payments from "./pages/dashboard/Payments";
 import Wishlist from "./pages/dashboard/Wishlist";
+import Cart from "./pages/dashboard/Cart";
 
 
 import Support from "./pages/dashboard/Support";
@@ -74,6 +75,8 @@ import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
+import VendorProtectedRoute from "./components/vendor/VendorProtectedRoute";
+import VendorPublicRoute from "./components/vendor/VendorPublicRoute";
 
 const App = () => {
   return (
@@ -112,18 +115,26 @@ const App = () => {
         <Route path="addresses" element={<Addresses />} />
         <Route path="payments" element={<Payments />} />
         <Route path="wishlist" element={<Wishlist />} />
+        <Route path="cart" element={<Cart />} />
         <Route path="support" element={<Support />} />
         <Route path="raise-ticket" element={<RaiseTicket />} />
       </Route>
 
       {/* ===================== Vendor Auth Routes ===================== */}
-      <Route path="/vendor/login" element={<Login />} />
+      {/* <Route path="/vendor/login" element={<Login />} />
+      <Route path="/vendor/register" element={<Register />} />
+      <Route path="/vendor/forgot-password" element={<VendorForgot />} />
+      <Route path="/vendor/reset-password/:token" element={<VendorReset />} /> */}
+      <Route element={<VendorPublicRoute />}>
+        <Route path="/vendor/login" element={<Login />} />
       <Route path="/vendor/register" element={<Register />} />
       <Route path="/vendor/forgot-password" element={<VendorForgot />} />
       <Route path="/vendor/reset-password/:token" element={<VendorReset />} />
-      
+      </Route>
+
 
       {/* ===================== Vendor Dashboard Routes ===================== */}
+      <Route element={<VendorProtectedRoute />}>
       <Route path="/vendor" element={<VendorDashboardLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardHomeVendor />} />
@@ -135,7 +146,8 @@ const App = () => {
         <Route path="profile" element={<ProfileVendor />} />
    <Route path="/vendor/view-product/:productId" element={<VendorView />} />
       </Route>
-
+</Route>
+   
       {/* ===================== Admin Login ===================== */}
       <Route path="/admin-login" element={<AdminLogin />} />
 

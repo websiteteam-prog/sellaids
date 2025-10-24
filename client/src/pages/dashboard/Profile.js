@@ -11,6 +11,10 @@ export default function Profile() {
     name: "",
     email: "",
     phone: "",
+    address_line: "",
+    city: "",
+    state: "",
+    pincode: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -40,6 +44,10 @@ export default function Profile() {
           name: userData.name || userData.full_name || "",
           email: userData.email || "",
           phone: userData.phone || "",
+          address_line: userData.address_line || "",
+          city: userData.city || "",
+          state: userData.state || "",
+          pincode: userData.pincode || "",
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
@@ -79,6 +87,10 @@ export default function Profile() {
             name: userData.name || userData.full_name || "",
             email: userData.email || "",
             phone: userData.phone || "",
+            address_line: userData.address_line || "",
+            city: userData.city || "",
+            state: userData.state || "",
+            pincode: userData.pincode || "",
             currentPassword: "",
             newPassword: "",
             confirmPassword: "",
@@ -97,9 +109,13 @@ export default function Profile() {
       const updateData = {
         name: formData.name,
         phone: formData.phone,
+        address_line: formData.address_line,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
       };
 
-      // Validate password fields
+      // Include password fields only if provided
       if (formData.newPassword || formData.confirmPassword || formData.currentPassword) {
         if (formData.newPassword !== formData.confirmPassword) {
           alert("New password and confirm password do not match!");
@@ -134,17 +150,29 @@ export default function Profile() {
         alert("Current password is incorrect!");
         setLoading(false);
         return;
+      } else if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Handle validation errors as alerts
+        const errorMessages = Array.isArray(error.response.data.errors)
+          ? error.response.data.errors
+          : error.response.data.errors.map((err) => err.msg);
+        errorMessages.forEach((errorMsg) => alert(errorMsg));
       } else {
         console.error("Error updating profile:", error.response?.data || error.message);
-        alert("Failed to update profile: " + (error.response?.data?.message || "Unknown error"));
+        alert(error.response?.data?.message || "Failed to update profile: Unknown error");
       }
-    } finally {
       setLoading(false);
     }
   };
 
   const togglePassword = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
+
+  // Format address for display
+  const formatAddress = () => {
+    const { address_line, city, state, pincode } = formData;
+    const parts = [address_line, city, state, pincode].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "Not provided";
+  };
 
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
@@ -191,7 +219,7 @@ export default function Profile() {
             name="phone"
             value={formData.phone || ""}
             onChange={(e) => {
-              // allow only digits and limit to 10 characters
+              // Allow only digits and limit to 10 characters
               const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
               setFormData({ ...formData, phone: digits });
             }}
@@ -204,7 +232,67 @@ export default function Profile() {
               !isEditing ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
           />
-          {/* <p className="text-xs text-gray-500 mt-1">Enter up to 10 digits (numbers only).</p> */}
+        </div>
+        {/* Address */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address
+          </label>
+          {isEditing ? (
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  name="address_line"
+                  value={formData.address_line || ""}
+                  onChange={handleChange}
+                  placeholder="Enter address line"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city || ""}
+                  onChange={handleChange}
+                  placeholder="Enter city"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state || ""}
+                  onChange={handleChange}
+                  placeholder="Enter state"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="pincode"
+                  value={formData.pincode || ""}
+                  onChange={(e) => {
+                    // Allow only digits and limit to 6 characters
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                    setFormData({ ...formData, pincode: digits });
+                  }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="Enter pincode"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed">
+              {formatAddress()}
+            </div>
+          )}
         </div>
         {/* Password Section */}
         {isEditing && (

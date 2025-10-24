@@ -10,10 +10,10 @@ const VendorReset = () => {
 
   const [formData, setFormData] = useState({
     newPassword: "",
-    confirmPassword: "",
+    // confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  // const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -29,13 +29,13 @@ const VendorReset = () => {
       isValid = false;
     }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Confirm Password is required";
-      isValid = false;
-    } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-      isValid = false;
-    }
+    // if (!formData.confirmPassword) {
+    //   newErrors.confirmPassword = "Confirm Password is required";
+    //   isValid = false;
+    // } else if (formData.newPassword !== formData.confirmPassword) {
+    //   newErrors.confirmPassword = "Passwords do not match";
+    //   isValid = false;
+    // }
 
     setErrors(newErrors);
     return isValid;
@@ -67,7 +67,7 @@ const VendorReset = () => {
         position: "top-right",
         duration: 3000,
       });
-      setFormData({ newPassword: "", confirmPassword: "" });
+      setFormData({ newPassword: ""});
       setErrors({});
       setTimeout(() => navigate("/vendor/login"), 2000);
     } catch (error) {
@@ -120,9 +120,9 @@ const VendorReset = () => {
               <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
             )}
           </div>
-
-          {/* Confirm Password */}
-          <div className="relative">
+{/* 
+          Confirm Password */}
+          {/* <div className="relative">
             <label className="block mb-2 font-medium text-gray-700">
               Confirm Password
             </label>
@@ -147,7 +147,7 @@ const VendorReset = () => {
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
             )}
-          </div>
+          </div> */}
 
           {/* Submit Button */}
           <button
