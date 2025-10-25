@@ -61,7 +61,7 @@ export const getAllWishlistService = async (userId) => {
       include: [
         {
           model: Product,
-          attributes: ['id', 'product_type', 'purchase_price'],
+          attributes: ['id', 'product_type', 'purchase_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
         },
         {
           model: User,
@@ -82,6 +82,13 @@ export const getAllWishlistService = async (userId) => {
           id: item.Product.id,
           name: item.Product.product_type,
           price: item.Product.purchase_price,
+          front_photo: item.Product.front_photo,
+          back_photo: item.Product.back_photo,
+          label_photo: item.Product.label_photo,
+          inside_photo: item.Product.inside_photo,
+          button_photo: item.Product.button_photo,
+          wearing_photo: item.Product.wearing_photo,
+          more_images: item.Product.more_images,
         } : null,
         user: item.User ? {
           id: item.User.id,

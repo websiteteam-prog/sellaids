@@ -14,7 +14,7 @@ const Orders = () => {
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
-      navigate("/UserLogin");
+      navigate("/UserAuth/UserLogin");
       return;
     }
     fetchOrders();
@@ -30,7 +30,7 @@ const Orders = () => {
       setFilteredOrders(res.data.data || []); // Initialize filtered orders
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate("/UserLogin");
+        navigate("/UserAuth/UserLogin");
       } else {
         setError(err.response?.data?.message || "Failed to fetch orders");
         console.error("Failed to fetch orders:", err.response?.data || err.message);

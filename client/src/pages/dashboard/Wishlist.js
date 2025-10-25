@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useWishlistStore from '../../stores/useWishlistStore';
-import useCartStore from '../../stores/useCartStore'; // Added to access fetchCart
+import useCartStore from '../../stores/useCartStore';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../../stores/useUserStore';
@@ -8,9 +8,12 @@ import { useUserStore } from '../../stores/useUserStore';
 export default function Wishlist() {
   const { wishlist, setWishlist, removeFromWishlist } = useWishlistStore();
   const { user, isAuthenticated, isUserLoading } = useUserStore();
-  const { fetchCart } = useCartStore(); // Added to fetch cart after adding item
+  const { fetchCart } = useCartStore();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // State to manage the active image index for each product
+  const [activeImages, setActiveImages] = useState({});
 
   const handleAddToWishlist = async (productId) => {
     try {
@@ -32,7 +35,7 @@ export default function Wishlist() {
   useEffect(() => {
     if (isUserLoading) return;
     if (!isAuthenticated || !user?.id) {
-      navigate('/UserLogin', { state: { from: window.location.pathname } });
+      navigate('/UserAuth/UserLogin', { state: { from: window.location.pathname } });
     } else {
       setLoading(true);
       axios
@@ -41,6 +44,12 @@ export default function Wishlist() {
         })
         .then((res) => {
           setWishlist(res.data.data || []);
+          // Initialize active image index for each product
+          const initialActiveImages = res.data.data.reduce((acc, item) => {
+            acc[item.product_id] = 0;
+            return acc;
+          }, {});
+          setActiveImages(initialActiveImages);
         })
         .catch((err) => {
           console.error('Failed to fetch wishlist:', {
@@ -49,7 +58,7 @@ export default function Wishlist() {
             url: err.config?.url,
           });
           if (err.response?.status === 401) {
-            navigate('/UserLogin', { state: { from: window.location.pathname } });
+            navigate('/UserAuth/UserLogin', { state: { from: window.location.pathname } });
           } else if (err.response?.status === 404) {
             alert('Wishlist endpoint not found. Please check the API URL.');
           }
@@ -58,19 +67,17 @@ export default function Wishlist() {
     }
   }, [user, isAuthenticated, isUserLoading, navigate, setWishlist]);
 
-  const handleRemove = async (itemId) => {
+  const handleRemove = async (productId) => {
     try {
-      // Optimistically remove the item from the local state immediately
-      const updatedWishlist = wishlist.filter((item) => item.product_id !== itemId);
+      const updatedWishlist = wishlist.filter((item) => item.product_id !== productId);
       setWishlist(updatedWishlist);
 
-      const res = await axios.delete(`${process.env.REACT_APP_API_URL}/api/user/wishlist/${itemId}`, {
+      const res = await axios.delete(`${process.env.REACT_APP_API_URL}/api/user/wishlist/${productId}`, {
         withCredentials: true,
       });
       alert(res.data.message || 'Item removed from wishlist!');
     } catch (err) {
       console.error('Failed to remove item:', err);
-      // Revert to the original wishlist if the API call fails
       axios
         .get(`${process.env.REACT_APP_API_URL}/api/user/wishlist`, { withCredentials: true })
         .then((res) => setWishlist(res.data.data || []));
@@ -86,11 +93,51 @@ export default function Wishlist() {
         { withCredentials: true }
       );
       alert(res.data.message || 'Item added to cart!');
-      await fetchCart(); // Fetch updated cart data to reflect in Navbar
+      await fetchCart();
     } catch (err) {
       console.error('Failed to add to cart:', err);
       alert(err.response?.data?.message || 'Failed to add item to cart');
     }
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = 'https://via.placeholder.com/96'; // Fallback image
+  };
+
+  // Function to get all product images
+  const getProductImages = (product) => {
+    if (!product || typeof product !== 'object') return [];
+
+    const moreImages = (() => {
+      try {
+        return JSON.parse(product.more_images || '[]') || [];
+      } catch {
+        return [];
+      }
+    })();
+
+  const images = [
+    product.front_photo,
+    product.back_photo,
+    product.label_photo,
+    product.inside_photo,
+    product.button_photo,
+    product.wearing_photo,
+    ...moreImages,
+  ].filter(Boolean);
+
+  return images;
+};
+
+
+  // Function to change active image
+  const changeImage = (productId, offset) => {
+    setActiveImages((prev) => {
+      const currentIndex = prev[productId] || 0;
+      const images = getProductImages(wishlist.find(item => item.product_id === productId)?.product || {});
+      const newIndex = (currentIndex + offset + images.length) % images.length;
+      return { ...prev, [productId]: newIndex };
+    });
   };
 
   if (isUserLoading) return <p className="text-center mt-10">Loading user...</p>;
@@ -116,33 +163,115 @@ export default function Wishlist() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {wishlist.map((item) => (
-            <div
-              key={item.product_id}
-              className="bg-white p-4 rounded-xl shadow-lg flex flex-col items-center sm:flex-row sm:items-start justify-between hover:shadow-xl transition-shadow duration-200"
-            >
-              <div className="mb-4 sm:mb-0 sm:mr-4 text-center sm:text-left">
-                <p className="font-semibold text-lg text-gray-900">Product: {item.product?.name || 'Unknown Product'}</p>
-                <p className="text-gray-700">₹{item.product?.price || 'N/A'}</p>
-                <p className="text-gray-600">Added by: {item.user?.name || 'Unknown User'}</p>
-                {item.user?.age && <p className="text-gray-600">User Age: {item.user.age}</p>}
+          {wishlist.map((item) => {
+            const images = getProductImages(item.product);
+            const activeIndex = activeImages[item.product_id] || 0;
+
+            return (
+              <div
+                key={item.product_id}
+                className="bg-white p-4 rounded-xl shadow-lg flex flex-col items-center hover:shadow-xl transition-shadow duration-200"
+              >
+                <div className="mb-4 text-center sm:text-left w-full">
+                  {/* Product Image Slider */}
+                  <div className="relative">
+                    {/* Main Centered Image */}
+                    <div className="flex justify-center mb-2">
+                      <img
+                        src={images[activeIndex] || 'https://via.placeholder.com/96'}
+                        alt={item.product?.name || 'Product Image'}
+                        className="w-32 h-32 object-cover rounded-md"
+                        onError={handleImageError}
+                      />
+                    </div>
+                    {/* Navigation Arrows */}
+                    <div className="flex justify-between mt-2">
+                      <button
+                        onClick={() => changeImage(item.product_id, -1)}
+                        className="text-gray-600 hover:text-gray-800 disabled:text-gray-300"
+                        disabled={images.length <= 1}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => changeImage(item.product_id, 1)}
+                        className="text-gray-600 hover:text-gray-800 disabled:text-gray-300"
+                        disabled={images.length <= 1}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                    {/* Thumbnail Strip */}
+                    <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
+                      {images.map((img, index) => (
+                        <img
+                          key={index}
+                          src={img}
+                          alt={`${item.product?.name} Thumbnail ${index + 1}`}
+                          className={`w-12 h-12 object-cover rounded-md cursor-pointer ${activeIndex === index ? 'border-2 border-blue-600' : ''}`}
+                          onClick={() => changeImage(item.product_id, index - activeIndex)}
+                          onError={handleImageError}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Product Details */}
+                  <p className="font-semibold text-lg text-gray-900 mt-4">
+                    {item.product?.name || 'Unknown Product'}
+                  </p>
+                  <p className="text-gray-700">₹{item.product?.price || 'N/A'}</p>
+                  <p className="text-gray-600">Added by: {item.user?.name || 'Unknown User'}</p>
+                </div>
+                {/* Buttons in a single line at the bottom */}
+                <div className="w-full flex justify-between mt-4">
+                  <button
+                    onClick={() => handleAddToCart(item.product_id)}
+                    className="flex items-center justify-center bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors w-1/2 mr-2"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={() => handleRemove(item.product_id)}
+                    className="flex items-center justify-center bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-red-700 transition-colors w-1/2 ml-2"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    Remove
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <button
-                  onClick={() => handleAddToCart(item.product_id)}
-                  style={{ backgroundColor: '#16a34a', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', transition: 'background-color 0.2s', width: '100%', maxWidth: '10rem' }}
-                >
-                  Add to Cart
-                </button>
-                <button
-                  onClick={() => handleRemove(item.product_id)}
-                  style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', transition: 'background-color 0.2s', width: '100%', maxWidth: '10rem' }}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -17,7 +17,7 @@ const DashboardHome = () => {
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
-      navigate("/UserLogin");
+      navigate("/UserAuth/UserLogin");
       return;
     }
     fetchDashboardData();
@@ -38,7 +38,7 @@ const DashboardHome = () => {
       });
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate("/UserLogin");
+        navigate("/UserAuth/UserLogin");
       } else {
         setError(err.response?.data?.message || "Failed to fetch dashboard data");
         console.error("Error fetching dashboard data:", err.response?.data || err.message);

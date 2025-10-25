@@ -7,6 +7,7 @@ import { Product } from "../../models/productModel.js";
 import { User } from "../../models/userModel.js";
 import logger from "../../config/logger.js";
 import { sequelize } from "../../config/db.js";
+import { Vendor } from "../../models/vendorModel.js";
 
 export const createRazorpayInstance = () => {
   try {
@@ -32,7 +33,10 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
 
     let totalAmount = 0;
     for (const item of cartItems) {
-      const product = await Product.findByPk(item.product_id, { transaction });
+      const product = await Product.findByPk(item.product_id, {
+        transaction,
+        include: [{ model: Vendor, as: "vendor" }], 
+      });
       if (!product) {
         await transaction.rollback();
         return { status: false, message: `Product ${item.product_id} not found` };
@@ -40,6 +44,10 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       if (product.stock < item.quantity) {
         await transaction.rollback();
         return { status: false, message: `Product ${item.product_id} is out of stock` };
+      }
+      if (!product.vendor_id || !product.vendor) {
+        await transaction.rollback();
+        return { status: false, message: `Product ${item.product_id} has no associated vendor` };
       }
       totalAmount += product.purchase_price * item.quantity;
     }
@@ -62,6 +70,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       const order = await Order.create(
         {
           user_id: userId,
+          vendor_id: product.vendor_id, 
           product_id: item.product_id,
           quantity: item.quantity,
           total_amount: product.purchase_price * item.quantity,
@@ -78,9 +87,10 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       orders.push(order);
     }
 
-    const vendorId = userId;
-    const userExists = await User.findByPk(vendorId, { transaction });
-    if (!userExists) {
+    // Validate vendor_id exists in vendors table
+    const vendorId = orders[0].vendor_id;
+    const vendorExists = await Vendor.findByPk(vendorId, { transaction });
+    if (!vendorExists) {
       await transaction.rollback();
       return { status: false, message: `Vendor ${vendorId} not found` };
     }
@@ -89,7 +99,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       {
         order_id: orders[0].id,
         user_id: userId,
-        vendor_id: vendorId,
+        vendor_id: vendorId, 
         payment_method: "razorpay",
         razorpay_order_id: razorpayOrder.id,
         amount: totalAmount,
@@ -113,7 +123,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         key: process.env.RAZORPAY_KEY_ID,
-        orderIds: orders.map((o) => o.id), // Fixed syntax error
+        orderIds: orders.map((o) => o.id),
       },
     };
   } catch (error) {

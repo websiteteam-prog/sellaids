@@ -43,11 +43,11 @@ export default function Payments() {
           await fetchUser();
           if (!user?.id) {
             console.warn("User still not authenticated after fetch");
-            navigate("/UserLogin", { state: { from: "/user/user-payments" } });
+            navigate("/UserAuth/UserLogin", { state: { from: "/user/user-payments" } });
           }
         } catch (err) {
           console.error("Failed to fetch user:", err);
-          navigate("/UserLogin", { state: { from: "/user/user-payments" } });
+          navigate("/UserAuth/UserLogin", { state: { from: "/user/user-payments" } });
         }
       }
     };

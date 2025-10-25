@@ -42,7 +42,7 @@ export const getCartService = async (userId) => {
         {
           model: Product,
           as: "product",
-          attributes: ['id', 'product_type', 'purchase_price'],
+          attributes: ['id', 'product_type', 'purchase_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
         },
       ],
     });
@@ -52,8 +52,15 @@ export const getCartService = async (userId) => {
       quantity: item.quantity,
       product: {
         id: item.product?.id,
-        name: item.product?.product_type || 'Unknown Product', // Fallback if product_type is missing
-        price: item.product?.purchase_price || 'N/A', // Fallback if purchase_price is missing
+        name: item.product?.product_type || 'Unknown Product', 
+        price: item.product?.purchase_price || 'N/A', 
+        front_photo: item.product?.front_photo || 'N/A', 
+        back_photo: item.product.back_photo,
+        label_photo: item.product.label_photo,
+        inside_photo: item.product.inside_photo,
+        button_photo: item.product.button_photo,
+        wearing_photo: item.product.wearing_photo,
+        more_images: item.product.more_images,
       },
     }));
 
