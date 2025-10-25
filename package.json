@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "html2canvas": "^1.4.1",
+    "js-cookie": "^3.0.5",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.536.0",
     "react-fast-marquee": "^1.6.5",

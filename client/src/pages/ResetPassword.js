@@ -26,7 +26,7 @@ function ResetPassword() {
 
       if (res.data.success) {
         alert("Password reset successful ✅");
-        navigate("/UserLogin"); // Login page or dashboard
+        navigate("/UserAuth/UserLogin"); // Login page or dashboard
       } else {
         alert("Password reset failed ❌");
       }

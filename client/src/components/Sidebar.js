@@ -4,19 +4,18 @@ import {
   Home,
   ShoppingBag,
   User,
-  MapPin,
   Heart,
   HelpCircle,
   Menu,
   X,
-  LogOut
+  LogOut,
 } from "lucide-react";
+import UserLogout from "./UserAuth/UserLogout";
 
 const menuItems = [
   { path: "/user", label: "Dashboard", icon: <Home size={18} /> },
   { path: "/user/orders", label: "My Orders", icon: <ShoppingBag size={18} /> },
   { path: "/user/profile", label: "Profile", icon: <User size={18} /> },
-  // { path: "/user/addresses", label: "Address", icon: <MapPin size={18} /> },
   { path: "/user/wishlist", label: "Wishlist", icon: <Heart size={18} /> },
   { path: "/user/support", label: "Support", icon: <HelpCircle size={18} /> },
 ];
@@ -29,14 +28,15 @@ export default function Sidebar() {
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
+  // Handling logout
   const handleLogout = () => {
     // Clear session/token
     localStorage.removeItem("token"); // example
-    navigate("/UserLogin");
+    navigate("/UserAuth/UserLogin");
   };
 
   const renderMenuItems = () =>
-    menuItems.map(item => (
+    menuItems.map((item) => (
       <Link
         key={item.path}
         to={item.path}
@@ -69,12 +69,7 @@ export default function Sidebar() {
         </div>
 
         {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 text-gray-700 transition border-t"
-        >
-          <LogOut size={18} /> Logout
-        </button>
+        <UserLogout />
       </div>
 
       {/* Sidebar Overlay for Mobile */}
@@ -102,15 +97,7 @@ export default function Sidebar() {
         </div>
 
         {/* Mobile Logout Button */}
-        <button
-          onClick={() => {
-            handleLogout();
-            closeSidebar();
-          }}
-          className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 text-gray-700 transition border-t"
-        >
-          <LogOut size={18} /> Logout
-        </button>
+        <UserLogout />
       </div>
     </>
   );

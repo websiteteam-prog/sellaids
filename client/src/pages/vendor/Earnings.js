@@ -4,6 +4,7 @@ import {
   BarChart,
   Bar,
   XAxis,
+  YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
@@ -24,7 +25,7 @@ const Earnings = () => {
       try {
         setLoading(true);
         const res = await axios.get(`${process.env.REACT_APP_API_URL}api/product/earnings`, {
-          withCredentials: true, // send session/cookie
+          withCredentials: true,
         });
 
         if (res.data.success) {
@@ -52,46 +53,69 @@ const Earnings = () => {
     fetchEarnings();
   }, []);
 
-  if (loading) return <p className="p-6">Loading...</p>;
+  if (loading) return <p className="p-6 text-gray-500 text-center">Loading...</p>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Earnings</h1>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Earnings Overview</h1>
 
       {/* Top Earnings Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500">Total Earnings</h3>
-          <p className="text-2xl font-bold">₹{stats.totalEarnings}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500">This Month</h3>
-          <p className="text-2xl font-bold">₹{stats.thisMonth}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500">Pending Payouts</h3>
-          <p className="text-2xl font-bold">₹{stats.pendingPayouts}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500">Completed Payouts</h3>
-          <p className="text-2xl font-bold">₹{stats.completedPayouts}</p>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[
+          { title: "Total Earnings", value: stats.totalEarnings },
+          { title: "This Month", value: stats.thisMonth },
+          { title: "Pending Payouts", value: stats.pendingPayouts },
+          { title: "Completed Payouts", value: stats.completedPayouts },
+        ].map((card, index) => (
+          <div
+            key={index}
+            className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+          >
+            <h3 className="text-sm font-medium text-gray-500 uppercase">{card.title}</h3>
+            <p className="text-2xl font-bold text-gray-800 mt-2">₹{card.value.toLocaleString()}</p>
+          </div>
+        ))}
       </div>
 
       {/* Monthly Earnings Chart */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Monthly Earnings</h2>
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Monthly Earnings Trend</h2>
         {monthlyEarnings.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyEarnings}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" />
-              <Tooltip />
-              <Bar dataKey="earnings" fill="#f97316" radius={[6, 6, 0, 0]} /> {/* Orange color */}
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={monthlyEarnings} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+              <XAxis
+                dataKey="month"
+                tick={{ fill: "#4b5563", fontSize: 12 }}
+                tickMargin={10}
+                axisLine={{ stroke: "#d1d5db" }}
+              />
+              <YAxis
+                tickFormatter={(value) => `₹${value.toLocaleString()}`}
+                tick={{ fill: "#4b5563", fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                formatter={(value) => `₹${value.toLocaleString()}`}
+                contentStyle={{
+                  backgroundColor: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
+              />
+              <Bar
+                dataKey="earnings"
+                fill="#f97316"
+                radius={[8, 8, 0, 0]}
+                barSize={40}
+                background={{ fill: "#f3f4f6", radius: 8 }}
+              />
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-gray-500 text-center py-12">No earnings data yet.</p>
+          <p className="text-gray-500 text-center py-12">No earnings data available yet.</p>
         )}
       </div>
     </div>

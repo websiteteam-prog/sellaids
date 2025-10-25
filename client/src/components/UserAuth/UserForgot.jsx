@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-// import useUserStore from "../stores/useUserStore";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useUserStore } from "../stores/useUserStore";
+import { useUserStore } from "../../stores/useUserStore";
+import { toast, Toaster } from "react-hot-toast"; // Import toast and Toaster from react-hot-toast
 
 function UserLogin() {
   const [email, setEmail] = useState("");
@@ -23,20 +23,24 @@ function UserLogin() {
       );
 
       const { success, data, message } = res.data;
-      console.log(res.data)
       if (success) {
         login(data);
         setEmail("");
         setPassword("");
 
-        alert("Login Successful ✅");
-        navigate("/user")
+        // Show success toast
+        toast.success("Login Successful ✅");
+
+        // Delay the redirection slightly to ensure toast shows
+        setTimeout(() => {
+          navigate("/user");
+        }, 2000); // Adjust time as needed
       } else {
-        alert(message || "Login Failed ❌");
+        toast.error(message || "Login Failed ❌");
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Invalid Credentials ❌");
+      toast.error("Invalid Credentials ❌");
     }
   };
 
@@ -74,7 +78,7 @@ function UserLogin() {
 
           {/* Forgot Password Link */}
           <div className="text-right mb-4">
-            <Link to="/forgot-password" className="text-blue-500 hover:underline">
+            <Link to="/UserAuth/forgot-password" className="text-blue-500 hover:underline">
               Forgot Password?
             </Link>
           </div>
@@ -88,11 +92,12 @@ function UserLogin() {
         </form>
         <div className="mt-5 text-center">
           Not registered?{" "}
-          <Link to="/register" className="text-orange-600">
+          <Link to="/UserAuth/register" className="text-orange-600">
             Register
           </Link>
         </div>
       </div>
+      <Toaster /> {/* Add this Toast container to your JSX */}
     </div>
   );
 }
