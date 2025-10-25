@@ -4,34 +4,34 @@ import { Product } from "../../models/productModel.js";
 import { User } from "../../models/userModel.js";
 
 export const addToWishlistService = async (userId, productId) => {
-    try {
-        const product = await Product.findByPk(productId);
-        if (!product) {
-            logger.warn(`Product ${productId} not found`);
-            return { status: false, message: "Product not found" };
-        }
-
-        const existing = await Wishlist.findOne({
-            where: { user_id: userId, product_id: productId },
-        });
-
-        if (existing) {
-            logger.warn(`Product ${productId} already in wishlist for user ${userId}`);
-            return { status: false, message: "Product already in wishlist" };
-        }
-
-        const newItem = await Wishlist.create({
-            user_id: userId,
-            product_id: productId,
-        });
-
-        logger.info(`Product ${productId} successfully added to wishlist`);
-        return { status: true, data: newItem };
-
-    } catch (error) {
-        logger.error(`Error in addToWishlistService: ${error.message}`);
-        throw new Error("Failed to add product to wishlist");
+  try {
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      logger.warn(`Product ${productId} not found`);
+      return { status: false, message: "Product not found" };
     }
+
+    const existing = await Wishlist.findOne({
+      where: { user_id: userId, product_id: productId },
+    });
+
+    if (existing) {
+      // If product already in wishlist, do nothing and return success
+      logger.info(`Product ${productId} already in wishlist for user ${userId}`);
+      return { status: true, data: existing, action: "already_present" };
+    }
+
+    const newItem = await Wishlist.create({
+      user_id: userId,
+      product_id: productId,
+    });
+
+    logger.info(`Product ${productId} successfully added to wishlist`);
+    return { status: true, data: newItem, action: "added" };
+  } catch (error) {
+    logger.error(`Error in addToWishlistService: ${error.message}`);
+    throw new Error("Failed to add product to wishlist");
+  }
 };
 
 export const removeFromWishlistService = async (userId, productId) => {

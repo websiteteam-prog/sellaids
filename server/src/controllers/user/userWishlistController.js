@@ -7,49 +7,50 @@ import logger from "../../config/logger.js";
 import { wishlistSchema } from "../../validations/wishlistValidation.js";
 
 export const addToWishlist = async (req, res) => {
-    try {
-        if (!req.body) {
-            logger.warn("Missing request body in addToWishlist");
-            return res.status(400).json({ success: false, message: "Request body is missing" });
-        }
-
-        await wishlistSchema.validate(req.body, { abortEarly: false });
-
-        const { product_id } = req.body;
-        const userId = req?.session?.user?.userId;
-
-        if (!userId) {
-            logger.warn("Unauthorized wishlist add attempt");
-            return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
-        }
-
-        const result = await addToWishlistService(userId, product_id);
-        if (!result.status) {
-            return res.status(400).json({ success: false, message: result.message || "Failed to add to wishlist" });
-        }
-
-        logger.info(`Wishlist add successful for user ${userId}`);
-        return res.status(200).json({
-            success: true,
-            message: "Product added to wishlist successfully",
-            data: result.data,
-        });
-    } catch (error) {
-        if (error.name === "ValidationError") {
-            logger.warn("Validation error in addToWishlist", { errors: error.errors });
-            return res.status(400).json({
-                success: false,
-                message: "Validation failed",
-                errors: error.errors,
-            });
-        }
-        logger.error(`addToWishlistController Error: ${error.message}`);
-        return res.status(500).json({
-            success: false,
-            message: "Something went wrong",
-            error: error.message,
-        });
+  try {
+    if (!req.body) {
+      logger.warn("Missing request body in addToWishlist");
+      return res.status(400).json({ success: false, message: "Request body is missing" });
     }
+
+    await wishlistSchema.validate(req.body, { abortEarly: false });
+
+    const { product_id } = req.body;
+    const userId = req?.session?.user?.userId;
+
+    if (!userId) {
+      logger.warn("Unauthorized wishlist add attempt");
+      return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
+    }
+
+    const result = await addToWishlistService(userId, product_id);
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message || "Failed to add to wishlist" });
+    }
+
+    logger.info(`Wishlist action (${result.action}) successful for user ${userId}`);
+    return res.status(200).json({
+      success: true,
+      message: result.action === "added" ? "Product added to wishlist successfully" : "Product already in wishlist",
+      data: result.data,
+      action: result.action,
+    });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      logger.warn("Validation error in addToWishlist", { errors: error.errors });
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: error.errors,
+      });
+    }
+    logger.error(`addToWishlistController Error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
 };
 
 export const removeFromWishlist = async (req, res) => {
