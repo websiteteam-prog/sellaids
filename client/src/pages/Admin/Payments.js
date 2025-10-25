@@ -3,60 +3,80 @@ import React, { useState, useEffect } from "react";
 import { Eye, Download } from "lucide-react";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
 
 const Payments = () => {
-  const [summary, setSummary] = useState([]);
   const [payments, setPayments] = useState([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
+
+  // For triggering search button
+  const [searchClicked, setSearchClicked] = useState(false);
+
+  const fetchPayments = async (page = 1) => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admin/management/payment`,
+        {
+          params: {
+            transaction_id: search || undefined,
+            status: statusFilter !== "all" ? statusFilter.toLowerCase() : undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            page,
+            limit,
+          },
+          withCredentials: true,
+        }
+      );
+
+      const { success, data, message, pagination } = res.data;
+
+      if (success) {
+        setPayments(data || []);
+        setTotalPages(pagination?.totalPages || 1);
+      } else {
+        setPayments([]);
+        toast.error(message || "Failed to fetch payments");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error fetching payments");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/admin/payments");
-        setSummary(res.data.summary || []);
-        setPayments(res.data.payments || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchPayments();
-  }, []);
+    fetchPayments(currentPage);
+  }, [currentPage, searchClicked, statusFilter, startDate, endDate]);
 
-  // Filter payments
-  const filteredPayments = payments.filter((p) => {
-    const matchesSearch =
-      p.order.toLowerCase().includes(search.toLowerCase()) ||
-      p.vendor.toLowerCase().includes(search.toLowerCase()) ||
-      p.customer.toLowerCase().includes(search.toLowerCase()) ||
-      p.id.toLowerCase().includes(search.toLowerCase());
-
-    const matchesStatus = statusFilter === "All" || p.status === statusFilter;
-
-    const matchesDate = dateFilter
-      ? new Date(p.createdAt).toDateString() === new Date(dateFilter).toDateString()
-      : true;
-
-    return matchesSearch && matchesStatus && matchesDate;
-  });
-
-  // Export payments to Excel
+  // Export to Excel
   const exportExcel = () => {
     if (!payments.length) return;
 
     const worksheet = XLSX.utils.json_to_sheet(
       payments.map((p) => ({
         "Payment ID": p.id,
-        Order: p.order,
-        Vendor: p.vendor,
-        Customer: p.customer,
+        Order: p.order_id,
+        Vendor: p.vendor_id,
         Amount: p.amount,
-        Commission: p.commission,
-        "Vendor Payout": p.payout,
+        Commission: p.platform_fee,
+        "Vendor Payout": p.vendor_earning,
         Status: p.status,
-        Method: p.method,
+        Method: p.payment_method,
+        "Transaction ID": p.transaction_id,
+        "Payment Date": p.payment_date,
       }))
     );
 
@@ -65,16 +85,16 @@ const Payments = () => {
     XLSX.writeFile(workbook, "Payments_Report.xlsx");
   };
 
+  const handleSearch = () => {
+    setCurrentPage(1);
+    setSearchClicked((prev) => !prev);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold">Payments & Transactions</h2>
-          <p className="text-sm text-gray-500">
-            Monitor revenue, commissions, and vendor payouts
-          </p>
-        </div>
+        <h2 className="text-xl font-bold">Payments & Transactions</h2>
         <button
           onClick={exportExcel}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -83,102 +103,88 @@ const Payments = () => {
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summary.map((s, i) => (
-          <div
-            key={i}
-            className="bg-white shadow rounded-lg p-4 flex flex-col justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-full ${s.color}`}>{s.icon}</div>
-              <h3 className="text-sm text-gray-600">{s.title}</h3>
-            </div>
-            <p className="text-lg font-bold mt-2">{s.value}</p>
-            <p className="text-xs text-gray-500">{s.subtitle}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center bg-white shadow-sm p-4 rounded-lg">
+      <div className="flex gap-3 items-center bg-white shadow-sm p-4 rounded-lg w-full">
         <input
           type="text"
-          placeholder="Search payments..."
+          placeholder="Search by Transaction ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-64"
+          className="border rounded-lg px-3 py-2 w-full"
         />
+
+        <button
+          onClick={handleSearch}
+          className="bg-[#FF6A00] text-white px-4 py-2 rounded-lg"
+        >
+          Search
+        </button>
+
         <select
           className="border rounded-lg px-3 py-2"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option>All</option>
-          <option>Pending</option>
-          <option>Completed</option>
-          <option>Processing</option>
-          <option>Failed</option>
+          <option value="all">All</option>
+          <option value="success">Success</option>
+          <option value="failed">Failed</option>
+          <option value="unpaid">Unpaid</option>
         </select>
+
         <input
           type="date"
           className="border rounded-lg px-3 py-2"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="border rounded-lg px-3 py-2"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
         />
       </div>
 
-      {/* Payments Table */}
-      {payments.length === 0 ? (
-        <div className="bg-white shadow rounded-lg p-6 text-center text-gray-500">
-          No transactions available.
-        </div>
-      ) : (
-        <div className="bg-white shadow rounded-lg overflow-x-auto">
+      {/* Table */}
+      <div className="bg-white shadow rounded-lg overflow-x-auto">
+        {loading ? (
+          <div className="text-center p-6 text-gray-500">Loading payments...</div>
+        ) : payments.length === 0 ? (
+          <div className="text-center p-6 text-gray-500">No transactions available.</div>
+        ) : (
           <table className="w-full border-collapse">
             <thead className="bg-gray-100 text-left">
               <tr>
-                <th className="p-3">Payment ID</th>
-                <th className="p-3">Order</th>
-                <th className="p-3">Vendor</th>
-                <th className="p-3">Customer</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Commission</th>
-                <th className="p-3">Vendor Payout</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Method</th>
-                <th className="p-3">Action</th>
+                <th className="px-4 py-3 border">SR.</th>
+                <th className="p-3 border">Payment ID</th>
+                <th className="p-3 border">Order</th>
+                <th className="p-3 border">Vendor</th>
+                <th className="p-3 border">Amount</th>
+                <th className="p-3 border">Commission</th>
+                <th className="p-3 border">Vendor Payout</th>
+                <th className="p-3 border">Status</th>
+                <th className="p-3 border">Method</th>
+                <th className="p-3 border">Transaction ID</th>
+                <th className="p-3 border text-center">Action</th>
               </tr>
             </thead>
             <tbody>
-              {filteredPayments.map((p, i) => (
-                <tr key={i} className="border-b hover:bg-gray-50">
-                  <td className="p-3 text-blue-600">{p.id}</td>
-                  <td className="p-3">{p.order}</td>
-                  <td className="p-3">{p.vendor}</td>
-                  <td className="p-3">{p.customer}</td>
-                  <td className="p-3 font-bold">{p.amount}</td>
-                  <td className="p-3 text-green-600">{p.commission}</td>
-                  <td className="p-3 text-blue-600">{p.payout}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        p.status === "Completed"
-                          ? "bg-green-100 text-green-700"
-                          : p.status === "Pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : p.status === "Processing"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="p-3">{p.method}</td>
-                  <td className="p-3">
+              {payments.map((p, index) => (
+                <tr key={p.id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-3 border">{index + 1}</td>
+                  <td className="p-3 border text-blue-600">{p.id}</td>
+                  <td className="p-3 border">{p.order_id}</td>
+                  <td className="p-3 border">{p.vendor_id}</td>
+                  <td className="p-3 border font-bold">{p.amount}</td>
+                  <td className="p-3 border text-green-600">{p.platform_fee}</td>
+                  <td className="p-3 border text-blue-600">{p.vendor_earning}</td>
+                  <td className="p-3 border capitalize">{p.status}</td>
+                  <td className="p-3 border">{p.payment_method}</td>
+                  <td className="p-3 border">{p.transaction_id}</td>
+                  <td className="p-3 border text-center">
                     <Eye
-                      className="h-4 w-4 text-blue-600 cursor-pointer"
+                      className="h-4 w-4 text-blue-600 cursor-pointer inline-block"
                       onClick={() => setSelectedPayment(p)}
                     />
                   </td>
@@ -186,6 +192,47 @@ const Payments = () => {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-end items-center gap-2 mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-2 rounded ${currentPage === 1
+              ? "bg-gray-200 text-gray-500"
+              : "bg-blue-600 text-white"
+              }`}
+          >
+            Prev
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-2 rounded ${currentPage === i + 1
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-blue-50"
+                }`}
+            >
+              {i + 1}
+            </button>
+          )
+          )}
+
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-2 rounded ${currentPage === totalPages
+              ? "bg-gray-200 text-gray-500"
+              : "bg-blue-600 text-white"
+              }`}
+          >
+            Next
+          </button>
         </div>
       )}
 
@@ -200,15 +247,11 @@ const Payments = () => {
               &times;
             </button>
             <h3 className="text-lg font-bold mb-4">Payment Details</h3>
-            <p><strong>Payment ID:</strong> {selectedPayment.id}</p>
-            <p><strong>Order:</strong> {selectedPayment.order}</p>
-            <p><strong>Vendor:</strong> {selectedPayment.vendor}</p>
-            <p><strong>Customer:</strong> {selectedPayment.customer}</p>
-            <p><strong>Amount:</strong> {selectedPayment.amount}</p>
-            <p><strong>Commission:</strong> {selectedPayment.commission}</p>
-            <p><strong>Payout:</strong> {selectedPayment.payout}</p>
-            <p><strong>Status:</strong> {selectedPayment.status}</p>
-            <p><strong>Method:</strong> {selectedPayment.method}</p>
+            {Object.entries(selectedPayment).map(([key, value]) => (
+              <p key={key} className="text-sm mb-1">
+                <strong className="capitalize">{key}:</strong> {value?.toString()}
+              </p>
+            ))}
           </div>
         </div>
       )}

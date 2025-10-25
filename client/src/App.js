@@ -62,6 +62,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome";
 import RaiseTicket from "./pages/dashboard/RaiseTicket";
 
 // ✅ Admin Layout and Pages
+import AdminProtectedRoute from "./components/admindashboard/AdminProtectedRoute"
 import AdminLayout from "./components/admindashboard/Layout";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminUsers from "./pages/Admin/Users";
@@ -74,6 +75,12 @@ import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminPublicRoute from "./components/admindashboard/AdminPublicRoute";
+import AdminForgotPassword from "./pages/Admin/AdminForgotPassword";
+import AdminResetPassword from "./pages/Admin/AdminResetPassword";
+import ProductDetails from "./pages/Admin/ProductDetails";
+import AdminVendorDetails from "./pages/Admin/AdminVendorDetails";
+import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
 
 const App = () => {
   return (
@@ -121,7 +128,7 @@ const App = () => {
       <Route path="/vendor/register" element={<Register />} />
       <Route path="/vendor/forgot-password" element={<VendorForgot />} />
       <Route path="/vendor/reset-password/:token" element={<VendorReset />} />
-      
+
 
       {/* ===================== Vendor Dashboard Routes ===================== */}
       <Route path="/vendor" element={<VendorDashboardLayout />}>
@@ -133,23 +140,32 @@ const App = () => {
         <Route path="orders" element={<OrdersVendor />} />
         <Route path="earnings" element={<Earnings />} />
         <Route path="profile" element={<ProfileVendor />} />
-   <Route path="/vendor/view-product/:productId" element={<VendorView />} />
+        <Route path="/vendor/view-product/:productId" element={<VendorView />} />
       </Route>
 
       {/* ===================== Admin Login ===================== */}
-      <Route path="/admin-login" element={<AdminLogin />} />
+      <Route element={<AdminPublicRoute />}>
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+        <Route path="/admin/reset-password/:token" element={<AdminResetPassword />} />
+      </Route>
 
       {/* ===================== Admin Dashboard Routes ===================== */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="vendors" element={<AdminVendors />} />
-        <Route path="products" element={<AdminProducts />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="payments" element={<AdminPayments />} />
-        <Route path="reports" element={<AdminReports />} />
-        <Route path="profile-settings" element={<Profilesetting />} />
-        <Route path="security" element={<AdminSecurity />} />
+      <Route element={<AdminProtectedRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="vendors" element={<AdminVendors />} />
+          <Route path="vendors/:vendorId" element={<AdminVendorDetails />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="products/:productId" element={<ProductDetails />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="orders/:orderId" element={<AdminOrderDetails />} />
+          <Route path="payments" element={<AdminPayments />} />
+          {/* <Route path="reports" element={<AdminReports />} /> */}
+          <Route path="profile-settings" element={<Profilesetting />} />
+          <Route path="security" element={<AdminSecurity />} />
+        </Route>
       </Route>
 
     </Routes>

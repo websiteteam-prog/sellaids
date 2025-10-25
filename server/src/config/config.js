@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-dotenv.config(); // dotenv ko sirf yaha import karke configure karenge
+dotenv.config();
 
 const config = {
   env: process.env.NODE_ENV || "development",

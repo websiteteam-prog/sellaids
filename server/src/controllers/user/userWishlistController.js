@@ -1,77 +1,58 @@
-import {
-    addToWishlistService,
-    removeFromWishlistService,
-    getAllWishlistService,
-} from "../services/wishlist.service.js";
-import { successResponse, errorResponse } from "../helpers/responseHandler.js";
-import logger from "../config/logger.js";
+import { addToWishlistService, removeFromWishlistService, getAllWishlistService } from "../../services/user/userWishlistService.js";
+import { successResponse, errorResponse } from "../../utils/helpers.js";
+import logger from "../../config/logger.js";
 
-export const addToWishlist = async (req, res, next) => {
-    try {
-        const { product_id } = req.body;
-        const userId = req?.session?.user?.userId;
+export const addWishlistController = async (req, res) => {
+  try {
+    const userId = req.session?.user?.userId;
+    const { product_id } = req.body;
 
-        if (!userId) {
-            logger.warn("Unauthorized wishlist add attempt");
-            return errorResponse(res, 401, "User not logged in");
-        }
+    if (!userId || !product_id)
+      return res.status(400).json({
+        success: false,
+        message: "User ID and Product ID are required"
+      })
 
-        if (!product_id) {
-            logger.warn("Missing product_id in addToWishlist");
-            return errorResponse(res, 400, "Product ID is required");
-        }
+    const result = await addToWishlistService(userId, product_id);
+    console.log(result.data)
+    if (!result.success)
+      return errorResponse(res, 400, result.message);
 
-        const result = await addToWishlistService(userId, product_id);
-        if (!result.status)
-            return errorResponse(res, 400, result.message || "Failed to add to wishlist");
-
-        logger.info(`Wishlist add successful for user ${userId}`);
-        return successResponse(res, 200, "Product added to wishlist successfully", result.data);
-    } catch (error) {
-        logger.error(`addToWishlistController Error: ${error.message}`);
-        return errorResponse(res, 500, "Internal Server Error");
-    }
+    return successResponse(res, 201, "Product added to wishlist", result.data);
+  } catch (error) {
+    logger.error("addWishlist Controller Error:", error);
+    return errorResponse(res, 500, error);
+  }
 };
 
-export const removeFromWishlist = async (req, res, next) => {
-    try {
-        const { productId } = req.params;
-        const userId = req?.session?.user?.userId;
+export const removeWishlistController = async (req, res) => {
+  try {
+    const userId = req.session?.user?.userId;
+    const { productId } = req.params;
 
-        if (!userId) {
-            logger.warn("Unauthorized wishlist remove attempt");
-            return errorResponse(res, 401, "User not logged in");
-        }
+    if (!userId || !productId)
+      return errorResponse(res, 400, "User ID and Product ID are required");
 
-        const result = await removeFromWishlistService(userId, productId);
-        if (!result.status)
-            return errorResponse(res, 400, result.message || "Failed to remove product");
+    const result = await removeFromWishlistService(userId, productId);
+    if (!result.success)
+      return errorResponse(res, 404, result.message);
 
-        logger.info(`Wishlist remove successful for user ${userId}`);
-        return successResponse(res, 200, "Product removed from wishlist successfully");
-    } catch (error) {
-        logger.error(`removeFromWishlistController Error: ${error.message}`);
-        return errorResponse(res, 500, "Internal Server Error");
-    }
+    return successResponse(res, 200, "Product removed from wishlist");
+  } catch (error) {
+    logger.error("removeWishlist Controller Error:", error);
+    return errorResponse(res, 500, error);
+  }
 };
 
-export const getWishlist = async (req, res, next) => {
-    try {
-        const userId = req?.session?.user?.userId;
+export const getAllWishlistController = async (req, res) => {
+  try {
+    const userId = req.session?.user?.userId;
+    if (!userId) return errorResponse(res, 401, "User not logged in");
 
-        if (!userId) {
-            logger.warn("Unauthorized wishlist fetch attempt");
-            return errorResponse(res, 401, "User not logged in");
-        }
-
-        const result = await getAllWishlistService(userId);
-        if (!result.status)
-            return errorResponse(res, 400, result.message || "Failed to fetch wishlist");
-
-        logger.info(`Wishlist fetched for user ${userId}`);
-        return successResponse(res, 200, "Wishlist fetched successfully", result.data);
-    } catch (error) {
-        logger.error(`getWishlistController Error: ${error.message}`);
-        return errorResponse(res, 500, "Internal Server Error");
-    }
+    const result = await getAllWishlistService(userId);
+    return successResponse(res, 200, "Wishlist fetched successfully", result.data);
+  } catch (error) {
+    logger.error("getAllWishlist Controller Error:", error);
+    return errorResponse(res, 500, error);
+  }
 };

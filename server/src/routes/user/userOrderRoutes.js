@@ -1,12 +1,24 @@
-import express from "express"
-import { userAddAddressController, userGetAddressController, userChangeAddressController } from "../../controllers/user/userAddressController.js"
-// import { sessionMiddleware } from "../../config/session.js"
+// routes/orderRoutes.js
+import express from "express";
+import {
+  createOrderController,
+  verifyPaymentController
+} from "../../controllers/user/userOrderController.js";
 import { isUserLoginIn } from "../../middlewares/authMiddlewares.js"
 
-const router = express.Router()
+const router = express.Router();
 
-router.put("/register", isUserLoginIn, userAddAddressController)
-router.get("/login", isUserLoginIn, userGetAddressController)
-router.put("/logout", isUserLoginIn, userChangeAddressController)
+// User routes
+router.post("/create", isUserLoginIn, createOrderController);
+router.post("/payment/verify", isUserLoginIn, verifyPaymentController); // body: { order_id, provider, provider_payment_id, amount }
 
-export default router
+// User summary
+// router.get("/me/summary", getUserPaymentSummaryController);
+
+// Vendor earnings
+// router.get("/vendor/earnings/:vendorId?", getVendorEarningsController); // vendor auth or param
+
+// Admin
+// router.get("/admin/all", getOrdersForAdminController);
+
+export default router;

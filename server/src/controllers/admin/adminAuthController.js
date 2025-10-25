@@ -27,8 +27,12 @@ export const adminLoginController = async (req, res) => {
         const admin = await loginAdmin(validatedData);
 
         req.session.admin = { adminId: admin.id, email: admin.email };
-        req.session.cookie.maxAge = 30 * 60 * 1000; // 30 min 
+        // req.session.cookie.maxAge = 30 * 60 * 1000; // 30 min 
+        console.log(req.session)
         console.log(req.session.admin.adminId)
+        req.session.save((err) => {
+            if (err) console.error("Session save error:", err);
+        });
 
         logger.info(`Admin logged in: ${admin.email}`);
         return successResponse(res, 200, `${admin.name} login successfully`, { id: admin.id, name: admin.name, email: admin.email });
@@ -46,7 +50,7 @@ export const adminLogoutController = (req, res) => {
                 logger.error(`Logout error: ${err.message}`);
                 return errorResponse(res, 400, err);
             }
-            res.clearCookie("connect.sid");
+            res.clearCookie("session_cookie_name", { path: "/" })
             logger.info(`Admin logged out: ${email}`);
             return successResponse(res, 200, "Logout successfully");
         });
@@ -66,7 +70,7 @@ export const adminForgotPasswordController = async (req, res) => {
 
         // Generate reset token
         const token = await forgotPasswordService(email);
-        const resetLink = `${config.frontend.url}/reset-password/${token}`;
+        const resetLink = `${config.frontend.url}/admin/reset-password/${token}`;
 
         // Send email
         await sendEmail(email, "Reset Your Password", `Click here to reset your password: ${resetLink}`);

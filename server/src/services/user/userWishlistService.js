@@ -1,62 +1,67 @@
-import { Wishlist } from "../../models/wishlistModel.js";
+import { Wishlist } from "../../models/userWishlistModel.js";
+import { Product } from "../../models/productModel.js";
 import logger from "../../config/logger.js";
 
 export const addToWishlistService = async (userId, productId) => {
     try {
-        logger.info(`Adding product ${productId} to wishlist for user ${userId}`);
-
-        const existing = await Wishlist.findOne({
-            where: { user_id: userId, product_id: productId },
-        });
-
-        if (existing) {
-            logger.warn(`Product ${productId} already in wishlist for user ${userId}`);
-            return { status: false, message: "Product already in wishlist" };
+        const exists = await Wishlist.findOne({ where: { user_id: userId, product_id: productId } });
+        if (exists) {
+            return { success: false, message: "Product already in wishlist" };
         }
 
-        const newItem = await Wishlist.create({
-            user_id: userId,
-            product_id: productId,
-        });
-
-        logger.info(`Product ${productId} successfully added to wishlist`);
-        return { status: true, data: newItem };
+        const newItem = await Wishlist.create({ user_id: userId, product_id: productId });
+        logger.info(`Wishlist added: user ${userId}, product ${productId}`);
+        return { success: true, data: newItem };
     } catch (error) {
-        logger.error(`Error in addToWishlistService: ${error.message}`);
-        throw new Error("Failed to add product to wishlist");
+        logger.error("Error in addToWishlistService:", error);
+        throw error;
     }
 };
 
 export const removeFromWishlistService = async (userId, productId) => {
     try {
-        logger.info(`Removing product ${productId} from wishlist for user ${userId}`);
-
-        const deleted = await Wishlist.destroy({
-            where: { user_id: userId, product_id: productId },
-        });
-
+        const deleted = await Wishlist.destroy({ where: { user_id: userId, product_id: productId } });
         if (!deleted) {
-            logger.warn(`Product ${productId} not found in wishlist of user ${userId}`);
-            return { status: false, message: "Product not found in wishlist" };
+            return { success: false, message: "Product not found in wishlist" };
         }
 
-        logger.info(`Product ${productId} removed successfully from wishlist`);
-        return { status: true };
+        logger.info(`Wishlist removed: user ${userId}, product ${productId}`);
+        return { success: true };
     } catch (error) {
-        logger.error(`Error in removeFromWishlistService: ${error.message}`);
-        throw new Error("Failed to remove product from wishlist");
+        logger.error("Error in removeFromWishlistService:", error);
+        throw error;
     }
 };
 
 export const getAllWishlistService = async (userId) => {
     try {
-        logger.info(`Fetching wishlist for user ${userId}`);
-        const items = await Wishlist.findAll({ where: { user_id: userId } });
+        const items = await Wishlist.findAll({
+            where: { user_id: userId },
+            include: [
+                {
+                    model: Product,
+                    as: "product",
+                    attributes: [
+                        "id",
+                        "product_group",
+                        "brand",
+                        "model_name",
+                        "front_photo",
+                        "selling_price",
+                        "status",
+                        "size",
+                        "fit",
+                        "product_color"
+                    ],
+                },
+            ],
+            order: [["created_at", "DESC"]],
+        });
 
-        logger.info(`Fetched ${items.length} items from wishlist`);
-        return { status: true, data: items };
+        logger.info(`Fetched ${items?.length} wishlist items for user ${userId}`);
+        return { success: true, data: items.map(item => item.product) };
     } catch (error) {
-        logger.error(`Error in getAllWishlistService: ${error.message}`);
-        throw new Error("Failed to fetch wishlist");
+        logger.error("Error in getAllWishlistService:", error);
+        throw error;
     }
 };

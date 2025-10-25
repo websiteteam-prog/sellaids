@@ -6,6 +6,8 @@ import {
   FaBoxOpen,
   FaShoppingCart,
 } from "react-icons/fa";
+import toast from "react-hot-toast";
+import { Package, TrendingUp } from "lucide-react";
 
 // Admin Dashboard Overview:
 // Displays key metrics (total users, vendors, products, orders),
@@ -19,7 +21,13 @@ const AdminDashboard = () => {
     totalOrders: 0,
   });
 
-  const [topProducts, setTopProducts] = useState([]);
+  const [topProducts, setTopProducts] = useState([
+    { id: 1, name: "Wireless Headphones", sales: 1240, img: "🎧" },
+    { id: 2, name: "Smart Watch", sales: 980, img: "⌚" },
+    { id: 3, name: "Bluetooth Speaker", sales: 875, img: "🔊" },
+    { id: 4, name: "Gaming Mouse", sales: 650, img: "🖱️" },
+    { id: 5, name: "Laptop Stand", sales: 520, img: "💻" },
+  ]);
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,17 +38,29 @@ const AdminDashboard = () => {
   const fetchAdminDashboard = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/admin/dashboard");
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`, { withCredentials: true });
 
-      setStats({
-        totalUsers: res.data.totalUsers || 0,
-        totalVendors: res.data.totalVendors || 0,
-        totalProducts: res.data.totalProducts || 0,
-        totalOrders: res.data.totalOrders || 0,
-      });
-
-      setTopProducts(res.data.topProducts || []);
-      setRecentOrders(res.data.recentOrders || []);
+      const { success, data, message } = res?.data;
+      console.log(data)
+      if (success) {
+        setStats({
+          totalUsers: data.total_users || 0,
+          totalVendors: data.total_vendors || 0,
+          totalProducts: data.total_products || 0,
+          totalOrders: data.total_orders || 0,
+        });
+        setTopProducts(
+          data.top_products?.map((p, i) => ({
+            id: p.id,
+            name: p.name,
+            img: "🔥", // or use <img src={p.img} /> if you want actual image
+            sales: p.sales,
+          })) || []
+        );
+        toast.success(message)
+      } else {
+        toast.error(message)
+      }
     } catch (err) {
       console.error("Error fetching admin dashboard:", err.response?.data || err.message);
     } finally {
@@ -55,15 +75,17 @@ const AdminDashboard = () => {
     { title: "Total Orders", value: stats.totalOrders, icon: <FaShoppingCart size={20} />, color: "#FACC15" },
   ];
 
+  const maxSales = Math.max(...topProducts.map(p => p.sales), 1);
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       {/* Top Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {topStats.map((stat, i) => (
+        {topStats?.map((stat, i) => (
           <div key={i} className="bg-white shadow rounded-lg p-5 flex items-center justify-between">
             <div>
-              <h3 className="text-gray-500 text-sm">{stat.title}</h3>
-              <p className="text-2xl font-bold text-gray-800">{loading ? 0 : stat.value}</p>
+              <h3 className="text-gray-500 text-sm">{stat?.title}</h3>
+              <p className="text-2xl font-bold text-gray-800">{loading ? 0 : stat?.value}</p>
               <p className={`text-xs mt-1 ${stat.trendColor === "green" ? "text-green-600" : "text-red-600"}`}>
                 {stat.trend}
               </p>
@@ -76,8 +98,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Middle Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        {/* Top Selling Products */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         <div className="bg-white shadow rounded-lg p-5">
           <h3 className="text-gray-700 font-semibold mb-4">Top Selling Products</h3>
           {(topProducts.length > 0 ? topProducts : Array(5).fill({ name: "-", sales: 0 })).map((item, i) => (
@@ -89,6 +110,53 @@ const AdminDashboard = () => {
               <span className="text-sm font-medium text-gray-700">{item.sales}</span>
             </div>
           ))}
+        </div>
+      </div> */}
+
+      {/* List */}
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
+        {/* Card */}
+        <div className="bg-white shadow rounded-lg p-5">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-gray-700 font-semibold flex items-center gap-2">
+              <TrendingUp className="text-[#FF6A00]" size={20} />
+              Top Selling Products
+            </h3>
+            <span className="text-sm text-gray-500">This Month</span>
+          </div>
+
+          {/* Product List */}
+          <div className="space-y-4">
+            {topProducts.map((item, i) => (
+              <div key={i} className="flex items-center justify-between">
+                {/* Product Info */}
+                <div className="flex items-center gap-3 w-48">
+                  <span className="text-2xl">{item.img}</span>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{item.name}</p>
+                    <p className="text-xs text-gray-500">#{i + 1} best seller</p>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="flex-1 mx-4 bg-gray-200 rounded-full h-3 relative">
+                  <div
+                    className="bg-gradient-to-r from-[#FF6A00] to-orange-600 h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${(item.sales / maxSales) * 100}%` }}
+                  ></div>
+                </div>
+
+                {/* Sales Count */}
+                <div className="flex items-center gap-1 w-20 justify-end">
+                  <Package size={15} className="text-gray-500" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    {item.sales}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

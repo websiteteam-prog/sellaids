@@ -1,146 +1,214 @@
-// src/pages/admin/VendorManagement.jsx
-import React, { useEffect, useState } from "react";
-import { FaTrash, FaSearch } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
+import { Download, Edit } from "lucide-react";
+import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
 
 const VendorManagement = () => {
   const [vendors, setVendors] = useState([]);
-  const [filteredVendors, setFilteredVendors] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState(""); // status filter
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalVendors, setTotalVendors] = useState(0); // total count from backend
+  const [editVendor, setEditVendor] = useState(null);
 
-  useEffect(() => {
-    fetchVendors();
-  }, []);
+  const itemsPerPage = 10;
 
+  // Fetch Vendors with pagination
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/admin/vendors"); // replace with your API
-      setVendors(res.data || []);
-      setFilteredVendors(res.data || []);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admin/management/vendor`,
+        {
+          params: {
+            search,
+            status: statusFilter,
+            page: currentPage,
+            limit: itemsPerPage,
+          },
+          withCredentials: true,
+        }
+      );
+      const { success, data, message } = res.data;
+      if (success) {
+        setVendors(data.vendors);
+        setTotalVendors(data.total); // total number of vendors
+      } else {
+        setVendors([]);
+        setTotalVendors(0);
+        toast.error(message);
+      }
     } catch (err) {
-      console.error("Error fetching vendors:", err.response?.data || err.message);
+      console.error(err);
       setVendors([]);
-      setFilteredVendors([]);
+      setTotalVendors(0);
+      toast.error("Error fetching vendors");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchVendors();
+  }, [statusFilter, currentPage]); // Search handled separately
+
+  // Search Button Click
   const handleSearch = () => {
-    let filtered = vendors.filter(
-      (v) =>
-        v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (statusFilter) {
-      filtered = filtered.filter((v) => v.status === statusFilter);
-    }
-
-    setFilteredVendors(filtered);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to page 1
+    fetchVendors();
   };
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const vendorsPerPage = 5;
-  const indexOfLast = currentPage * vendorsPerPage;
-  const indexOfFirst = indexOfLast - vendorsPerPage;
-  const currentVendors = filteredVendors.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredVendors.length / vendorsPerPage);
+  // Status Update
+  const updateStatus = async (vendorId, newStatus) => {
+    try {
+      await axios.patch(
+        `${process.env.REACT_APP_API_URL}/api/admin/management/vendor/${vendorId}/status`,
+        { status: newStatus },
+        { withCredentials: true }
+      );
+      toast.success("Status updated successfully");
+      fetchVendors(); // Refresh after status update
+      closeEditModal();
+    } catch (err) {
+      console.error(err);
+      toast.error("Error updating status");
+    }
+  };
+
+  // Edit Modal
+  const openEditModal = (vendor) => setEditVendor(vendor);
+  const closeEditModal = () => setEditVendor(null);
+  const handleStatusChange = (e) => {
+    setEditVendor((prev) => ({ ...prev, status: e.target.value }));
+  };
+  const handleSaveEdit = () => {
+    updateStatus(editVendor.id, editVendor.status);
+  };
+
+  // Excel Export
+  const exportExcel = () => {
+    if (!vendors.length) return;
+    const ws = XLSX.utils.json_to_sheet(
+      vendors.map((v, index) => ({
+        SR_No: (currentPage - 1) * itemsPerPage + index + 1,
+        Name: v.name,
+        Email: v.email,
+        Phone: v.phone,
+        Status: v.status,
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vendors");
+    XLSX.writeFile(wb, "vendors.xlsx");
+  };
+
+  const totalPages = Math.ceil(totalVendors / itemsPerPage);
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen text-gray-800 text-sm">
-      {/* Header */}
+    <div className="p-6 bg-gray-50 min-h-screen text-gray-800">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold">Vendor Management</h2>
+        <h2 className="text-2xl font-bold">Vendor Management</h2>
+        <button
+          onClick={exportExcel}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700"
+        >
+          <Download size={16} /> Export Report
+        </button>
       </div>
 
-      {/* Search + Filter */}
-      <div className="flex flex-col md:flex-row gap-3 mb-4 items-center">
-        <div className="flex w-full md:w-1/3">
-          <input
-            type="text"
-            placeholder="Search vendors..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border border-gray-300 bg-white text-gray-700 rounded-l-lg px-3 py-2 w-full text-sm"
-          />
-          <button
-            onClick={handleSearch}
-            className="bg-[#FF6A00] text-white px-3 py-2 rounded-r-lg hover:bg-orange-500"
-          >
-            <FaSearch />
-          </button>
-        </div>
-
+      {/* Filters */}
+      <div className="mb-4 flex gap-2 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search by name, email or phone"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-4 py-2 border rounded-lg flex-1 focus:ring focus:ring-blue-200"
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-[#FF6A00] text-white rounded-lg hover:bg-orange-500"
+        >
+          Search
+        </button>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-300 bg-white text-gray-700 rounded-lg px-3 py-2 w-full md:w-1/6 text-sm"
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="px-4 py-2 border rounded-lg"
         >
-          <option value="">Filter by Status</option>
-          <option value="Approved">Approved</option>
-          <option value="Pending">Pending</option>
-          <option value="Rejected">Rejected</option>
+          <option value="all">All</option>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+          <option value="rejected">Rejected</option>
         </select>
       </div>
 
       {/* Vendor Table */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="p-3">ID</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Phone</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Actions</th>
+              <th className="px-4 py-3 border">SR.</th>
+              <th className="px-4 py-3 border">Name</th>
+              <th className="px-4 py-3 border">Email</th>
+              <th className="px-4 py-3 border">Phone</th>
+              <th className="px-4 py-3 border">Status</th>
+              <th className="px-4 py-3 border">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-6 text-gray-500">
-                  Loading Vendors...
+                <td colSpan={6} className="text-center py-6">
+                  Loading vendors...
                 </td>
               </tr>
-            ) : currentVendors.length === 0 ? (
+            ) : vendors.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-6 text-gray-500">
-                  No Vendors Found
+                <td colSpan={6} className="text-center py-6">
+                  No matching vendors
                 </td>
               </tr>
             ) : (
-              currentVendors.map((vendor) => (
-                <tr
-                  key={vendor.id}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition"
-                >
-                  <td className="p-3">{vendor.id}</td>
-                  <td className="p-3 font-medium">{vendor.name}</td>
-                  <td className="p-3">{vendor.email}</td>
-                  <td className="p-3">{vendor.phone}</td>
-                  <td className="p-3">
+              vendors.map((v, index) => (
+                <tr key={v.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 border">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
+                  <td className="px-4 py-3 border font-medium">{v.name}</td>
+                  <td className="px-4 py-3 border">{v.email}</td>
+                  <td className="px-4 py-3 border">{v.phone}</td>
+                  <td className="px-4 py-3 border">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        vendor.status === "Approved"
+                        v.status === "approved"
                           ? "bg-green-100 text-green-700"
-                          : vendor.status === "Pending"
+                          : v.status === "pending"
                           ? "bg-yellow-100 text-yellow-700"
                           : "bg-red-100 text-red-700"
                       }`}
                     >
-                      {vendor.status}
+                      {v.status}
                     </span>
                   </td>
-                  <td className="p-3">
-                    <button className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
-                      <FaTrash size={12} /> Delete
+                  <td className="px-4 py-3 border flex gap-2">
+                    <Link
+                      to={`/admin/vendors/${v.id}`}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      View
+                    </Link>
+                    <button
+                      onClick={() => openEditModal(v)}
+                      className="text-green-500 hover:text-green-700 flex items-center gap-1"
+                    >
+                      <Edit size={16} />Edit
                     </button>
                   </td>
                 </tr>
@@ -151,39 +219,68 @@ const VendorManagement = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
-        <p className="text-gray-600 text-xs">
-          Showing {currentVendors.length > 0 ? indexOfFirst + 1 : 0}-
-          {indexOfFirst + currentVendors.length} of {filteredVendors.length} vendors
-        </p>
-        <div className="flex gap-2">
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4">
           <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
             className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
           >
-            &lt;
+            Prev
           </button>
           {Array.from({ length: totalPages }, (_, i) => (
             <button
-              key={i + 1}
+              key={i}
               onClick={() => setCurrentPage(i + 1)}
               className={`px-3 py-1 border rounded ${
-                currentPage === i + 1 ? "bg-[#FF6A00] text-white" : "hover:bg-gray-100"
+                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
               }`}
             >
               {i + 1}
             </button>
           ))}
           <button
-            disabled={currentPage === totalPages || totalPages === 0}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
             className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
           >
-            &gt;
+            Next
           </button>
         </div>
-      </div>
+      )}
+
+      {/* Edit Modal */}
+      {editVendor && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              onClick={closeEditModal}
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-bold mb-4">Update Vendor Status</h3>
+            <div className="flex flex-col gap-3">
+              <select
+                name="status"
+                value={editVendor.status}
+                onChange={handleStatusChange}
+                className="px-3 py-2 border rounded"
+              >
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button
+                onClick={handleSaveEdit}
+                className="bg-[#FF6A00] text-white px-4 py-2 rounded hover:bg-orange-500"
+              >
+                Save Status
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
