@@ -3,19 +3,20 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useUserStore } from "../../stores/useUserStore";
-
-
+import toast from "react-hot-toast";
 
 function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const { login } = useUserStore();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/user/auth/login`,
@@ -24,20 +25,21 @@ function UserLogin() {
       );
 
       const { success, data, message } = res.data;
-      console.log(res.data)
       if (success) {
         login(data);
         setEmail("");
         setPassword("");
-
-        alert("Login Successful ✅");
-        navigate("/user")
+        
+        toast.success(message || "Login Successful ✅");
+        navigate("/user");
       } else {
-        alert(message || "Login Failed ❌");
+        toast.error(message || "Login Failed ❌");
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Invalid Credentials ❌");
+      toast.error("Invalid Credentials ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,24 +75,36 @@ function UserLogin() {
             )}
           </div>
 
-          {/* Forgot Password Link */}
+          {/* Forgot Password Link with Debugging */}
           <div className="text-right mb-4">
-            <Link to="/UserAuth/forgot-password" className="text-blue-500 hover:underline">
+            <Link
+              to="/UserAuth/forgot-password"
+              className="text-blue-500 hover:underline"
+              onClick={() => console.log("Forgot Password link clicked")}
+            >
               Forgot Password?
             </Link>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md"
+            className={`w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={loading}
           >
-            LOGIN
+            {loading ? "Logging In..." : "LOGIN"}
           </button>
         </form>
+
         <div className="mt-5 text-center">
           Not registered?{" "}
           <Link to="/UserAuth/register" className="text-orange-600">
             Register
+          </Link>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link to="/" className="text-blue-500 hover:underline">
+            Back to website
           </Link>
         </div>
       </div>

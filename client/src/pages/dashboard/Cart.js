@@ -23,10 +23,8 @@ export default function Cart() {
   useEffect(() => {
     if (isUserLoading) return;
     if (!isAuthenticated || !user?.id) {
-      console.log("Redirecting to UserLogin due to auth failure");
-      navigate("/UserAuth/UserLogin", {
-        state: { from: window.location.pathname },
-      });
+      console.log('Redirecting to UserLogin due to auth failure');
+      navigate('/UserAuth/UserLogin', { state: { from: window.location.pathname } });
     } else {
       setLoading(true);
       axios

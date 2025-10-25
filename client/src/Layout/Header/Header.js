@@ -88,16 +88,11 @@ const Header = () => {
         {/* Icons & User */}
         <div className="flex space-x-3 sm:space-x-4 text-gray-600 items-center relative">
           {user ? (
-            <div className="relative group">
-              <div className="flex items-center cursor-pointer hover:text-orange-500">
-                <User className="w-5 h-5" />
-              </div>
-              <div className="absolute right-[-20px] top-3 mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
-                <Link to="/user" className="block px-4 py-2 hover:bg-orange-100">Dashboard</Link>
-                <button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-orange-100">
-                  Logout
-                </button>
-              </div>
+            <div className="flex items-center gap-3 cursor-pointer hover:text-orange-500">
+              <User
+                className="w-5 h-5"
+                onClick={() => navigate("/user")} // When clicked, navigate to the Dashboard
+              />
             </div>
           ) : (
             <Link to="/UserAuth/UserLogin">
