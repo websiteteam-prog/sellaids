@@ -2,12 +2,21 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 
 const UserPublicRoute = () => {
-  const { isAuthenticated } = useUserStore();
+  const { isAuthenticated, isUserLoading } = useUserStore();
 
-  console.log("UserPublicRoute - isAuthenticated:", isAuthenticated);
+  console.log("UserPublicRoute - isAuthenticated:", isAuthenticated, "isUserLoading:", isUserLoading);
 
-  // Allow access if not authenticated, or always allow for public routes like forgot password
-  return !isAuthenticated ? <Outlet /> : <Navigate to="/user" replace />;
+  // If user is loading, show a loading state
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-6">
+        <p className="text-center mt-10">Loading user...</p>
+      </div>
+    );
+  }
+
+  // Always allow access to public routes (e.g., login, forgot password)
+  return <Outlet />;
 };
 
 export default UserPublicRoute;
