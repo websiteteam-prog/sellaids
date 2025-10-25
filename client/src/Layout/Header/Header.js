@@ -15,10 +15,14 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/auth/logout`, {}, { withCredentials: true });
+      await axios.post(
+        "http://localhost:5000/api/user/auth/logout",
+        {},
+        { withCredentials: true }
+      );
       logout();
       toast.success("You have successfully logged out");
-      setTimeout(() => navigate("/UserLogin"), 1500);
+      setTimeout(() => navigate("/UserAuth/UserLogin"), 1500);
     } catch (err) {
       console.error("Logout failed:", err);
       toast.error("Logout failed, please try again.");
@@ -88,15 +92,15 @@ const Header = () => {
               <div className="flex items-center cursor-pointer hover:text-orange-500">
                 <User className="w-5 h-5" />
               </div>
-              <div className="absolute right-0 top-full mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
-                <Link to="/dashboard" className="block px-4 py-2 hover:bg-orange-100">Dashboard</Link>
+              <div className="absolute right-[-20px] top-3 mt-2 w-40 bg-white shadow-lg border rounded z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+                <Link to="/user" className="block px-4 py-2 hover:bg-orange-100">Dashboard</Link>
                 <button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-orange-100">
                   Logout
                 </button>
               </div>
             </div>
           ) : (
-            <Link to="/UserLogin">
+            <Link to="/UserAuth/UserLogin">
               <User className="w-5 h-5 hover:text-orange-500 cursor-pointer" />
             </Link>
           )}

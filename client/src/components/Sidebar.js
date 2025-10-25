@@ -11,6 +11,7 @@ import {
   X,
   LogOut
 } from "lucide-react";
+import UserLogout from "./UserAuth/UserLogout";
 
 const menuItems = [
   { path: "/user", label: "Dashboard", icon: <Home size={18} /> },
@@ -32,7 +33,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     // Clear session/token
     localStorage.removeItem("token"); // example
-    navigate("/UserLogin");
+    navigate("/UserAuth/UserLogin");
   };
 
   const renderMenuItems = () =>
@@ -109,7 +110,7 @@ export default function Sidebar() {
           }}
           className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-red-50 text-gray-700 transition border-t"
         >
-          <LogOut size={18} /> Logout
+          <UserLogout size={18} /> Logout
         </button>
       </div>
     </>

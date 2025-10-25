@@ -38,7 +38,7 @@ const Login = () => {
         // localStorage.setItem('vendorInfo', JSON.stringify(vendor));
         // localStorage.setItem('vendorId', vendor.id);
         toast.success('Vendor login Successful');
-        navigate('/vendor');
+      navigate("/vendor", { replace: true });
       } else {
         toast.error('Login Failed');
       }

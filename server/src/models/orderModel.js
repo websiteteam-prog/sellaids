@@ -2,6 +2,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
 import { User } from "./userModel.js";
 import { Product } from "./productModel.js";
+import { Vendor } from "./vendorModel.js";
 
 export const Order = sequelize.define(
   "Order",
@@ -10,6 +11,15 @@ export const Order = sequelize.define(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+    },
+    vendor_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Vendor,
+        key: "id",
+      },
+      onDelete: "CASCADE",
     },
     user_id: {
       type: DataTypes.INTEGER,

@@ -156,7 +156,7 @@ export const getDashboardStatsService = async (vendorId) => {
   try {
     const totalProducts = await Product.count({ where: { vendor_id: vendorId, is_active: true } });
 
-    const pendingOrders = await Order.count({ where: { order_status: "pending" } });
+    const pendingOrders = await Order.count({ where: { order_status: "pending" , vendor_id: vendorId } });
 
     const totalEarnings = await Payment.sum("vendor_earning", {
       where: { vendor_id: vendorId, status: "success" },
