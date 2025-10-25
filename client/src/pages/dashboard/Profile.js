@@ -32,7 +32,7 @@ export default function Profile() {
   // Fetch user profile
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
-      navigate("/UserLogin");
+      navigate("/UserAuth/UserLogin");
       return;
     }
     const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/list`;
@@ -55,7 +55,7 @@ export default function Profile() {
       })
       .catch((err) => {
         if (err.response?.status === 401) {
-          navigate("/UserLogin");
+          navigate("/UserAuth/UserLogin");
         } else {
           console.error("Error fetching profile:", err);
         }
@@ -145,7 +145,7 @@ export default function Profile() {
       });
     } catch (error) {
       if (error.response?.status === 401) {
-        navigate("/UserLogin");
+        navigate("/UserAuth/UserLogin");
       } else if (error.response?.data?.error === "Current password is incorrect") {
         alert("Current password is incorrect!");
         setLoading(false);

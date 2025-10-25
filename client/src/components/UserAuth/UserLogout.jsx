@@ -8,7 +8,6 @@ const UserLogout = () => {
   const { logout } = useUserStore();
   const navigate = useNavigate();
 
-  // Function to clear all cookies
   const clearCookies = () => {
     document.cookie.split(";").forEach((cookie) => {
       const name = cookie.split("=")[0].trim();
@@ -18,7 +17,6 @@ const UserLogout = () => {
 
   const handleLogout = async () => {
     try {
-      // Call backend logout API
       const res = await axios.post(
         "http://localhost:5000/api/user/auth/logout",
         {},
@@ -26,34 +24,38 @@ const UserLogout = () => {
       );
 
       const { success, message } = res.data;
-      console.log(res.data);
+      console.log("Logout API response:", res.data);
 
-      if (success) {
-        // Clear Zustand store, localStorage, and cookies
+      if (success || message === "User not logged in or session expired") {
         logout();
-        localStorage.removeItem("user-store");
         clearCookies();
 
-        toast.success(message || "Logged out successfully!");
-        navigate("/UserAuth/UserLogin", { replace: true });
+        toast.success("Logged out successfully!");
+        console.log("Navigating to login page");
+        navigate("/UserAuth/UserLogin"); // Remove { replace: true }
+      } else {
+        toast.error(message || "Logout failed ❌");
       }
     } catch (error) {
       console.error("Logout failed:", error);
-      toast.error("Logout failed, redirecting to login");
+      toast.error("Logout failed, please try again.");
 
-      // Force clear everything even if API fails
       logout();
-      localStorage.clear();
-      sessionStorage.clear();
       clearCookies();
 
-      navigate("/UserAuth/UserLogin", { replace: true });
+      console.log("Navigating to login page after error");
+      setTimeout(() => {
+        navigate("/UserAuth/UserLogin"); // Remove { replace: true }
+      }, 100);
     }
   };
 
   return (
     <button
-      onClick={handleLogout}
+      onClick={() => {
+        console.log("Logout button clicked");
+        handleLogout();
+      }}
       className="flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50 w-full"
     >
       Logout

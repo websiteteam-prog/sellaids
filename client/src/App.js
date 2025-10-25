@@ -1,4 +1,3 @@
-// src/App.js
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
@@ -41,6 +40,7 @@ import ResetPassword from "./components/UserAuth/UserReset";
 import UserLogout from "./components/UserAuth/UserLogout";
 import UserPublicRoute from "./components/UserAuth/UserPublicRoute";
 import UserProtectedRoute from "./components/UserAuth/UserProtectedRoute";
+
 // ✅ Vendor Dashboard Pages
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
 import AddProduct from "./pages/vendor/AddProduct";
@@ -58,8 +58,6 @@ import Addresses from "./pages/dashboard/Addresses";
 import Payments from "./pages/dashboard/Payments";
 import Wishlist from "./pages/dashboard/Wishlist";
 import Cart from "./pages/dashboard/Cart";
-
-
 import Support from "./pages/dashboard/Support";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import RaiseTicket from "./pages/dashboard/RaiseTicket";
@@ -83,7 +81,6 @@ import VendorPublicRoute from "./components/vendor/VendorPublicRoute";
 const App = () => {
   return (
     <Routes>
-
       {/* ===================== Public Routes ===================== */}
       <Route path="/" element={<Layout><LandingPage /></Layout>} />
       <Route path="/landingpage" element={<Layout><LandingPage /></Layout>} />
@@ -105,54 +102,52 @@ const App = () => {
 
       {/* ===================== User Auth Routes ===================== */}
       <Route element={<UserPublicRoute />}>
-      <Route path="/UserAuth/UserLogin" element={<UserLogin />} />
-      <Route path="/UserAuth/register" element={<UserRegister />} />
+        <Route path="/UserAuth/UserLogin" element={<UserLogin />} />
+        <Route path="/UserAuth/register" element={<UserRegister />} />
+        <Route path="/UserAuth/forgot-password" element={<ForgotPassword />} /> 
+        <Route path="/UserAuth/reset-password/:token" element={<ResetPassword />} />
+      </Route>
+      {/* Move UserLogout outside UserPublicRoute to allow logout from any state */}
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
-      <Route path="/UserAuth/forgot-password" element={<ForgotPassword />} />
-      <Route path="/UserAuth/reset-password/:token" element={<ResetPassword />} />
-</Route>
+
       {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
-      <Route path="/user" element={<DashboardLayout />}>
-        <Route index element={<DashboardHome />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="addresses" element={<Addresses />} />
-        <Route path="user-payments" element={<Payments />} />
-        <Route path="wishlist" element={<Wishlist />} />
-        <Route path="cart" element={<Cart />} />
-        <Route path="support" element={<Support />} />
-        <Route path="raise-ticket" element={<RaiseTicket />} />
-      </Route>
-</Route>
-      {/* ===================== Vendor Auth Routes ===================== */}
-      {/* <Route path="/vendor/login" element={<Login />} />
-      <Route path="/vendor/register" element={<Register />} />
-      <Route path="/vendor/forgot-password" element={<VendorForgot />} />
-      <Route path="/vendor/reset-password/:token" element={<VendorReset />} /> */}
-      <Route element={<VendorPublicRoute />}>
-        <Route path="/vendor/login" element={<Login />} />
-      <Route path="/vendor/register" element={<Register />} />
-      <Route path="/vendor/forgot-password" element={<VendorForgot />} />
-      <Route path="/vendor/reset-password/:token" element={<VendorReset />} />
+        <Route path="/user" element={<DashboardLayout />}>
+          <Route index element={<DashboardHome />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="addresses" element={<Addresses />} />
+          <Route path="user-payments" element={<Payments />} />
+          <Route path="wishlist" element={<Wishlist />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="support" element={<Support />} />
+          <Route path="raise-ticket" element={<RaiseTicket />} />
+        </Route>
       </Route>
 
+      {/* ===================== Vendor Auth Routes ===================== */}
+      <Route element={<VendorPublicRoute />}>
+        <Route path="/vendor/login" element={<Login />} />
+        <Route path="/vendor/register" element={<Register />} />
+        <Route path="/vendor/forgot-password" element={<VendorForgot />} />
+        <Route path="/vendor/reset-password/:token" element={<VendorReset />} />
+      </Route>
 
       {/* ===================== Vendor Dashboard Routes ===================== */}
       <Route element={<VendorProtectedRoute />}>
-      <Route path="/vendor" element={<VendorDashboardLayout />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardHomeVendor />} />
-        <Route path="add-product" element={<AddProduct />} />
-        <Route path="all-products" element={<AllProducts />} />
-        <Route path="edit-product/:id" element={<EditProduct />} />
-        <Route path="orders" element={<OrdersVendor />} />
-        <Route path="earnings" element={<Earnings />} />
-        <Route path="profile" element={<ProfileVendor />} />
-   <Route path="/vendor/view-product/:productId" element={<VendorView />} />
+        <Route path="/vendor" element={<VendorDashboardLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardHomeVendor />} />
+          <Route path="add-product" element={<AddProduct />} />
+          <Route path="all-products" element={<AllProducts />} />
+          <Route path="edit-product/:id" element={<EditProduct />} />
+          <Route path="orders" element={<OrdersVendor />} />
+          <Route path="earnings" element={<Earnings />} />
+          <Route path="profile" element={<ProfileVendor />} />
+          <Route path="view-product/:productId" element={<VendorView />} />
+        </Route>
       </Route>
-</Route>
-   
+
       {/* ===================== Admin Login ===================== */}
       <Route path="/admin-login" element={<AdminLogin />} />
 
@@ -169,6 +164,8 @@ const App = () => {
         <Route path="security" element={<AdminSecurity />} />
       </Route>
 
+      {/* ===================== Default Route ===================== */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

@@ -32,7 +32,7 @@ export default function Wishlist() {
   useEffect(() => {
     if (isUserLoading) return;
     if (!isAuthenticated || !user?.id) {
-      navigate('/UserLogin', { state: { from: window.location.pathname } });
+      navigate('/UserAuth/UserLogin', { state: { from: window.location.pathname } });
     } else {
       setLoading(true);
       axios
@@ -49,7 +49,7 @@ export default function Wishlist() {
             url: err.config?.url,
           });
           if (err.response?.status === 401) {
-            navigate('/UserLogin', { state: { from: window.location.pathname } });
+            navigate('/UserAuth/UserLogin', { state: { from: window.location.pathname } });
           } else if (err.response?.status === 404) {
             alert('Wishlist endpoint not found. Please check the API URL.');
           }
