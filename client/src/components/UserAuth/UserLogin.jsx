@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-// import useUserStore from "../stores/useUserStore";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useUserStore } from "../stores/useUserStore";
+import { useUserStore } from "../../stores/useUserStore";
+
+
 
 function UserLogin() {
   const [email, setEmail] = useState("");
@@ -74,7 +75,7 @@ function UserLogin() {
 
           {/* Forgot Password Link */}
           <div className="text-right mb-4">
-            <Link to="/forgot-password" className="text-blue-500 hover:underline">
+            <Link to="/UserAuth/forgot-password" className="text-blue-500 hover:underline">
               Forgot Password?
             </Link>
           </div>
@@ -88,7 +89,7 @@ function UserLogin() {
         </form>
         <div className="mt-5 text-center">
           Not registered?{" "}
-          <Link to="/register" className="text-orange-600">
+          <Link to="/UserAuth/register" className="text-orange-600">
             Register
           </Link>
         </div>

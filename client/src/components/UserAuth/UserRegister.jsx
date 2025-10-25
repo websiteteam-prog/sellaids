@@ -23,7 +23,7 @@ function Register() {
 
       if (res.data.success) {
         alert("Registration Successful ✅");
-        navigate("/UserLogin");
+        navigate("/UserAuth/UserLogin");
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
