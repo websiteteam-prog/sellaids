@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import useCartStore from "../../stores/useCartStore";
 import axios from "axios";
-import { toast, Toaster } from "react-hot-toast"; // Import toast and Toaster
+import { toast, Toaster } from "react-hot-toast";
 
 export default function Payments() {
   const { user, isAuthenticated, fetchUser } = useUserStore();
@@ -27,7 +27,7 @@ export default function Payments() {
     const fetchOrderData = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/user/${user.id}/latest-order`,
+          `${process.env.REACT_APP_API_URL}/api/payment/user/${user.id}/latest-order`,
           { withCredentials: true }
         );
         setOrderData(response.data.data);
@@ -35,28 +35,31 @@ export default function Payments() {
         console.error("Failed to fetch order data:", err);
         setTimeout(() => {
           navigate("/user");
-        }, 1500); // Delay navigation
+        }, 1500);
       }
     };
 
     const validateUser = async () => {
       if (!isAuthenticated || !user?.id) {
         try {
-          // Attempt to fetch user profile to restore session
           await fetchUser();
           if (!user?.id) {
             console.warn("User still not authenticated after fetch");
             toast.error("Please log in to continue ❌");
             setTimeout(() => {
-              navigate("/UserAuth/UserLogin", { state: { from: "/user/user-payments" } });
-            }, 1500); // Delay navigation
+              navigate("/UserAuth/UserLogin", {
+                state: { from: "/user/user-payments" },
+              });
+            }, 1500);
           }
         } catch (err) {
           console.error("Failed to fetch user:", err);
           toast.error("Authentication failed. Please log in ❌");
           setTimeout(() => {
-            navigate("/UserAuth/UserLogin", { state: { from: "/user/user-payments" } });
-          }, 1500); // Delay navigation
+            navigate("/UserAuth/UserLogin", {
+              state: { from: "/user/user-payments" },
+            });
+          }, 1500);
         }
       }
     };
@@ -78,7 +81,7 @@ export default function Payments() {
         toast.error("Invalid order data. Redirecting to dashboard... ❌");
         setTimeout(() => {
           navigate("/user");
-        }, 1500); // Delay navigation
+        }, 1500);
       } else {
         loadRazorpay();
       }
@@ -107,16 +110,17 @@ export default function Payments() {
       toast.error("Failed to load Razorpay. Please try again ❌");
       setTimeout(() => {
         navigate("/user");
-      }, 1500); // Delay navigation
+      }, 1500);
     };
   };
 
+  // ✅ Updated openPayment() with cancel integration
   const openPayment = async () => {
     if (!window.Razorpay) {
       toast.error("Razorpay not loaded yet. Please try again ❌");
       setTimeout(() => {
         navigate("/user");
-      }, 1500); // Delay navigation
+      }, 1500);
       return;
     }
 
@@ -139,6 +143,7 @@ export default function Payments() {
             },
             { withCredentials: true }
           );
+
           if (verifyRes.data.success) {
             toast.success("Payment Successful! ✅");
             await clearCart();
@@ -146,30 +151,55 @@ export default function Payments() {
             setOrderData(null);
             setTimeout(() => {
               navigate("/user");
-            }, 1500); // Delay navigation
+            }, 1500);
           } else {
             toast.error("Payment verification failed! ❌");
             setTimeout(() => {
               navigate("/user");
-            }, 1500); // Delay navigation
+            }, 1500);
           }
         } catch (err) {
           console.error("Verification error:", err);
           toast.error("Payment verification failed! ❌");
           setTimeout(() => {
             navigate("/user");
-          }, 1500); // Delay navigation
+          }, 1500);
         }
       },
+
+      // 🔴 Handle Razorpay modal close (cancel)
       modal: {
-        ondismiss: () => {
+        ondismiss: async () => {
           console.warn("Payment modal closed by user");
-          toast.error("Payment was cancelled. Please try again ❌");
-          setTimeout(() => {
-            navigate("/user");
-          }, 1500); // Delay navigation
+          toast.loading("Cancelling payment...");
+
+          try {
+            await axios.post(
+              `${process.env.REACT_APP_API_URL}/api/payment/cancel`,
+              {
+                razorpayOrderId: orderData.razorpayOrderId,
+                orderIds: orderData.orderIds,
+              },
+              { withCredentials: true }
+            );
+
+            toast.dismiss();
+            toast.error("Payment cancelled ❌");
+
+            // Clear session + redirect without refresh
+            sessionStorage.removeItem("orderData");
+            setOrderData(null);
+
+            setTimeout(() => navigate("/user"), 1000);
+          } catch (err) {
+            console.error("Cancel payment error:", err);
+            toast.dismiss();
+            toast.error("Failed to cancel payment ❌");
+            setTimeout(() => navigate("/user"), 1000);
+          }
         },
       },
+
       prefill: {
         name: user?.name || "",
         email: user?.email || "",
@@ -187,24 +217,33 @@ export default function Payments() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Toaster /> {/* Add Toaster component */}
+        <Toaster />
         <p className="text-gray-600 text-lg">Loading payment gateway...</p>
       </div>
     );
   }
 
-  if (!orderData || !orderData.key || !orderData.razorpayOrderId || !orderData.amount || !orderData.currency || !orderData.orderIds) {
+  if (
+    !orderData ||
+    !orderData.key ||
+    !orderData.razorpayOrderId ||
+    !orderData.amount ||
+    !orderData.currency ||
+    !orderData.orderIds
+  ) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Toaster /> {/* Add Toaster component */}
-        <p className="text-red-600 text-lg">Invalid order data. Redirecting to dashboard...</p>
+        <Toaster />
+        <p className="text-red-600 text-lg">
+          Invalid order data. Redirecting to dashboard...
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-50">
-      <Toaster /> {/* Add Toaster component */}
+      <Toaster />
       <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">
           Redirecting to Razorpay...

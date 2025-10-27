@@ -22,6 +22,7 @@ const config = {
   email: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
+    adminEmail: process.env.ADMIN_EMAIL || "admin@myshop.com",
   },
   frontend: {
     url: process.env.FRONTEND_URL,

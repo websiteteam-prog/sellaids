@@ -35,7 +35,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
     for (const item of cartItems) {
       const product = await Product.findByPk(item.product_id, {
         transaction,
-        include: [{ model: Vendor, as: "vendor" }], 
+        include: [{ model: Vendor, as: "vendor" }],
       });
       if (!product) {
         await transaction.rollback();
@@ -70,7 +70,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       const order = await Order.create(
         {
           user_id: userId,
-          vendor_id: product.vendor_id, 
+          vendor_id: product.vendor_id,
           product_id: item.product_id,
           quantity: item.quantity,
           total_amount: product.purchase_price * item.quantity,
@@ -87,7 +87,6 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       orders.push(order);
     }
 
-    // Validate vendor_id exists in vendors table
     const vendorId = orders[0].vendor_id;
     const vendorExists = await Vendor.findByPk(vendorId, { transaction });
     if (!vendorExists) {
@@ -99,7 +98,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       {
         order_id: orders[0].id,
         user_id: userId,
-        vendor_id: vendorId, 
+        vendor_id: vendorId,
         payment_method: "razorpay",
         razorpay_order_id: razorpayOrder.id,
         amount: totalAmount,
@@ -177,7 +176,7 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
     }
     await payment.update(
       {
-        status: "success",
+        payment_status: "success", // Corrected from 'status'
         razorpay_payment_id,
         razorpay_signature,
         transaction_id: razorpay_payment_id,
@@ -196,6 +195,67 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
   } catch (error) {
     await transaction.rollback();
     logger.error(`verifyPaymentService error for user ${userId}:`, error);
+    return { status: false, message: error.message };
+  }
+};
+
+export const cancelPaymentService = async (userId, razorpayOrderId, orderIds) => {
+  const transaction = await sequelize.transaction();
+  try {
+    // Validate orders
+    for (const orderId of orderIds) {
+      const order = await Order.findOne({
+        where: { id: orderId, user_id: userId, payment_status: "pending" }, // Added status check
+        transaction,
+      });
+      if (!order) {
+        await transaction.rollback();
+        return { status: false, message: `Order ${orderId} not found or not cancellable` };
+      }
+      await order.update(
+        {
+          payment_status: "failed",
+          order_status: "cancelled",
+          updated_at: new Date(),
+        },
+        { transaction }
+      );
+    }
+
+    // Update payment status
+    const payment = await Payment.findOne({
+      where: { razorpay_order_id: razorpayOrderId, payment_status: "pending" }, // Added status check
+      transaction,
+    });
+    if (!payment) {
+      await transaction.rollback();
+      return { status: false, message: "Payment record not found or not cancellable" };
+    }
+    await payment.update(
+      {
+        payment_status: "failed", // Corrected from 'status'
+        failure_reason: "Payment cancelled by user",
+        updated_at: new Date(),
+      },
+      { transaction }
+    );
+
+    // Restore product stock
+    for (const orderId of orderIds) {
+      const order = await Order.findByPk(orderId, { transaction });
+      const product = await Product.findByPk(order.product_id, { transaction });
+      await product.update(
+        { stock: product.stock + order.quantity },
+        { transaction }
+      );
+    }
+
+    await transaction.commit();
+    logger.info(`Payment cancelled for Razorpay order ${razorpayOrderId}`);
+    return { status: true, message: "Payment and order cancelled successfully" };
+  } catch (error) {
+    await transaction.rollback();
+    logger.error(`cancelPaymentService error for user ${userId}:`, error);
     return { status: false, message: error.message };
   }
 };

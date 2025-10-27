@@ -66,3 +66,5 @@ export const Payment = sequelize.define(
 Payment.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 Payment.belongsTo(User, { foreignKey: "user_id", as: "user" });
 Payment.belongsTo(Vendor, { foreignKey: "vendor_id", as: "vendor" });
+Order.hasOne(Payment, { foreignKey: "order_id", as: "payment" });
+  

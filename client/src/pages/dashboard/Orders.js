@@ -11,6 +11,10 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const limit = 10; // Items per page
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
@@ -18,16 +22,18 @@ const Orders = () => {
       return;
     }
     fetchOrders();
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, currentPage]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError(null);
-      const endpoint = `${process.env.REACT_APP_API_URL}/api/user/order/list`;
+      const endpoint = `${process.env.REACT_APP_API_URL}/api/user/order/list?page=${currentPage}&limit=${limit}`;
       const res = await axios.get(endpoint, { withCredentials: true });
-      setOrders(res.data.data || []);
-      setFilteredOrders(res.data.data || []); // Initialize filtered orders
+      setOrders(res.data.data.orders || []);
+      setFilteredOrders(res.data.data.orders || []); // Initialize filteredOrders with all orders
+      setTotalPages(res.data.data.totalPages || 1);
+      setTotalItems(res.data.data.totalItems || 0);
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/UserAuth/UserLogin");
@@ -36,19 +42,79 @@ const Orders = () => {
         console.error("Failed to fetch orders:", err.response?.data || err.message);
         setOrders([]);
         setFilteredOrders([]);
+        setTotalPages(1);
+        setTotalItems(0);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Automatic search on input change
-  useEffect(() => {
+  // Handle search button click
+  const handleSearch = () => {
     const filtered = orders.filter((order) =>
       order.productName.toLowerCase().includes(search.toLowerCase())
     );
     setFilteredOrders(filtered);
-  }, [search, orders]);
+  };
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Pagination controls
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 mx-1 rounded ${
+            currentPage === i
+              ? "bg-red-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex justify-center items-center mt-4 gap-2">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        {pages}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
+        >
+          Next
+        </button>
+        <span className="ml-4 text-sm text-gray-600">
+          Page {currentPage} of {totalPages} | Total Items: {totalItems}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="p-4 sm:p-6">
@@ -73,7 +139,7 @@ const Orders = () => {
             />
             <button
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-              disabled
+              onClick={handleSearch} // Trigger search on button click
             >
               Search
             </button>
@@ -128,6 +194,9 @@ const Orders = () => {
               ))}
             </tbody>
           </table>
+
+          {/* Pagination Controls */}
+          {renderPagination()}
         </div>
       )}
     </div>
