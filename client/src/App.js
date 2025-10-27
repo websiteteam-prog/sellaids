@@ -104,7 +104,7 @@ const App = () => {
       <Route element={<UserPublicRoute />}>
         <Route path="/UserAuth/UserLogin" element={<UserLogin />} />
         <Route path="/UserAuth/register" element={<UserRegister />} />
-        <Route path="/UserAuth/forgot-password" element={<ForgotPassword />} /> 
+        <Route path="/UserAuth/UserForgot" element={<ForgotPassword />} />
         <Route path="/UserAuth/reset-password/:token" element={<ResetPassword />} />
       </Route>
       {/* Move UserLogout outside UserPublicRoute to allow logout from any state */}

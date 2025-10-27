@@ -29,6 +29,14 @@ const Header = () => {
     }
   };
 
+  const handleWishlistClick = () => {
+    if (user) {
+      navigate("/wishlist");
+    } else {
+      navigate("/UserAuth/UserLogin");
+    }
+  };
+
   return (
     <header className="bg-white shadow relative z-40">
       <Toaster position="top-right" />
@@ -100,10 +108,10 @@ const Header = () => {
             </Link>
           )}
 
-          <Link to="/wishlist">
+          <div onClick={handleWishlistClick}>
             <Heart className="w-5 h-5 hover:text-orange-500 cursor-pointer" />
-          </Link>
-          
+          </div>
+
           <Search
             className="w-5 h-5 hover:text-orange-500 cursor-pointer"
             onClick={() => setIsSearchOpen(true)}
