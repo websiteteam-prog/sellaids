@@ -3,9 +3,10 @@ import { useUserStore } from "../../stores/useUserStore";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast, Toaster } from "react-hot-toast";
 
 export default function Profile() {
-  const { user, isAuthenticated, login } = useUserStore();
+  const { user, isAuthenticated, isUserLoading, login } = useUserStore();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
@@ -31,10 +32,19 @@ export default function Profile() {
 
   // Fetch user profile
   useEffect(() => {
+    // If user is loading, do nothing yet
+    if (isUserLoading) return;
+
+    // If not authenticated or no user ID, navigate immediately
     if (!isAuthenticated || !user?.id) {
-      navigate("/UserAuth/UserLogin");
+      toast.error("Please log in to view your profile ❌");
+      navigate("/UserAuth/UserLogin", {
+        state: { from: window.location.pathname },
+      });
       return;
     }
+
+    // Fetch profile for authenticated user
     const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/list`;
     axios
       .get(endpoint, { withCredentials: true })
@@ -55,12 +65,16 @@ export default function Profile() {
       })
       .catch((err) => {
         if (err.response?.status === 401) {
-          navigate("/UserAuth/UserLogin");
+          toast.error("Session expired. Please log in again ❌");
+          navigate("/UserAuth/UserLogin", {
+            state: { from: window.location.pathname },
+          });
         } else {
           console.error("Error fetching profile:", err);
+          toast.error("Failed to fetch profile data ❌");
         }
       });
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, isUserLoading, navigate]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -118,7 +132,7 @@ export default function Profile() {
       // Include password fields only if provided
       if (formData.newPassword || formData.confirmPassword || formData.currentPassword) {
         if (formData.newPassword !== formData.confirmPassword) {
-          alert("New password and confirm password do not match!");
+          toast.error("New password and confirm password do not match! ❌");
           setLoading(false);
           return;
         }
@@ -135,7 +149,7 @@ export default function Profile() {
         },
       });
       login(res.data); // Update user in store
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully! ✅");
       setIsEditing(false);
       setFormData({
         ...formData,
@@ -145,20 +159,23 @@ export default function Profile() {
       });
     } catch (error) {
       if (error.response?.status === 401) {
-        navigate("/UserAuth/UserLogin");
+        toast.error("Session expired. Please log in again ❌");
+        navigate("/UserAuth/UserLogin", {
+          state: { from: window.location.pathname },
+        });
       } else if (error.response?.data?.error === "Current password is incorrect") {
-        alert("Current password is incorrect!");
+        toast.error("Current password is incorrect! ❌");
         setLoading(false);
         return;
       } else if (error.response?.status === 400 && error.response?.data?.errors) {
-        // Handle validation errors as alerts
+        // Handle validation errors as toasts
         const errorMessages = Array.isArray(error.response.data.errors)
           ? error.response.data.errors
           : error.response.data.errors.map((err) => err.msg);
-        errorMessages.forEach((errorMsg) => alert(errorMsg));
+        errorMessages.forEach((errorMsg) => toast.error(errorMsg + " ❌"));
       } else {
         console.error("Error updating profile:", error.response?.data || error.message);
-        alert(error.response?.data?.message || "Failed to update profile: Unknown error");
+        toast.error(error.response?.data?.message || "Failed to update profile: Unknown error ❌");
       }
       setLoading(false);
     }
@@ -174,8 +191,24 @@ export default function Profile() {
     return parts.length > 0 ? parts.join(", ") : "Not provided";
   };
 
+  // Early return for loading user state
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-6">
+        <Toaster />
+        <p className="text-center mt-10">Loading user...</p>
+      </div>
+    );
+  }
+
+  // Early return if not authenticated or no user ID (navigation handled in useEffect)
+  if (!isAuthenticated || !user?.id) {
+    return null;
+  }
+
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
+      <Toaster />
       <h1 className="text-3xl font-bold mb-6 text-gray-800">My Profile</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Full Name */}

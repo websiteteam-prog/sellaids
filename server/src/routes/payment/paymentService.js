@@ -74,7 +74,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
           product_id: item.product_id,
           quantity: item.quantity,
           total_amount: product.purchase_price * item.quantity,
-          payment_status: "unpaid",
+          payment_status: "pending",
           order_status: "pending",
           shipping_address: shippingAddress,
           payment_method: "razorpay",
@@ -105,7 +105,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
         amount: totalAmount,
         vendor_earning: totalAmount * 0.8,
         platform_fee: totalAmount * 0.2,
-        status: "pending",
+        payment_status: "pending",
         payment_date: new Date(),
         payment_info: razorpayOrder,
         currency: razorpayOrder.currency,
@@ -161,7 +161,7 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
       }
       await order.update(
         {
-          payment_status: "paid",
+          payment_status: "success",
           order_status: "confirmed",
           transaction_id: razorpay_payment_id,
           updated_at: new Date(),

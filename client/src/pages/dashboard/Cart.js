@@ -4,6 +4,7 @@ import useCartStore from "../../stores/useCartStore";
 import { useUserStore } from "../../stores/useUserStore";
 import useWishlistStore from "../../stores/useWishlistStore";
 import axios from "axios";
+import { toast, Toaster } from "react-hot-toast"; // Import toast and Toaster
 
 export default function Cart() {
   const { cart, fetchCart, removeFromCart } = useCartStore();
@@ -23,8 +24,13 @@ export default function Cart() {
   useEffect(() => {
     if (isUserLoading) return;
     if (!isAuthenticated || !user?.id) {
-      console.log('Redirecting to UserLogin due to auth failure');
-      navigate('/UserAuth/UserLogin', { state: { from: window.location.pathname } });
+      if (window.location.pathname !== "/UserAuth/UserLogin") {
+        console.log("Redirecting to login due to auth failure");
+        navigate("/UserAuth/UserLogin", {
+          state: { from: window.location.pathname },
+        });
+      }
+      return;
     } else {
       setLoading(true);
       axios
@@ -33,17 +39,16 @@ export default function Cart() {
         })
         .then((response) => {
           const { data } = response.data;
-          // Check if profile has address fields
           if (data.address_line && data.city && data.pincode) {
             const profileAddress = `${data.address_line}, ${data.city}, ${data.pincode}`;
-            setShippingAddress(profileAddress); // Set shippingAddress to profile address
+            setShippingAddress(profileAddress);
             setAddressFields({
               address_line: data.address_line,
               city: data.city,
               pincode: data.pincode,
             });
           } else {
-            setShippingAddress(""); // No profile address available
+            setShippingAddress("");
             setAddressFields({
               address_line: "",
               city: "",
@@ -53,7 +58,7 @@ export default function Cart() {
         })
         .catch((err) => {
           console.error("Failed to fetch user profile:", err);
-          setShippingAddress(""); // Fallback to empty if fetch fails
+          setShippingAddress("");
         })
         .finally(() => {
           fetchCart()
@@ -83,10 +88,10 @@ export default function Cart() {
         { withCredentials: true }
       );
       await fetchCart();
-      alert("Quantity updated successfully!");
+      toast.success("Quantity updated successfully! ✅");
     } catch (err) {
       console.error("Failed to update quantity:", err);
-      alert(err.response?.data?.message || "Failed to update quantity");
+      toast.error(err.response?.data?.message || "Failed to update quantity ❌");
     }
   };
 
@@ -99,32 +104,36 @@ export default function Cart() {
       );
       await addToWishlist(productId);
       await removeFromCart(productId);
-      alert(
+      toast.success(
         response.data.action === "added"
-          ? "Added to wishlist!"
-          : "Already in wishlist!"
+          ? "Added to wishlist! ✅"
+          : "Already in wishlist! ✅"
       );
-      navigate("/user/cart");
+      setTimeout(() => {
+        navigate("/user/cart");
+      }, 1500); // Delay navigation to show toast
     } catch (err) {
       console.error("Failed to move to wishlist:", err);
-      alert(err.response?.data?.message || "Failed to move to wishlist");
+      toast.error(err.response?.data?.message || "Failed to move to wishlist ❌");
     }
   };
 
   const handleRemove = async (productId) => {
     try {
       await removeFromCart(productId);
-      alert("Item removed from cart!");
-      navigate("/user/cart");
+      toast.success("Item removed from cart! ✅");
+      setTimeout(() => {
+        navigate("/user/cart");
+      }, 1500); // Delay navigation to show toast
     } catch (err) {
       console.error("Failed to remove item:", err);
-      alert("Failed to remove item from cart");
+      toast.error("Failed to remove item from cart ❌");
     }
   };
 
   const handleContinue = async () => {
     if (!shippingAddress.trim()) {
-      alert("Please enter a shipping address");
+      toast.error("Please enter a shipping address ❌");
       return;
     }
 
@@ -139,7 +148,7 @@ export default function Cart() {
       });
     } catch (err) {
       console.error("Failed to create order:", err);
-      alert(err.response?.data?.message || "Failed to initiate payment");
+      toast.error(err.response?.data?.message || "Failed to initiate payment ❌");
     }
   };
 
@@ -158,10 +167,10 @@ export default function Cart() {
         { withCredentials: true }
       );
       setIsEditingAddress(false);
-      alert("Address updated successfully!");
+      toast.success("Address updated successfully! ✅");
     } catch (err) {
       console.error("Failed to update address:", err);
-      alert(err.response?.data?.message || "Failed to update address");
+      toast.error(err.response?.data?.message || "Failed to update address ❌");
     }
   };
 
@@ -198,14 +207,20 @@ export default function Cart() {
     });
   };
 
-  if (isUserLoading) return <p className="text-center mt-10">Loading user...</p>;
+  if (isUserLoading)
+    return <p className="text-center mt-10">Loading user...</p>;
   if (loading) return <p className="text-center mt-10">Loading cart...</p>;
   if (!isAuthenticated || !user?.id)
-    return <p className="text-center mt-10">Please log in to view your cart.</p>;
+    return (
+      <p className="text-center mt-10">Please log in to view your cart.</p>
+    );
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">My Cart</h1>
+      <Toaster /> {/* Add Toaster component to render toasts */}
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
+        My Cart
+      </h1>
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center mt-20 text-gray-500">
           <svg
@@ -216,7 +231,11 @@ export default function Cart() {
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
           <p className="text-xl font-semibold">Your cart is currently empty.</p>
         </div>
@@ -234,11 +253,14 @@ export default function Cart() {
                 >
                   <div className="mb-4 text-center sm:text-left w-full">
                     <div className="relative">
-                      <div className="flex justify-center mb-2">
+                      <div className="flex justify-center mb-2 min-h-[192px]">
                         <img
-                          src={images[activeIndex] || "https://placehold.co/150x150"}
+                          src={
+                            images[activeIndex] ||
+                            "https://placehold.co/150x150"
+                          }
                           alt={item.product?.name || "Product Image"}
-                          className="w-32 h-32 object-cover rounded-md"
+                          className="max-w-full h-auto max-h-48 object-contain rounded-md"
                           onError={handleImageError}
                         />
                       </div>
@@ -290,10 +312,14 @@ export default function Cart() {
                             key={index}
                             src={img}
                             alt={`${item.product?.name} Thumbnail ${index + 1}`}
-                            className={`w-12 h-12 object-cover rounded-md cursor-pointer ${
-                              activeIndex === index ? "border-2 border-blue-600" : ""
+                            className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
+                              activeIndex === index
+                                ? "border-2 border-blue-600"
+                                : ""
                             }`}
-                            onClick={() => changeImage(item.product_id, index - activeIndex)}
+                            onClick={() =>
+                              changeImage(item.product_id, index - activeIndex)
+                            }
                             onError={handleImageError}
                           />
                         ))}
@@ -302,21 +328,31 @@ export default function Cart() {
                     <p className="font-semibold text-lg text-gray-900 mt-4">
                       {item.product?.name || "Unknown Product"}
                     </p>
-                    <p className="text-gray-700">₹{item.product?.price || "N/A"}</p>
+                    <p className="text-gray-700">
+                      ₹{item.product?.price || "N/A"}
+                    </p>
                     <div className="flex items-center mt-2 justify-center sm:justify-start">
                       <p className="text-gray-600 mr-2">Quantity:</p>
                       <button
                         onClick={() =>
-                          handleUpdateQuantity(item.product_id, item.quantity - 1)
+                          handleUpdateQuantity(
+                            item.product_id,
+                            item.quantity - 1
+                          )
                         }
                         className="bg-gray-200 text-gray-700 px-2 py-1 rounded-l"
                       >
                         -
                       </button>
-                      <span className="px-3 py-1 bg-gray-100">{item.quantity}</span>
+                      <span className="px-3 py-1 bg-gray-100">
+                        {item.quantity}
+                      </span>
                       <button
                         onClick={() =>
-                          handleUpdateQuantity(item.product_id, item.quantity + 1)
+                          handleUpdateQuantity(
+                            item.product_id,
+                            item.quantity + 1
+                          )
                         }
                         className="bg-gray-200 text-gray-700 px-2 py-1 rounded-r"
                       >

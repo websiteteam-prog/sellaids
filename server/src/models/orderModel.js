@@ -49,8 +49,8 @@ export const Order = sequelize.define(
       allowNull: false,
     },
     payment_status: {
-      type: DataTypes.ENUM("unpaid", "paid", "failed"),
-      defaultValue: "unpaid",
+      type: DataTypes.ENUM("pending", "success", "failed", "refunded"),
+      defaultValue: "pending",
     },
     order_status: {
       type: DataTypes.ENUM(
