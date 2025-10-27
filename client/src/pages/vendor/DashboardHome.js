@@ -1,23 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useNavigate, Link } from "react-router-dom";
 import { FaBox, FaClock, FaRupeeSign, FaChartLine } from "react-icons/fa";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  YAxis,
-} from "recharts";
-import { useNavigate } from "react-router-dom";
 import { useVendorStore } from "../../stores/useVendorStore";
-
-const colorMap = {
-  yellow: { bg: "bg-yellow-100", text: "text-yellow-600" },
-  green: { bg: "bg-green-100", text: "text-green-600" },
-  blue: { bg: "bg-blue-100", text: "text-blue-600" },
-};
+import axios from "axios";
 
 const DashboardHome = () => {
   const [summary, setSummary] = useState({
@@ -25,53 +10,55 @@ const DashboardHome = () => {
     pendingOrders: 0,
     totalEarnings: "₹0",
     thisMonthSales: "₹0",
-    salesOverview: [],
-    ordersOverview: [],
   });
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
-
-  // Zustand store se vendor aur token access
-  const { vendor, token, logout } = useVendorStore();
+  const { vendor, logout } = useVendorStore();
 
   const vendorName = vendor?.name || "Vendor";
   const vendorInitials = vendorName
     .split(" ")
-    .map((word) => word.charAt(0))
+    .map((w) => w[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!token) return;
+  /* -------------------------------------------------------------
+     FETCH DASHBOARD DATA + RECENT PRODUCTS
+     ------------------------------------------------------------- */
+         const fetchDashboardData = async () => {
+      if (!vendor?.id) return;
 
       try {
         setLoading(true);
 
-        const config = {
-          headers: { Authorization: `Bearer ${token}` },
-        };
+        /* 1. Summary – pass vendor_id as query param (backend needs it) */
+        const summaryUrl = `http://localhost:5000/api/product/dashboard?vendor_id=${vendor.id}`;
+        const summaryRes = await axios.get(summaryUrl, { withCredentials: true });
 
-        const baseURL = import.meta.env.VITE_API_BASE_URL;
-
-        const [summaryRes, productsRes] = await Promise.all([
-          axios.get(`${baseURL}/api/vendor/dashboard-summary`, config),
-          axios.get(`${baseURL}/api/vendor/recent-products?limit=4`, config),
-        ]);
-
+        // ----> Log the API response data for debugging
+        console.log("Dashboard Data:", summaryRes.data);
+        
+        // Assuming the response data is properly structured
+        const data = summaryRes.data?.data;
+        console.log(data,':::::::::::::::')
         setSummary({
-          totalProducts: summaryRes.data.totalProducts,
-          pendingOrders: summaryRes.data.pendingOrders,
-          totalEarnings: summaryRes.data.totalEarnings,
-          thisMonthSales: summaryRes.data.thisMonthSales,
-          salesOverview: summaryRes.data.salesOverview,
-          ordersOverview: summaryRes.data.ordersOverview,
+          totalProducts: data.total_products ?? 0,
+          pendingOrders: data.pending_orders ?? 0,
+          totalEarnings: `₹${Number(data.total_earnings ?? 0).toLocaleString()}`,
+          thisMonthSales: `₹${Number(data.this_month_sales ?? 0).toLocaleString()}`,
         });
 
-        setRecentProducts(productsRes.data);
+        /* 2. Recent 5 products (already filtered by vendor_id) */
+        const productsUrl = `http://localhost:5000/api/product/products-list?vendor_id=${vendor.id}&page=1&limit=5`;
+        const productsRes = await axios.get(productsUrl, { withCredentials: true });
+
+        // ----> Log the products response for debugging
+        console.log("Recent Products:", productsRes.data);
+
+        setRecentProducts(productsRes.data.products ?? []);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
         if (err.response?.status === 401) {
@@ -83,9 +70,17 @@ const DashboardHome = () => {
       }
     };
 
-    fetchDashboardData();
-  }, [token, logout, navigate]);
+  useEffect(() => {
 
+
+    fetchDashboardData();
+  }, [vendor?.id, logout, navigate]);
+
+  /* -------------------------------------------------------------
+     UI
+     ------------------------------------------------------------- */
+
+     console.log("Rendering DashboardHome with:", { summary, recentProducts, loading });
   return (
     <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
       {/* Header */}
@@ -95,7 +90,7 @@ const DashboardHome = () => {
           <span className="text-gray-600 text-sm sm:text-base">
             Welcome back, <span className="font-semibold">{vendorName}</span>
           </span>
-          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm sm:text-base">
+          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
             {vendorInitials}
           </div>
         </div>
@@ -103,87 +98,103 @@ const DashboardHome = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {[
-          { label: "Total Products", value: summary.totalProducts, icon: <FaBox className="text-blue-500 text-xl" />, bg: "bg-blue-100" },
-          { label: "Pending Orders", value: summary.pendingOrders, icon: <FaClock className="text-yellow-500 text-xl" />, bg: "bg-yellow-100" },
-          { label: "Total Earnings", value: summary.totalEarnings, icon: <FaRupeeSign className="text-green-500 text-xl" />, bg: "bg-green-100" },
-          { label: "This Month Sales", value: summary.thisMonthSales, icon: <FaChartLine className="text-purple-500 text-xl" />, bg: "bg-purple-100" },
+        {[ 
+          { label: "Total Products",   value: summary.totalProducts,   icon: <FaBox className="text-blue-500 text-xl" />,   bg: "bg-blue-100" },
+          { label: "Pending Orders",  value: summary.pendingOrders,  icon: <FaClock className="text-yellow-500 text-xl" />, bg: "bg-yellow-100" },
+          { label: "Total Earnings",  value: summary.totalEarnings,  icon: <FaRupeeSign className="text-green-500 text-xl" />, bg: "bg-green-100" },
+          { label: "This Month Sales",value: summary.thisMonthSales, icon: <FaChartLine className="text-purple-500 text-xl" />, bg: "bg-purple-100" },
         ].map((card, idx) => (
-          <div key={idx} className="bg-white p-4 sm:p-5 rounded-xl shadow flex items-center justify-between">
+          <div
+            key={idx}
+            className="bg-white p-4 sm:p-5 rounded-xl shadow flex items-center justify-between"
+          >
             <div>
               <h2 className="text-sm text-gray-500">{card.label}</h2>
-              <p className="text-xl sm:text-2xl font-bold">{card.value}</p>
+              <p className="text-xl sm:text-2xl font-bold">
+                {loading ? "Loading..." : card.value}
+              </p>
             </div>
             <div className={`p-3 rounded-lg ${card.bg}`}>{card.icon}</div>
           </div>
         ))}
       </div>
 
-      {/* Sales Overview */}
-      <div className="bg-white p-4 sm:p-6 rounded-xl shadow mb-8 overflow-x-auto">
-        <div className="mb-4">
-          <h2 className="font-bold">Sales Overview</h2>
-        </div>
-
-        <div className="h-64">
-          {loading ? (
-            <div className="flex justify-center items-center h-full text-gray-500">Loading chart...</div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={summary.salesOverview}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis hide />
-                <Tooltip />
-                <Bar dataKey="value" fill="#FF6A00" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Products */}
+      {/* Recent Products Table */}
       <div className="bg-white p-4 sm:p-6 rounded-xl shadow overflow-x-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold">Recent Products</h2>
-          <button onClick={() => navigate("/vendor/all-products")} className="text-sm text-blue-600 hover:underline">View All</button>
+          <button
+            onClick={() => navigate("/vendor/all-products")}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            View All
+          </button>
         </div>
-        <div className="w-full">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b bg-gray-100">
-                <th className="p-2">Product ID</th>
-                <th className="p-2">Name</th>
-                <th className="p-2">Category</th>
-                <th className="p-2">Price</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Added Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentProducts.length > 0 ? (
-                recentProducts.map((product, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="p-2">{product.id}</td>
-                    <td className="p-2">{product.name}</td>
-                    <td className="p-2">{product.category}</td>
-                    <td className="p-2">{product.price}</td>
-                    <td className="p-2">
-                      <span className={`px-2 py-1 text-xs rounded ${colorMap[product.color]?.bg || "bg-gray-100"} ${colorMap[product.color]?.text || "text-gray-700"}`}>
-                        {product.status}
-                      </span>
-                    </td>
-                    <td className="p-2">{product.date}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="text-center py-4 text-gray-500">No products found</td>
+
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b bg-gray-100">
+              <th className="p-2">SR.</th>
+              <th className="p-2">SKU</th>
+              <th className="p-2">Category</th>
+              <th className="p-2">Group</th>
+              <th className="p-2">Brand</th>
+              <th className="p-2">Model</th>
+              <th className="p-2">Price</th>
+              <th className="p-2">Status</th>
+              <th className="p-2">Vendor</th>
+              <th className="p-2">Front Photo</th>
+              <th className="p-2">View</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentProducts.length > 0 ? (
+              recentProducts.map((product, idx) => (
+                <tr key={product.id} className="border-b hover:bg-gray-50">
+                  <td className="p-2 font-semibold">{idx + 1}</td>
+                  <td className="p-2 text-orange-600 cursor-pointer">{product.sku}</td>
+                  <td className="p-2">{product.category?.name ?? "N/A"}</td>
+                  <td className="p-2">{product.product_group}</td>
+                  <td className="p-2">{product.brand}</td>
+                  <td className="p-2 font-semibold">{product.model_name}</td>
+                  <td className="p-2 font-bold">
+                    ₹{Number(product.selling_price).toLocaleString()}
+                  </td>
+                  <td className="p-2">
+                    <span
+                      className={`px-2 py-1 text-xs rounded ${product.status === "Approved" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+                    >
+                      {product.status}
+                    </span>
+                  </td>
+                  <td className="p-2">{product.vendor?.name ?? "N/A"}</td>
+                  <td className="p-2">
+                    <img
+                      src={product.front_photo}
+                      alt="Front"
+                      className="w-16 h-16 object-cover rounded"
+                      onError={(e) => (e.currentTarget.src = "/placeholder-image.jpg")}
+                    />
+                  </td>
+                  <td className="p-2">
+                    <Link
+                      to={`/vendor/view-product/${product.id}`}
+                      className="text-orange-600 hover:text-orange-800"
+                    >
+                      View
+                    </Link>
+                  </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={11} className="text-center py-4 text-gray-500">
+                  No products found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

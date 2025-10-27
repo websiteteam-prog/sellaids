@@ -1,11 +1,10 @@
-// import { User } from "../../models/userModel.js";
-// import { Vendor } from "../../models/vendorModel.js";
-// import { Product } from "../../models/productModel.js"
-// import { Order } from "../../models/orderModel.js"
+import { User } from "../../models/userModel.js";
+import { Vendor } from "../../models/vendorModel.js";
+import { Product } from "../../models/productModel.js"
+import { Order } from "../../models/orderModel.js"
 import { Payment } from "../../models/paymentModel.js"
 import { Op } from "sequelize";
-// import { sequelize } from "../../config/db.js";
-import { sequelize, User, Vendor, Product, Order } from "../../models/index.js";
+import { sequelize } from "../../config/db.js";
 
 
 // admin dashboard Management
@@ -178,160 +177,246 @@ export const updateProductStatusService = async (id, status) => {
 };
 
 // orders management Service
-export const getAllOrdersService = async (filters) => {
-  const { order_id, status, start_date, end_date } = filters;
+export const getAllOrdersService = async ({ order_id, status, start_date, end_date, page = 1, limit = 10 }) => {
+  const offset = (page - 1) * limit;
 
-  // 🔹 Build WHERE conditions dynamically
-  let whereClause = "WHERE 1=1";
-  if (order_id) whereClause += ` AND o.id = ${order_id}`;
-  if (status && status !== "all") whereClause += ` AND o.status = '${status}'`;
-  if (start_date && end_date) whereClause += ` AND o.created_at BETWEEN '${start_date}' AND '${end_date}'`;
+  // Build WHERE clause dynamically
+  const where = {};
+  if (order_id) where.id = order_id;
+  if (status && status !== "all") where.order_status = status;
 
-  // 🔹 Orders query with User & Product
-  const ordersQuery = `
-    SELECT 
-      o.id AS order_id,
-      o.user_id,
-      u.name AS user_name,
-      u.email AS user_email,
-      o.product_id,
-      p.model_name AS model_name,
-      p.brand AS product_brand,
-      p.selling_price,
-      p.front_photo,
-      o.quantity,
-      o.total_price,
-      o.status,
-      o.payment_status,
-      o.created_at,
-      o.updated_at
-    FROM orders o
-    LEFT JOIN users u ON o.user_id = u.id
-    LEFT JOIN products p ON o.product_id = p.id
-    ${whereClause}
-    ORDER BY o.created_at DESC
-  `;
+  if (start_date && end_date) {
+    const start = new Date(start_date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(end_date);
+    end.setHours(23, 59, 59, 999);
+    where.created_at = { [Op.between]: [start, end] };
+  } else if (start_date) {
+    const start = new Date(start_date);
+    start.setHours(0, 0, 0, 0);
+    where.created_at = { [Op.gte]: start };
+  } else if (end_date) {
+    const end = new Date(end_date);
+    end.setHours(23, 59, 59, 999);
+    where.created_at = { [Op.lte]: end };
+  }
 
-  const [orders] = await sequelize.query(ordersQuery);
+  // Fetch orders with User & Product
+  const { count, rows } = await Order.findAndCountAll({
+    where,
+    include: [
+      { model: User, attributes: ["name"] },
+      { model: Vendor, attributes: ["name"] },
+      { model: Product, as: "product", attributes: ["id", "model_name", "brand", "selling_price", "front_photo"] },
+    ],
+    order: [["created_at", "DESC"]],
+    offset,
+    limit,
+  });
 
-  // 🔹 Status counts query
-  const countsQuery = `
-    SELECT status, COUNT(id) AS count
-    FROM orders
-    GROUP BY status
-  `;
-  const [countsRaw] = await sequelize.query(countsQuery);
+  // Status counts
+  const countsRaw = await Order.findAll({
+    attributes: ["order_status", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
+    group: ["order_status"],
+  });
 
-  // 🔹 Total count
-  const totalQuery = `SELECT COUNT(*) AS total FROM orders`;
-  const [[{ total }]] = await sequelize.query(totalQuery);
+  const counts = { total: count };
+  countsRaw.forEach(c => {
+    counts[c.order_status] = parseInt(c.get("count"));
+  });
 
-  // 🔹 Prepare counts object
-  const counts = { total, pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 };
-  countsRaw.forEach(c => counts[c.status] = parseInt(c.count));
+  const totalPages = Math.ceil(count / limit);
 
-  return { orders, counts };
+  return { orders: rows, counts, pagination: { totalPages, currentPage: page } };
 };
 
 export const getOrderDetailsService = async (id) => {
-  const orderQuery = `
-    SELECT
-      o.id AS order_id,
-      o.user_id,
-      u.name AS user_name,
-      u.email AS user_email,
-      u.phone AS user_phone,
-      u.address_line AS user_address_line,
-      u.city AS user_city,
-      u.state AS user_state,
-      u.pincode AS user_pincode,
-      u.created_at AS user_created_at,
-      
-      o.total_price,
-      o.payment_status,
-      o.status,
-      o.created_at AS order_created_at,
-      o.updated_at AS order_updated_at,
+  try {
+    const order = await Order.findOne({
+      where: { id },
+      include: [
+        {
+          model: User,
+          attributes: [
+            "id",
+            "name",
+            "email",
+            "phone",
+            "address_line",
+            "city",
+            "state",
+            "pincode",
+          ],
+        },
+        {
+          model: Product,
+          as: "product",
+          attributes: [
+            "id",
+            "brand",
+            "model_name",
+            "product_condition",
+            "size",
+            "product_color",
+            "selling_price",
+            "front_photo",
+            "product_type",
+            "product_group",
+          ],
+          include: [
+            {
+              model: Vendor,
+              as: "vendor",
+              attributes: [
+                "id",
+                "name",
+                "business_name",
+                "business_type",
+                "phone",
+                "email",
+              ],
+            },
+          ],
+        },
+        {
+          model: Vendor,
+          attributes: [
+            "id",
+            "name",
+            "business_name",
+            "business_type",
+            "phone",
+            "email",
+          ],
+        },
+      ],
+    });
 
-      o_product.id AS product_id,
-      o_product.vendor_id,
-      o_product.category_id,
-      o_product.product_group,
-      o_product.product_type,
-      o_product.product_condition,
-      o_product.fit,
-      o_product.size,
-      o_product.size_other,
-      o_product.product_color,
-      o_product.brand,
-      o_product.model_name,
-      o_product.invoice,
-      o_product.invoice_photo,
-      o_product.needs_repair,
-      o_product.repair_photo,
-      o_product.original_box,
-      o_product.dust_bag,
-      o_product.additional_items,
-      o_product.front_photo,
-      o_product.back_photo,
-      o_product.label_photo,
-      o_product.inside_photo,
-      o_product.button_photo,
-      o_product.wearing_photo,
-      o_product.more_images,
-      o_product.purchase_price,
-      o_product.selling_price,
-      o_product.reason_to_sell,
-      o_product.purchase_year,
-      o_product.purchase_place,
-      o_product.product_link,
-      o_product.additional_info,
-      o_product.status AS product_status,
-      o_product.sku,
-      o_product.is_active AS product_is_active,
-      o_product.created_at AS product_created_at,
-      o_product.updated_at AS product_updated_at
+    if (!order) return null;
 
-    FROM orders o
-    LEFT JOIN users u ON o.user_id = u.id
-    LEFT JOIN products o_product ON o.id = o_product.id
-    WHERE o.id = ${id}
-    LIMIT 1
-  `;
+    const user = order.User || {};
+    const product = order.product || {};
+    const vendor = product.vendor || order.Vendor || {};
 
-  const [result] = await sequelize.query(orderQuery);
-  return result[0] || null;
+    return {
+      order_id: order.id,
+      order_date: order.order_date,
+      order_status: order.order_status,
+      payment_status: order.payment_status,
+      payment_method: order.payment_method,
+      transaction_id: order.transaction_id,
+      total_amount: Number(order.total_amount) || 0,
+      quantity: order.quantity,
+      shipping_address: order.shipping_address,
+
+      customer: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: [
+          user.address_line,
+          user.city,
+          user.state,
+          user.pincode ? `- ${user.pincode}` : "",
+        ]
+          .filter(Boolean)
+          .join(", "),
+      },
+
+      product: {
+        id: product.id,
+        brand: product.brand,
+        model_name: product.model_name,
+        condition: product.product_condition,
+        size: product.size,
+        color: product.product_color,
+        selling_price: Number(product.selling_price) || 0,
+        image: product.front_photo,
+        group: product.product_group,
+        type: product.product_type,
+      },
+
+      vendor: {
+        id: vendor.id,
+        name: vendor.name,
+        business_name: vendor.business_name,
+        business_type: vendor.business_type,
+        phone: vendor.phone,
+        email: vendor.email,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getOrderDetailsService:", error);
+    throw error;
+  }
 };
 
 // payment management
-export const getPaymentsWithFiltersService = async ({ transaction_id, status, start_date, end_date }) => {
+export const getPaymentsWithFiltersService = async ({ transaction_id, status, start_date, end_date, page = 1, limit = 10 }) => {
   try {
     const where = {};
 
-    // Transaction ID search
+    // Filter by transaction_id
     if (transaction_id) {
       where.transaction_id = { [Op.like]: `%${transaction_id}%` };
     }
 
-    // Status filter
-    if (status && status !== "all") {
-      where.status = status;
+    // Filter by status
+    if (status && status.toLowerCase() !== "all") {
+      where.status = status.toLowerCase();
     }
 
-    // Date filter
+    // Filter by payment_date
     if (start_date && end_date) {
-      where.payment_date = { [Op.between]: [new Date(start_date), new Date(end_date)] };
+      const start = new Date(start_date);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(end_date);
+      end.setHours(23, 59, 59, 999);
+
+      where.payment_date = { [Op.between]: [start, end] };
     } else if (start_date) {
-      where.payment_date = { [Op.gte]: new Date(start_date) };
+      const start = new Date(start_date);
+      start.setHours(0, 0, 0, 0);
+      where.payment_date = { [Op.gte]: start };
     } else if (end_date) {
-      where.payment_date = { [Op.lte]: new Date(end_date) };
+      const end = new Date(end_date);
+      end.setHours(23, 59, 59, 999);
+      where.payment_date = { [Op.lte]: end };
     }
 
-    const payments = await Payment.findAll({ where, order: [["payment_date", "DESC"]] });
+    const offset = (page - 1) * limit;
 
-    // if (!payments || payments.length === 0) throw new Error("No payments found");
+    // Fetch paginated payments
+    const { count, rows } = await Payment.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order: [["payment_date", "DESC"]],
+      attributes: [
+        "id",
+        "order_id",
+        "user_id",
+        "vendor_id",
+        "amount",
+        "vendor_earning",
+        "platform_fee",
+        "currency",
+        "status",
+        "payment_method",
+        "transaction_id",
+        "payment_date",
+      ],
+    });
 
-    return payments;
+    const totalPages = Math.ceil(count / limit);
+
+    return {
+      payments: rows,
+      total: count,
+      totalPages,
+    };
   } catch (err) {
     throw new Error(err.message || "Error fetching payments");
   }

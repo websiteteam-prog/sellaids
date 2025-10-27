@@ -1,14 +1,20 @@
-import React, { useEffect, useState } from "react";
-import useWishlistStore from "../../stores/useWishlistStore";
+import React, { useEffect, useState, useRef } from "react";
+import { useUserStore } from "../../stores/useUserStore";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
-  const { user, setUser } = useWishlistStore();
+  const { user, isAuthenticated, login } = useUserStore();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    full_name: "",
+    name: "",
     email: "",
     phone: "",
+    address_line: "",
+    city: "",
+    state: "",
+    pincode: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -21,25 +27,79 @@ export default function Profile() {
     confirm: false,
   });
 
+  const nameInputRef = useRef(null);
+
   // Fetch user profile
   useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      navigate("/UserAuth/UserLogin");
+      return;
+    }
+    const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/list`;
+    axios
+      .get(endpoint, { withCredentials: true })
+      .then((res) => {
+        const userData = res.data.data;
+        setFormData({
+          name: userData.name || userData.full_name || "",
+          email: userData.email || "",
+          phone: userData.phone || "",
+          address_line: userData.address_line || "",
+          city: userData.city || "",
+          state: userData.state || "",
+          pincode: userData.pincode || "",
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      })
+      .catch((err) => {
+        if (err.response?.status === 401) {
+          navigate("/UserAuth/UserLogin");
+        } else {
+          console.error("Error fetching profile:", err);
+        }
+      });
+  }, [isAuthenticated, user, navigate]);
+
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  useEffect(() => {
+    if (isEditing) {
+      setTimeout(() => nameInputRef.current?.focus?.(), 0);
+    }
+  }, [isEditing]);
+
+  const handleCancelEdit = () => {
+    // Restore original user data when cancelling edit
     if (user?.id) {
+      const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/list`;
       axios
-        .get(`http://localhost:5000/api/user/profile/${user.id}`)
+        .get(endpoint, { withCredentials: true })
         .then((res) => {
+          const userData = res.data.data;
           setFormData({
-            ...formData,
-            full_name: res.data.full_name,
-            email: res.data.email,
-            phone: res.data.phone,
+            name: userData.name || userData.full_name || "",
+            email: userData.email || "",
+            phone: userData.phone || "",
+            address_line: userData.address_line || "",
+            city: userData.city || "",
+            state: userData.state || "",
+            pincode: userData.pincode || "",
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
           });
         })
         .catch((err) => console.error("Error fetching profile:", err));
     }
-  }, [user]);
-
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setIsEditing(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,11 +107,15 @@ export default function Profile() {
 
     try {
       const updateData = {
-        full_name: formData.full_name,
+        name: formData.name,
         phone: formData.phone,
+        address_line: formData.address_line,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
       };
 
-      // Validate password fields
+      // Include password fields only if provided
       if (formData.newPassword || formData.confirmPassword || formData.currentPassword) {
         if (formData.newPassword !== formData.confirmPassword) {
           alert("New password and confirm password do not match!");
@@ -60,14 +124,17 @@ export default function Profile() {
         }
         updateData.currentPassword = formData.currentPassword;
         updateData.newPassword = formData.newPassword;
+        updateData.confirmPassword = formData.confirmPassword;
       }
 
-      const res = await axios.put(
-        `http://localhost:5000/api/user/profile/${user.id}`,
-        updateData
-      );
-
-      setUser(res.data);
+      const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/edit`;
+      const res = await axios.put(endpoint, updateData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      login(res.data); // Update user in store
       alert("Profile updated successfully!");
       setIsEditing(false);
       setFormData({
@@ -77,9 +144,22 @@ export default function Profile() {
         confirmPassword: "",
       });
     } catch (error) {
-      console.error(error.response?.data || error.message);
-      alert("Failed to update profile");
-    } finally {
+      if (error.response?.status === 401) {
+        navigate("/UserAuth/UserLogin");
+      } else if (error.response?.data?.error === "Current password is incorrect") {
+        alert("Current password is incorrect!");
+        setLoading(false);
+        return;
+      } else if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Handle validation errors as alerts
+        const errorMessages = Array.isArray(error.response.data.errors)
+          ? error.response.data.errors
+          : error.response.data.errors.map((err) => err.msg);
+        errorMessages.forEach((errorMsg) => alert(errorMsg));
+      } else {
+        console.error("Error updating profile:", error.response?.data || error.message);
+        alert(error.response?.data?.message || "Failed to update profile: Unknown error");
+      }
       setLoading(false);
     }
   };
@@ -87,10 +167,16 @@ export default function Profile() {
   const togglePassword = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
+  // Format address for display
+  const formatAddress = () => {
+    const { address_line, city, state, pincode } = formData;
+    const parts = [address_line, city, state, pincode].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "Not provided";
+  };
+
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">My Profile</h1>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Full Name */}
         <div>
@@ -99,16 +185,17 @@ export default function Profile() {
           </label>
           <input
             type="text"
-            name="full_name"
-            value={formData.full_name || ""}
+            name="name"
+            ref={nameInputRef}
+            value={formData.name || ""}
             onChange={handleChange}
             disabled={!isEditing}
+            placeholder={isEditing ? "Enter new full name" : ""}
             className={`w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none ${
               !isEditing ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
           />
         </div>
-
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -122,7 +209,6 @@ export default function Profile() {
             className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed focus:outline-none"
           />
         </div>
-
         {/* Phone */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -132,21 +218,88 @@ export default function Profile() {
             type="tel"
             name="phone"
             value={formData.phone || ""}
-            onChange={handleChange}
+            onChange={(e) => {
+              // Allow only digits and limit to 10 characters
+              const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+              setFormData({ ...formData, phone: digits });
+            }}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={10}
             disabled={!isEditing}
+            placeholder={isEditing ? "Enter new phone" : ""}
             className={`w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none ${
               !isEditing ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
           />
         </div>
-
+        {/* Address */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address
+          </label>
+          {isEditing ? (
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  name="address_line"
+                  value={formData.address_line || ""}
+                  onChange={handleChange}
+                  placeholder="Enter address line"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city || ""}
+                  onChange={handleChange}
+                  placeholder="Enter city"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state || ""}
+                  onChange={handleChange}
+                  placeholder="Enter state"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="pincode"
+                  value={formData.pincode || ""}
+                  onChange={(e) => {
+                    // Allow only digits and limit to 6 characters
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                    setFormData({ ...formData, pincode: digits });
+                  }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="Enter pincode"
+                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed">
+              {formatAddress()}
+            </div>
+          )}
+        </div>
         {/* Password Section */}
         {isEditing && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
               Change Password
             </h2>
-
             {/* Current Password */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -167,7 +320,6 @@ export default function Profile() {
                 {showPassword.current ? <EyeOff size={18} /> : <Eye size={18} />}
               </span>
             </div>
-
             {/* New Password */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -188,7 +340,6 @@ export default function Profile() {
                 {showPassword.new ? <EyeOff size={18} /> : <Eye size={18} />}
               </span>
             </div>
-
             {/* Confirm Password */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -211,13 +362,12 @@ export default function Profile() {
             </div>
           </div>
         )}
-
         {/* Buttons */}
         <div className="flex justify-end mt-6 gap-3">
           {!isEditing ? (
             <button
               type="button"
-              onClick={() => setIsEditing(true)}
+              onClick={handleEditClick}
               className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition"
             >
               Edit Profile
@@ -226,7 +376,7 @@ export default function Profile() {
             <>
               <button
                 type="button"
-                onClick={() => setIsEditing(false)}
+                onClick={handleCancelEdit}
                 className="bg-gray-400 text-white px-6 py-3 rounded-lg hover:bg-gray-500 transition"
               >
                 Cancel

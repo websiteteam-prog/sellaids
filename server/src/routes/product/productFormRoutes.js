@@ -1,6 +1,6 @@
 import express from "express";
 import { addProductController, getCategories, getProductTypes, getAllProductsController, getProductByIdController, getDashboardController, getEarningsController } from "../../controllers/product/productFormController.js";
-import { isVendorLoginIn } from "../../middlewares/authMiddlewares.js";
+import { isVendorLoginIn, isVendorOrAdminLoggedIn } from "../../middlewares/authMiddlewares.js";
 import { upload } from "../../middlewares/productUpload.js";
 
 const router = express.Router();
@@ -23,7 +23,7 @@ router.get("/categories-list", getCategories);
 router.get("/", getProductTypes);
 
 // For Fetch Products Apis for vendors
-router.get("/products-list", isVendorLoginIn, getAllProductsController); 
+router.get("/products-list", isVendorOrAdminLoggedIn, getAllProductsController); 
 router.get("/products/:id", getProductByIdController); 
 
 // Dashboard API For vendors

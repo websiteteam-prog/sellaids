@@ -1,180 +1,151 @@
-import { addToCartService, updateCartQuantityService, removeCartService, getCartItemsService, getCartItemService } from "../../services/user/userCartService.js"
-import { successResponse, errorResponse } from "../../utils/helpers.js"
-import logger from "../../config/logger.js"
+import { addToCartService, getCartService, updateCartQuantityService, removeFromCartService } from "../../services/user/userCartService.js";
+import { successResponse, errorResponse } from "../../utils/helpers.js";
+import logger from "../../config/logger.js";
 
-// Add to cart
-export const addCartController = async (req, res) => {
-    try {
-      const userId = req.session?.user?.userId;
-      const { productId } = req.body;
-  
-      if (!userId || !productId) {
-        // Only log bad requests
-        logger.warn("Missing userId or productId in cart add request");
-        return errorResponse(res, 400, "User and Product required");
-      }
-  
-      const result = await addToCartService(userId, productId);
-  
-      if (!result.success) {
-        return errorResponse(res, 400, result.message);
-      }
-  
-      return successResponse(res, 201, result.message, result.data);
-    } catch (error) {
-      // Log actual caught error
-      logger.error("Add Cart Error:", error);
-      return errorResponse(res, 500, error);
+export const addToCartController = async (req, res) => {
+  try {
+    if (!req.body) {
+      logger.warn("Missing request body in addToCart");
+      return res.status(400).json({ success: false, message: "Request body is missing" });
     }
-  };
-// export const addCartController = async (req, res) => {
-//     try {
-//         const userId = req.session?.user?.userId;
-//         const { productId } = req.body;
-//         if (!userId || !productId) return errorResponse(res, 400, "User and Product required");
+    const { product_id } = req.body;
+    const userId = req?.session?.user?.userId;
 
-//         const result = await addToCartService(userId, productId);
-//         return successResponse(res, 201, result.message, result.data);
-//     } catch (error) {
-//         logger.error("Add Cart Error:", error);
-//         return errorResponse(res, 500, error.message);
-//     }
-// };
-
-// Update quantity
-export const updateCartQuantityController = async (req, res) => {
-    try {
-        const userId = req.session?.user?.userId;
-        const { cartId } = req.params;
-        const { action } = req.body;
-
-        if (!userId || !cartId || !action) {
-            return errorResponse(res, 400, "User ID, Cart ID, and action are required");
-        }
-
-        const result = await updateCartQuantityService(userId, cartId, action);
-
-        if (!result.success) {
-            return errorResponse(res, 400, result.message);
-        }
-
-        return successResponse(res, 200, result.message, result.data);
-    } catch (error) {
-        logger.error("Update Cart Quantity Error:", error);
-        return errorResponse(res, 500, error);
+    if (!userId) {
+      logger.warn("Unauthorized cart add attempt");
+      return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
     }
+    if (!product_id) {
+      logger.warn("Missing product_id in addToCart");
+      return res.status(400).json({ success: false, message: "Product ID is required" });
+    }
+
+    const result = await addToCartService(userId, product_id);
+
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message || "Failed to add to cart" });
+    }
+
+    logger.info(`Cart add successful for user ${userId}`);
+    return res.status(200).json({
+      success: true,
+      message: "Product added to cart successfully",
+      data: result.data,
+    });
+  } catch (error) {
+    logger.error(`addToCartController Error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
 };
 
-// Remove cart item
-export const removeCartController = async (req, res) => {
-    try {
-        const userId = req.session?.user?.userId;
-        const { cartId } = req.params;
-        if (!userId || !cartId) return errorResponse(res, 400, "User and CartId required");
-
-        const result = await removeCartService(userId, cartId);
-        if (!result.success) return errorResponse(res, 404, result.message);
-
-        return successResponse(res, 200, result.message);
-    } catch (error) {
-        logger.error("Remove Cart Error:", error);
-        return errorResponse(res, 500, error);
-    }
-};
-
-// Get all cart items
 export const getCartController = async (req, res) => {
-    try {
-        const userId = req.session?.user?.userId;
-        if (!userId) return errorResponse(res, 401, "Login required");
+  try {
+    const userId = req?.session?.user?.userId;
 
-        const result = await getCartItemsService(userId);
-        return successResponse(res, 200, "Cart fetched successfully", result.data);
-    } catch (error) {
-        logger.error("Get Cart Error:", error);
-        return errorResponse(res, 500, error);
+    if (!userId) {
+      logger.warn("Unauthorized cart fetch attempt");
+      return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
     }
+
+    const result = await getCartService(userId);
+
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message || "Failed to fetch cart" });
+    }
+
+    logger.info(`Cart fetched successfully for user ${userId}`);
+    return res.status(200).json({
+      success: true,
+      message: "Cart fetched successfully",
+      data: result.data,
+    });
+  } catch (error) {
+    logger.error(`getCartController Error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
 };
 
-// Get single cart item
-export const getCartItemController = async (req, res) => {
-    try {
-        const userId = req.session?.user?.userId;
-        const { cartId } = req.params;
-        if (!userId || !cartId) return errorResponse(res, 400, "User and CartId required");
+export const updateCartQuantityController = async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const { quantity } = req.body;
+    const userId = req?.session?.user?.userId;
 
-        const result = await getCartItemService(userId, cartId);
-        if (!result.success) return errorResponse(res, 404, result.message);
-
-        return successResponse(res, 200, "Cart item fetched", result.data);
-    } catch (error) {
-        logger.error("Get Single Cart Item Error:", error);
-        return errorResponse(res, 500, error);
+    if (!userId) {
+      logger.warn("Unauthorized cart update attempt");
+      return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
     }
+    if (!product_id) {
+      logger.warn("Missing product_id in updateCartQuantity");
+      return res.status(400).json({ success: false, message: "Product ID is required" });
+    }
+    if (quantity === undefined || quantity < 0) {
+      logger.warn("Invalid quantity in updateCartQuantity");
+      return res.status(400).json({ success: false, message: "Valid quantity is required" });
+    }
+
+    const result = await updateCartQuantityService(userId, product_id, quantity);
+
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message || "Failed to update cart quantity" });
+    }
+
+    logger.info(`Cart quantity updated for user ${userId}, product ${product_id}`);
+    return res.status(200).json({
+      success: true,
+      message: "Cart quantity updated successfully",
+      data: result.data,
+    });
+  } catch (error) {
+    logger.error(`updateCartQuantityController Error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
 };
 
-// // Add or increase
-// export const addCartController = async (req, res) => {
-//     try {
-//         const userId = req.session?.user?.userId;
-//         const { product_id, quantity } = req.body;
+export const removeFromCartController = async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const userId = req?.session?.user?.userId;
 
-//         if (!userId || !product_id) return errorResponse(res, 400, "User ID and Product ID required");
+    if (!userId) {
+      logger.warn("Unauthorized cart remove attempt");
+      return res.status(401).json({ success: false, message: "Unauthorized: User session missing" });
+    }
+    if (!product_id) {
+      logger.warn("Missing product_id in removeFromCart");
+      return res.status(400).json({ success: false, message: "Product ID is required" });
+    }
 
-//         const result = await addToCartService(userId, product_id, quantity);
-//         return successResponse(res, 201, result.message, result.data);
-//     } catch (error) {
-//         logger.error("addCart Controller Error:", error);
-//         return errorResponse(res, 500, error.message);
-//     }
-// };
+    const result = await removeFromCartService(userId, product_id);
 
-// // Decrease quantity
-// export const decreaseCartController = async (req, res) => {
-//     try {
-//         const userId = req.session?.user?.userId;
-//         const { product_id, quantity } = req.body;
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message || "Failed to remove from cart" });
+    }
 
-//         if (!userId || !product_id) return errorResponse(res, 400, "User ID and Product ID required");
-
-//         const result = await decreaseCartQuantityService(userId, product_id, quantity);
-//         if (!result.success) return errorResponse(res, 404, result.message);
-
-//         return successResponse(res, 200, result.message, result.data);
-//     } catch (error) {
-//         logger.error("decreaseCart Controller Error:", error);
-//         return errorResponse(res, 500, error.message);
-//     }
-// };
-
-// // Remove completely
-// export const removeCartController = async (req, res) => {
-//     try {
-//         const userId = req.session?.user?.userId;
-//         const { productId } = req.params;
-
-//         if (!userId || !productId) return errorResponse(res, 400, "User ID and Product ID required");
-
-//         const result = await removeFromCartService(userId, productId);
-//         if (!result.success) return errorResponse(res, 404, result.message);
-
-//         return successResponse(res, 200, "Product removed from cart");
-//     } catch (error) {
-//         logger.error("removeCart Controller Error:", error);
-//         return errorResponse(res, 500, error.message);
-//     }
-// };
-
-// // Get all cart items
-// export const getCartController = async (req, res) => {
-//     try {
-//         const userId = req.session?.user?.userId;
-//         if (!userId) return errorResponse(res, 401, "User not logged in");
-
-//         const result = await getCartItemsService(userId);
-//         return successResponse(res, 200, "Cart items fetched successfully", result.data);
-//     } catch (error) {
-//         logger.error("getCart Controller Error:", error);
-//         return errorResponse(res, 500, error.message);
-//     }
-// };
+    logger.info(`Cart item removed for user ${userId}, product ${product_id}`);
+    return res.status(200).json({
+      success: true,
+      message: "Cart item removed successfully",
+      data: result.data,
+    });
+  } catch (error) {
+    logger.error(`removeFromCartController Error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { toast, Toaster } from "react-hot-toast";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -7,26 +8,16 @@ const Profile = () => {
     name: "",
     email: "",
     phone: "",
-    designation: "",
-    businessName: "",
-    businessType: "",
-    gstNumber: "",
-    panNumber: "",
-    houseNo: "",
-    streetName: "",
-    city: "",
-    state: "",
-    pincode: "",
-    contactPersonName: "",
-    contactPersonPhone: "",
-    bankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    accountType: "",
+    business_name: "",
+    business_type: "",
+    gst_number: "",
+    pan_number: "",
+    bank_name: "",
+    account_number: "",
+    ifsc_code: "",
+    account_type: "",
     photo: null,
-    password: "", // store new password temporarily
   });
-
   const [errors, setErrors] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -35,51 +26,98 @@ const Profile = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState({
     currentPassword: false,
     newPassword: false,
     confirmPassword: false,
   });
 
-  // Fetch vendor data on login
+  // Fetch vendor data
+  const fetchVendorData = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/vendor/profile",
+        { withCredentials: true }
+      );
+      const vendorData = response.data.data || response.data;
+      setVendor({
+        name: vendorData.name || "",
+        email: vendorData.email || "",
+        phone: vendorData.phone || "",
+        business_name: vendorData.business_name || "",
+        business_type: vendorData.business_type || "",
+        gst_number: vendorData.gst_number || "",
+        pan_number: vendorData.pan_number || "",
+        bank_name: vendorData.bank_name || "",
+        account_number: vendorData.account_number || "",
+        ifsc_code: vendorData.ifsc_code || "",
+        account_type: vendorData.account_type || "",
+        photo: vendorData.photo || null,
+      });
+    } catch (error) {
+      console.error("Error fetching vendor data", error);
+      toast.error("Failed to load profile data.");
+    }
+  };
+
   useEffect(() => {
-    const fetchVendorData = async () => {
-      try {
-        const { data } = await axios.get("http://localhost:5000/api/vendor/profile");
-        setVendor(data);
-      } catch (error) {
-        console.error("Error fetching vendor data", error);
-      }
-    };
     fetchVendorData();
   }, []);
 
+  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setVendor({ ...vendor, [name]: value });
   };
 
+  // Handle password field change
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordFields({ ...passwordFields, [name]: value });
   };
 
+  // Validation
   const validateForm = () => {
     const newErrors = {};
-    Object.keys(vendor).forEach((key) => {
-      if (!vendor[key] && key !== "photo" && key !== "designation" && key !== "houseNo" && key !== "streetName" && key !== "password") {
-        newErrors[key] = "This field is required";
-      }
-    });
 
-    if (vendor.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(vendor.email)) newErrors.email = "Invalid email";
-    if (vendor.phone && !/^\+?\d{10,15}$/.test(vendor.phone)) newErrors.phone = "Invalid phone";
-    if (vendor.ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(vendor.ifscCode)) newErrors.ifscCode = "Invalid IFSC";
+    if (activeTab === "personal") {
+      if (!vendor.name) newErrors.name = "Name is required";
+      if (!vendor.email) newErrors.email = "Email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(vendor.email))
+        newErrors.email = "Invalid email";
+      if (!vendor.phone) newErrors.phone = "Phone is required";
+      else if (!/^\+?\d{10,15}$/.test(vendor.phone))
+        newErrors.phone = "Invalid phone";
+    }
 
-    // Validate password if password form is shown
-    if (showPasswordForm) {
-      if (!passwordFields.currentPassword) newErrors.currentPassword = "Enter current password";
-      if (!passwordFields.newPassword) newErrors.newPassword = "Enter new password";
+    if (activeTab === "business") {
+      if (!vendor.business_name)
+        newErrors.business_name = "Business name is required";
+      if (!vendor.business_type)
+        newErrors.business_type = "Business type is required";
+      if (!vendor.gst_number) newErrors.gst_number = "GST number is required";
+      if (!vendor.pan_number) newErrors.pan_number = "PAN number is required";
+    }
+
+    if (activeTab === "bank") {
+      if (!vendor.bank_name) newErrors.bank_name = "Bank name is required";
+      if (!vendor.account_number)
+        newErrors.account_number = "Account number is required";
+      if (!vendor.ifsc_code) newErrors.ifsc_code = "IFSC code is required";
+      else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(vendor.ifsc_code))
+        newErrors.ifsc_code = "Invalid IFSC";
+      if (!vendor.account_type)
+        newErrors.account_type = "Account type is required";
+    }
+
+    if (activeTab === "security" && showPasswordForm) {
+      if (!passwordFields.currentPassword)
+        newErrors.currentPassword = "Current password is required";
+      if (!passwordFields.newPassword)
+        newErrors.newPassword = "New password is required";
+      if (passwordFields.newPassword.length < 6)
+        newErrors.newPassword = "New password must be at least 6 characters";
       if (passwordFields.newPassword !== passwordFields.confirmPassword)
         newErrors.confirmPassword = "Passwords do not match";
     }
@@ -88,27 +126,70 @@ const Profile = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Save profile
   const handleSave = async () => {
-    if (validateForm()) {
-      try {
-        const updateData = { ...vendor };
-        if (showPasswordForm) {
-          updateData.password = passwordFields.newPassword;
-        }
-        await axios.put("http://localhost:3000/api/vendor/profile", updateData);
-        alert("Profile updated successfully!");
-        setIsEditing(false);
-        setShowPasswordForm(false);
-        setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      } catch (error) {
-        console.error("Error updating profile", error);
-        alert("Error updating profile");
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      let endpoint = "";
+      let updateData = {};
+
+      if (activeTab === "personal") {
+        endpoint = "http://localhost:5000/api/vendor/personal";
+        updateData = {
+          name: vendor.name,
+          phone: vendor.phone,
+        };
+      } else if (activeTab === "business") {
+        endpoint = "http://localhost:5000/api/vendor/business";
+        updateData = {
+          business_name: vendor.business_name,
+          business_type: vendor.business_type,
+          gst_number: vendor.gst_number,
+          pan_number: vendor.pan_number,
+        };
+      } else if (activeTab === "bank") {
+        endpoint = "http://localhost:5000/api/vendor/bank";
+        updateData = {
+          bank_name: vendor.bank_name,
+          account_number: vendor.account_number,
+          ifsc_code: vendor.ifsc_code,
+          account_type: vendor.account_type,
+        };
+      } else if (activeTab === "security" && showPasswordForm) {
+        endpoint = "http://localhost:5000/api/vendor/password";
+        updateData = {
+          currentPassword: passwordFields.currentPassword,
+          newPassword: passwordFields.newPassword,
+        };
       }
+
+      await axios.put(endpoint, updateData, { withCredentials: true });
+
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+      setShowPasswordForm(false);
+      setPasswordFields({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setErrors({});
+    } catch (error) {
+      console.error("Error updating profile", error);
+      const errorMessage =
+        error.response?.data?.message || "Error updating profile";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <Toaster position="top-right" />
+
       {/* Breadcrumb */}
       <div className="mb-4 text-sm text-gray-600">
         Home / <span className="text-orange-600">Profile</span>
@@ -121,7 +202,11 @@ const Profile = () => {
         <div className="flex items-center space-x-4">
           <div className="w-16 h-16 rounded-full bg-orange-600 flex items-center justify-center text-white text-lg font-bold overflow-hidden">
             {vendor.photo ? (
-              <img src={vendor.photo} alt="Profile" className="w-full h-full object-cover" />
+              <img
+                src={vendor.photo}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
             ) : (
               vendor.name?.charAt(0)
             )}
@@ -129,33 +214,9 @@ const Profile = () => {
           <div>
             <h3 className="text-lg font-semibold">{vendor.name}</h3>
             <p className="text-gray-500">{vendor.email}</p>
-            <p className="text-gray-400 text-sm">{vendor.businessName}</p>
+            <p className="text-gray-400 text-sm">{vendor.business_name}</p>
           </div>
         </div>
-        {isEditing && (
-          <div>
-            <input
-              type="file"
-              id="photoUpload"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => setVendor({ ...vendor, photo: reader.result });
-                  reader.readAsDataURL(file);
-                }
-              }}
-            />
-            <button
-              onClick={() => document.getElementById("photoUpload").click()}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-            >
-              Change Photo
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Tabs */}
@@ -185,43 +246,34 @@ const Profile = () => {
           {/* Personal Info */}
           {activeTab === "personal" && (
             <div>
-              <h4 className="text-lg font-semibold mb-4">Personal Information</h4>
+              <h4 className="text-lg font-semibold mb-4">
+                Personal Information
+              </h4>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   { label: "Name", name: "name", type: "text" },
                   { label: "Email", name: "email", type: "email", disabled: true },
                   { label: "Phone", name: "phone", type: "text" },
-                  { label: "Designation", name: "designation", type: "text" },
                 ].map((field) => (
                   <div key={field.name}>
-                    <label className="block text-sm text-gray-600">{field.label}</label>
-                    {field.type === "select" ? (
-                      <select
-                        name={field.name}
-                        value={vendor[field.name]}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                          errors[field.name] ? "border-red-500" : ""
-                        }`}
-                      >
-                        {field.options.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type={field.type}
-                        name={field.name}
-                        value={vendor[field.name]}
-                        onChange={handleInputChange}
-                        disabled={field.disabled || !isEditing}
-                        className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                          errors[field.name] ? "border-red-500" : ""
-                        }`}
-                      />
+                    <label className="block text-sm text-gray-600">
+                      {field.label}
+                    </label>
+                    <input
+                      type={field.type}
+                      name={field.name}
+                      value={vendor[field.name]}
+                      onChange={handleInputChange}
+                      disabled={field.disabled || !isEditing}
+                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${
+                        errors[field.name] ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors[field.name] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[field.name]}
+                      </p>
                     )}
-                    {errors[field.name] && <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>}
                   </div>
                 ))}
               </form>
@@ -231,21 +283,20 @@ const Profile = () => {
           {/* Business Info */}
           {activeTab === "business" && (
             <div>
-              <h4 className="text-lg font-semibold mb-4">Business Information</h4>
+              <h4 className="text-lg font-semibold mb-4">
+                Business Information
+              </h4>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { label: "Business Name", name: "businessName" },
-                  { label: "Business Type", name: "businessType" },
-                  { label: "GST Number", name: "gstNumber" },
-                  { label: "PAN Number", name: "panNumber" },
-                  { label: "House No", name: "houseNo" },
-                  { label: "Street Name", name: "streetName" },
-                  { label: "City", name: "city" },
-                  { label: "State", name: "state" },
-                  { label: "Pincode", name: "pincode" },
+                  { label: "Business Name", name: "business_name" },
+                  { label: "Business Type", name: "business_type" },
+                  { label: "GST Number", name: "gst_number" },
+                  { label: "PAN Number", name: "pan_number" },
                 ].map((field) => (
                   <div key={field.name}>
-                    <label className="block text-sm text-gray-600">{field.label}</label>
+                    <label className="block text-sm text-gray-600">
+                      {field.label}
+                    </label>
                     <input
                       type="text"
                       name={field.name}
@@ -256,7 +307,11 @@ const Profile = () => {
                         errors[field.name] ? "border-red-500" : ""
                       }`}
                     />
-                    {errors[field.name] && <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>}
+                    {errors[field.name] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[field.name]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </form>
@@ -269,18 +324,20 @@ const Profile = () => {
               <h4 className="text-lg font-semibold mb-4">Bank Details</h4>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { label: "Bank Name", name: "bankName" },
-                  { label: "Account Number", name: "accountNumber" },
-                  { label: "IFSC Code", name: "ifscCode" },
+                  { label: "Bank Name", name: "bank_name" },
+                  { label: "Account Number", name: "account_number" },
+                  { label: "IFSC Code", name: "ifsc_code" },
                   {
                     label: "Account Type",
-                    name: "accountType",
+                    name: "account_type",
                     type: "select",
                     options: ["Saving", "Current"],
                   },
                 ].map((field) => (
                   <div key={field.name}>
-                    <label className="block text-sm text-gray-600">{field.label}</label>
+                    <label className="block text-sm text-gray-600">
+                      {field.label}
+                    </label>
                     {field.type === "select" ? (
                       <select
                         name={field.name}
@@ -291,8 +348,11 @@ const Profile = () => {
                           errors[field.name] ? "border-red-500" : ""
                         }`}
                       >
+                        <option value="">Select Account Type</option>
                         {field.options.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     ) : (
@@ -307,7 +367,11 @@ const Profile = () => {
                         }`}
                       />
                     )}
-                    {errors[field.name] && <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>}
+                    {errors[field.name] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[field.name]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </form>
@@ -318,43 +382,60 @@ const Profile = () => {
           {activeTab === "security" && (
             <div>
               <h4 className="text-lg font-semibold mb-4">Change Password</h4>
-              {!showPasswordForm ? (
-                <button
-                  onClick={() => setShowPasswordForm(true)}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                >
-                  Change Password
-                </button>
-              ) : (
-                <form className="max-w-lg space-y-4">
-                  {[
-                    { label: "Current Password", name: "currentPassword" },
-                    { label: "New Password", name: "newPassword" },
-                    { label: "Confirm Password", name: "confirmPassword" },
-                  ].map((field) => (
-                    <div key={field.name} className="relative">
-                      <label className="block text-sm text-gray-600">{field.label}</label>
-                      <input
-                        type={showPassword[field.name] ? "text" : "password"}
-                        name={field.name}
-                        value={passwordFields[field.name]}
-                        onChange={handlePasswordChange}
-                        className="w-full border rounded-lg px-3 py-2 mt-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPassword({ ...showPassword, [field.name]: !showPassword[field.name] })
-                        }
-                        className="absolute right-3 top-9 text-gray-500"
-                      >
-                        {showPassword[field.name] ? "Hide" : "Show"}
-                      </button>
-                      {errors[field.name] && <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>}
-                    </div>
-                  ))}
-                </form>
-              )}
+              <form className="max-w-lg space-y-4">
+                {[
+                  {
+                    label: "Current Password",
+                    name: "currentPassword",
+                    placeholder: "Enter current password",
+                  },
+                  {
+                    label: "New Password",
+                    name: "newPassword",
+                    placeholder: "Enter new password",
+                  },
+                  {
+                    label: "Confirm New Password",
+                    name: "confirmPassword",
+                    placeholder: "Confirm new password",
+                  },
+                ].map((field) => (
+                  <div key={field.name} className="relative">
+                    <label className="block text-sm text-gray-600">
+                      {field.label}
+                    </label>
+                    <input
+                      type={showPassword[field.name] ? "text" : "password"}
+                      name={field.name}
+                      value={passwordFields[field.name]}
+                      onChange={handlePasswordChange}
+                      placeholder={field.placeholder}
+                      disabled={isLoading || !isEditing}
+                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${
+                        errors[field.name] ? "border-red-500" : ""
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPassword({
+                          ...showPassword,
+                          [field.name]: !showPassword[field.name],
+                        })
+                      }
+                      className="absolute right-3 top-9 text-gray-500 text-sm"
+                      disabled={isLoading}
+                    >
+                      {showPassword[field.name] ? "Hide" : "Show"}
+                    </button>
+                    {errors[field.name] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[field.name]}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </form>
             </div>
           )}
 
@@ -362,8 +443,12 @@ const Profile = () => {
           <div className="mt-6 flex gap-4">
             {!isEditing ? (
               <button
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                onClick={() => {
+                  setIsEditing(true);
+                  if (activeTab === "security") setShowPasswordForm(true);
+                }}
+                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-orange-400"
+                disabled={isLoading}
               >
                 Edit Profile
               </button>
@@ -371,17 +456,25 @@ const Profile = () => {
               <>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-orange-400"
+                  disabled={isLoading}
                 >
-                  Save Changes
+                  {isLoading ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   onClick={() => {
                     setIsEditing(false);
                     setShowPasswordForm(false);
-                    setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                    setPasswordFields({
+                      currentPassword: "",
+                      newPassword: "",
+                      confirmPassword: "",
+                    });
+                    setErrors({});
+                    fetchVendorData();
                   }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:bg-gray-200"
+                  disabled={isLoading}
                 >
                   Cancel
                 </button>

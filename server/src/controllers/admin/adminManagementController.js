@@ -1,4 +1,4 @@
-import { getAdminDashboardService, getAllUsers,  getPaymentsWithFiltersService, getAllProductsService, getProductByIdService, updateProductStatusService, getVendorByIdService, updateVendorStatusService, getAllVendorsService, getAllOrdersService, getOrderDetailsService } from "../../services/admin/adminManagementService.js";
+import { getAdminDashboardService, getAllUsers, getPaymentsWithFiltersService, getAllProductsService, getProductByIdService, updateProductStatusService, getVendorByIdService, updateVendorStatusService, getAllVendorsService, getAllOrdersService, getOrderDetailsService } from "../../services/admin/adminManagementService.js";
 import { successResponse, errorResponse } from "../../utils/helpers.js";
 import logger from "../../config/logger.js";
 
@@ -156,12 +156,14 @@ export const getAllOrders = async (req, res) => {
       status: req.query.status || "all",
       start_date: req.query.start_date || null,
       end_date: req.query.end_date || null,
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
     };
 
-    const { orders, counts } = await getAllOrdersService(filters);
+    const { orders, counts, pagination  } = await getAllOrdersService(filters);
 
     logger.info("Fetched all orders successfully");
-    return successResponse(res, 200, "Orders fetched successfully", { counts, orders });
+    return successResponse(res, 200, "Orders fetched successfully", { counts, orders, pagination  });
   } catch (error) {
     logger.error(`Error fetching orders: ${error.message}`);
     return errorResponse(res, 500, error);
@@ -188,10 +190,25 @@ export const getOrderDetails = async (req, res) => {
 // payment Managemnet Controller
 export const getPaymentsController = async (req, res) => {
   try {
-    const filters = req.query; // transaction_id, status, start_date, end_date
-    const payments = await getPaymentsWithFiltersService(filters);
+    const filters = {
+      status: req.query.status || "all",
+      start_date: req.query.start_date || null,
+      end_date: req.query.end_date || null,
+      transaction_id: req.query.transaction_id || null,
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+    };
+    const result = await getPaymentsWithFiltersService(filters);
     logger.info("Fetched filtered payments");
-    return successResponse(res, 200, "Payments fetched successfully", payments);
+    return successResponse(res, 200, "Payments fetched successfully", {
+      data: result.payments,
+      pagination: {
+        totalItems: result.total,
+        totalPages: result.totalPages,
+        currentPage: filters.page,
+        limit: filters.limit,
+      },
+    });
   } catch (err) {
     logger.error("Error fetching payments:", err.message);
     return errorResponse(res, 500, err);

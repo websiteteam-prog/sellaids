@@ -36,6 +36,7 @@ const VendorManagement = () => {
       if (success) {
         setVendors(data.vendors);
         setTotalVendors(data.total); // total number of vendors
+        toast.success(message);
       } else {
         setVendors([]);
         setTotalVendors(0);

@@ -2,7 +2,6 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
 import { Vendor } from "./vendorModel.js";
 import { Category } from "./categoryModel.js";
-import { Order } from "./orderModel.js";
 
 export const Product = sequelize.define(
   "Product",
@@ -92,8 +91,9 @@ export const Product = sequelize.define(
     },
     is_active: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
+      defaultValue: true, 
     },
+
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
@@ -109,14 +109,6 @@ export const Product = sequelize.define(
   }
 );
 
-// ✅ Associations
-// Product.belongsTo(Vendor, { foreignKey: "vendor_id", as: "vendor" });
-// Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });
-// Product.hasMany(sequelize.models.Order, { foreignKey: "product_id", as: "orders" });
-
-Product.associate = () => {
-  const { Vendor, Category, Order } = sequelize.models;
-  Product.belongsTo(Vendor, { foreignKey: "vendor_id", as: "vendor" });
-  Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });
-  Product.hasMany(Order, { foreignKey: "product_id", as: "orders" });
-};
+// Associations
+Product.belongsTo(Vendor, { foreignKey: "vendor_id", as: "vendor" });
+Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });

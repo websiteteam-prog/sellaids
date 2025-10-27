@@ -1,18 +1,33 @@
-import { create } from "zustand"
+import { create } from 'zustand';
+import axios from 'axios';
 
-export const useCartStore = create((set, get) => ({
+const useCartStore = create((set) => ({
   cart: [],
-
-  addToCart: (item) => {
-    const cart = get().cart
-    set({ cart: [...cart, item] })
-  },
-
-  removeFromCart: (id) => {
-    set((state) => ({
-      cart: state.cart.filter((item) => item.id !== id),
-    }))
-  },
-
+  setCart: (cart) => set({ cart }),
   clearCart: () => set({ cart: [] }),
-}))
+  fetchCart: async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/user/cart`, {
+        withCredentials: true,
+      });
+      set({ cart: res.data.data || [] });
+    } catch (err) {
+      console.error('Failed to fetch cart:', err);
+    }
+  },
+  removeFromCart: async (productId) => {
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/user/cart/${productId}`, {
+        withCredentials: true,
+      });
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/user/cart`, {
+        withCredentials: true,
+      });
+      set({ cart: res.data.data || [] });
+    } catch (err) {
+      console.error('Failed to remove item from cart:', err);
+    }
+  },
+}));
+
+export default useCartStore;

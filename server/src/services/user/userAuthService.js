@@ -3,7 +3,7 @@ import { User } from "../../models/userModel.js"
 import crypto from "crypto";
 import { Op } from "sequelize";
 
-export const registerUser = async ({ name, email, phone, password }) => {
+export const registerUser = async ({ name, email, phone, password, address_line, city, state, pincode }) => {
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) throw new Error("User already exists");
 
@@ -14,6 +14,11 @@ export const registerUser = async ({ name, email, phone, password }) => {
         email,
         phone,
         password: hashedPassword,
+        address_line,
+        city,
+        state,
+        pincode,
+
     });
 
     return newUser;

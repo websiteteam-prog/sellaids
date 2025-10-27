@@ -1,10 +1,14 @@
 import { productSchema } from "../../validations/productFormValidation.js";
 import { createProductService, fetchCategories, fetchProductTypesByCategory, getAllProductsService, getProductByIdService, getDashboardStatsService, getEarningsStatsService } from "../../services/product/productFormService.js";
+import logger from "../../config/logger.js";
 
 
 export const addProductController = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
+    if (!vendorId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Vendor session missing" });
+    }
 
     await productSchema.validate(req.body, { abortEarly: false, context: { vendorId } });
 
@@ -33,13 +37,19 @@ export const addProductController = async (req, res) => {
     if (error.name === "ValidationError") {
       return res.status(400).json({ success: false, message: "Validation failed", errors: error.errors });
     }
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    logger.error(error.message);
+    res.status(500).json({ success: false, message: "Something went wrong", error: error.message });
   }
 };
 
 export const getCategories = async (req, res) => {
   try {
+    const vendorId = req.session.vendor?.vendorId;
+    const isAdmin = !!req.session.admin?.adminId;
+    if (!vendorId && !isAdmin) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
+    }
+
     const { search = "" } = req.query;
     const categories = await fetchCategories(search);
     res.json({
@@ -59,6 +69,12 @@ export const getCategories = async (req, res) => {
 
 export const getProductTypes = async (req, res) => {
   try {
+    const vendorId = req.session.vendor?.vendorId;
+    const isAdmin = !!req.session.admin?.adminId;
+    if (!vendorId && !isAdmin) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
+    }
+
     const { category_id, search = "" } = req.query;
 
     if (!category_id) {
@@ -87,7 +103,13 @@ export const getProductTypes = async (req, res) => {
 
 export const getAllProductsController = async (req, res) => {
   try {
-    const data = await getAllProductsService(req.query);
+    const vendorId = req.session.vendor?.vendorId;
+    const isAdmin = !!req.session.admin?.adminId;
+    if (!vendorId && !isAdmin) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
+    }
+
+    const data = await getAllProductsService(req.query, vendorId, isAdmin);
 
     res.status(200).json({
       success: true,
@@ -95,7 +117,7 @@ export const getAllProductsController = async (req, res) => {
       ...data,
     });
   } catch (err) {
-    console.error("Error fetching products:", err);
+    logger.error(err.message);
     res.status(500).json({
       success: false,
       message: "Failed to fetch product list",
@@ -106,6 +128,12 @@ export const getAllProductsController = async (req, res) => {
 
 export const getProductByIdController = async (req, res) => {
   try {
+    const vendorId = req.session.vendor?.vendorId;
+    const isAdmin = !!req.session.admin?.adminId;
+    if (!vendorId && !isAdmin) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
+    }
+
     const { id } = req.params;
     const product = await getProductByIdService(id);
 
@@ -134,19 +162,29 @@ export const getProductByIdController = async (req, res) => {
 export const getDashboardController = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
+    if (!vendorId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Vendor session missing" });
+    }
+
     const data = await getDashboardStatsService(vendorId);
     res.status(200).json({ success: true, msg: "Dashboard data fetched successfully", data });
   } catch (error) {
-    res.status(500).json({ success: false, msg: error.message });
+    logger.error(error.message);
+    res.status(500).json({ success: false, message: "Something went wrong", error: error.message });
   }
 };
 
 export const getEarningsController = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
+    if (!vendorId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Vendor session missing" });
+    }
+
     const data = await getEarningsStatsService(vendorId);
     res.status(200).json({ success: true, msg: "Earnings data fetched successfully", data });
   } catch (error) {
-    res.status(500).json({ success: false, msg: error.message });
+    logger.error(error.message);
+    res.status(500).json({ success: false, message: "Something went wrong", error: error.message });
   }
 };

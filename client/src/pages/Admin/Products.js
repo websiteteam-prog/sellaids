@@ -37,6 +37,7 @@ const ProductManagement = () => {
       if (success) {
         setProducts(data.products);
         setTotalProducts(data.total);
+        toast.success(message);
       } else {
         setProducts([]);
         setTotalProducts(0);
@@ -186,7 +187,7 @@ const ProductManagement = () => {
                   <td className="px-4 py-3 border font-medium">{p.sku}</td>
                   <td className="px-4 py-3 border">{p.model_name}</td>
                   <td className="px-4 py-3 border">{p.brand}</td>
-                  <td className="px-4 py-3 border">₹{p.price}</td>
+                  <td className="px-4 py-3 border">{p.selling_price}</td>
                   <td className="px-4 py-3 border">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${

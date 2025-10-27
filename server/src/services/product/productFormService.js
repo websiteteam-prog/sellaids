@@ -5,6 +5,7 @@ import { Category } from "../../models/categoryModel.js";
 import ProductType from "../../models/productType.js";
 import { Order } from "../../models/orderModel.js";
 import { Payment } from "../../models/paymentModel.js";
+import { Vendor } from "../../models/vendorModel.js";
 
 export const createProductService = async (vendorId, data, images) => {
   try {
@@ -82,19 +83,23 @@ export const fetchProductTypesByCategory = async (category_id, search = "") => {
   });
 };
 
-export const getAllProductsService = async (query) => {
+export const getAllProductsService = async (query, vendorId, isAdmin) => {
   const { search, category_id, page = 1, limit = 10 } = query;
 
-  const where = {
-    is_active: true, 
-  };
+  const where = { is_active: true };
+
+  // Vendor filter for non-admin users
+  if (vendorId && !isAdmin) {
+    where.vendor_id = vendorId;
+  }
+
   if (category_id) {
     where.category_id = category_id;
   }
 
   if (search) {
     where[Op.or] = [
-      { product_type: { [Op.like]: `%${search}%` } },
+      { model_name: { [Op.like]: `%${search}%` } },
       { sku: { [Op.like]: `%${search}%` } },
     ];
   }
@@ -115,6 +120,18 @@ export const getAllProductsService = async (query) => {
       "selling_price",
       "status",
       "front_photo",
+    ],
+    include: [
+      {
+        model: Category,
+        as: "category",
+        attributes: ["id", "name"], 
+      },
+      {
+        model: Vendor,
+        as: "vendor",
+        attributes: ["id", "name"], 
+      },
     ],
   });
 
@@ -139,7 +156,7 @@ export const getDashboardStatsService = async (vendorId) => {
   try {
     const totalProducts = await Product.count({ where: { vendor_id: vendorId, is_active: true } });
 
-    const pendingOrders = await Order.count({ where: { order_status: "pending" } });
+    const pendingOrders = await Order.count({ where: { order_status: "pending" , vendor_id: vendorId } });
 
     const totalEarnings = await Payment.sum("vendor_earning", {
       where: { vendor_id: vendorId, status: "success" },
