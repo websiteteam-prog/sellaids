@@ -44,7 +44,7 @@ export const Payment = sequelize.define(
     vendor_earning: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     platform_fee: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     currency: { type: DataTypes.STRING(10), defaultValue: "INR" },
-    status: {
+    payment_status: {
       type: DataTypes.ENUM("pending", "success", "failed", "refunded"),
       defaultValue: "pending",
     },
