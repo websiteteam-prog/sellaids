@@ -12,7 +12,8 @@ const VendorProtectedRoute = () => {
     }
   }, [isAuthenticated]);
 
-  // ✅ Agar login hai to child routes render karo
+
+// ✅ Render child routes if authenticated, otherwise navigate to login
   return isAuthenticated ? <Outlet /> : <Navigate to="/vendor/login" replace />;
 };
 

@@ -31,9 +31,9 @@ const Header = () => {
 
   const handleWishlistClick = () => {
     if (user) {
-      navigate("/wishlist");
+      navigate("/user/wishlist"); // Navigate to dashboard wishlist for logged-in users
     } else {
-      navigate("/UserAuth/UserLogin");
+      navigate("/UserAuth/UserLogin"); // Navigate to login page for unlogged users
     }
   };
 
@@ -99,7 +99,7 @@ const Header = () => {
             <div className="flex items-center gap-3 cursor-pointer hover:text-orange-500">
               <User
                 className="w-5 h-5"
-                onClick={() => navigate("/user")} // When clicked, navigate to the Dashboard
+                onClick={() => navigate("/user")} // Navigate to dashboard
               />
             </div>
           ) : (
@@ -108,7 +108,21 @@ const Header = () => {
             </Link>
           )}
 
-          <div onClick={handleWishlistClick}>
+          <div
+            className="relative"
+            onClick={handleWishlistClick}
+            onMouseEnter={(e) => {
+              if (!user) {
+                const tooltip = document.createElement("div");
+                tooltip.innerText = "Please log in to view wishlist";
+                tooltip.className = "absolute top-full mt-2 bg-gray-800 text-white text-xs rounded py-1 px-2 z-50";
+                tooltip.style.left = "50%";
+                tooltip.style.transform = "translateX(-50%)";
+                e.currentTarget.appendChild(tooltip);
+                setTimeout(() => tooltip.remove(), 2000);
+              }
+            }}
+          >
             <Heart className="w-5 h-5 hover:text-orange-500 cursor-pointer" />
           </div>
 

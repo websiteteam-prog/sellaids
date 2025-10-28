@@ -13,7 +13,7 @@ function Bestsellers() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/products/bestsellers");
+        const res = await axios.get("http://localhost:5000/api/admin/management/dashboard");
         setProducts(res.data); // assuming API returns array of products
       } catch (error) {
         console.error("Error fetching bestsellers:", error);
