@@ -35,7 +35,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
     for (const item of cartItems) {
       const product = await Product.findByPk(item.product_id, {
         transaction,
-        include: [{ model: Vendor, as: "vendor" }], 
+        include: [{ model: Vendor, as: "vendor" }],
       });
       if (!product) {
         await transaction.rollback();
@@ -52,69 +52,127 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       totalAmount += product.purchase_price * item.quantity;
     }
 
+    // 🧩 Check if a pending order/payment already exists for this user
+    const existingPayment = await Payment.findOne({
+      where: { user_id: userId, payment_status: "pending" },
+      include: [{ model: Order, as: "order" }],
+      transaction,
+    });
+
+    let razorpayOrder, orders = [], payment;
+
+    // 🧩 Create Razorpay instance
     const razorpay = createRazorpayInstance();
     if (!razorpay) {
       await transaction.rollback();
       return { status: false, message: "Failed to initialize payment gateway" };
     }
 
-    const razorpayOrder = await razorpay.orders.create({
-      amount: totalAmount * 100,
-      currency: "INR",
-      receipt: `receipt_${Date.now()}_${userId}`,
-    });
+    if (existingPayment) {
+      // ✅ Reuse old Razorpay order if exists
+      logger.info(`Reusing existing pending payment for user ${userId}`);
 
-    const orders = [];
-    for (const item of cartItems) {
-      const product = await Product.findByPk(item.product_id, { transaction });
-      const order = await Order.create(
+      razorpayOrder = {
+        id: existingPayment.razorpay_order_id,
+        amount: existingPayment.amount * 100,
+        currency: existingPayment.currency || "INR",
+      };
+
+      // Update existing orders
+      const existingOrders = await Order.findAll({
+        where: { user_id: userId, payment_status: "pending" },
+        transaction,
+      });
+
+      if (existingOrders.length) {
+        for (const order of existingOrders) {
+          await order.update(
+            {
+              total_amount: totalAmount, // updated amount if changed
+              shipping_address: shippingAddress,
+              updated_at: new Date(),
+            },
+            { transaction }
+          );
+        }
+        orders = existingOrders;
+      }
+
+      // Update existing payment record
+      await existingPayment.update(
         {
-          user_id: userId,
-          vendor_id: product.vendor_id, 
-          product_id: item.product_id,
-          quantity: item.quantity,
-          total_amount: product.purchase_price * item.quantity,
-          payment_status: "pending",
-          order_status: "pending",
-          shipping_address: shippingAddress,
-          payment_method: "razorpay",
-          transaction_id: razorpayOrder.id,
-          order_date: new Date(),
+          amount: totalAmount,
+          updated_at: new Date(),
         },
         { transaction }
       );
-      await product.update({ stock: product.stock - item.quantity }, { transaction });
-      orders.push(order);
-    }
 
-    // Validate vendor_id exists in vendors table
-    const vendorId = orders[0].vendor_id;
-    const vendorExists = await Vendor.findByPk(vendorId, { transaction });
-    if (!vendorExists) {
-      await transaction.rollback();
-      return { status: false, message: `Vendor ${vendorId} not found` };
-    }
+      payment = existingPayment;
+    } else {
+      // 🆕 Create new Razorpay order if no pending exists
+      razorpayOrder = await razorpay.orders.create({
+        amount: totalAmount * 100,
+        currency: "INR",
+        receipt: `receipt_${Date.now()}_${userId}`,
+      });
 
-    const payment = await Payment.create(
-      {
-        order_id: orders[0].id,
-        user_id: userId,
-        vendor_id: vendorId, 
-        payment_method: "razorpay",
-        razorpay_order_id: razorpayOrder.id,
-        amount: totalAmount,
-        vendor_earning: totalAmount * 0.8,
-        platform_fee: totalAmount * 0.2,
-        payment_status: "pending",
-        payment_date: new Date(),
-        payment_info: razorpayOrder,
-        currency: razorpayOrder.currency,
-      },
-      { transaction }
-    );
+      // Create new order records
+      for (const item of cartItems) {
+        const product = await Product.findByPk(item.product_id, { transaction });
+        const order = await Order.create(
+          {
+            user_id: userId,
+            vendor_id: product.vendor_id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            total_amount: product.purchase_price * item.quantity,
+            payment_status: "pending",
+            order_status: "pending",
+            shipping_address: shippingAddress,
+            payment_method: "razorpay",
+            transaction_id: razorpayOrder.id,
+            order_date: new Date(),
+          },
+          { transaction }
+        );
+        await product.update({ stock: product.stock - item.quantity }, { transaction });
+        orders.push(order);
+      }
+
+      const vendorId = orders[0].vendor_id;
+      const vendorExists = await Vendor.findByPk(vendorId, { transaction });
+      if (!vendorExists) {
+        await transaction.rollback();
+        return { status: false, message: `Vendor ${vendorId} not found` };
+      }
+
+      // Create new payment record
+      payment = await Payment.create(
+        {
+          order_id: orders[0].id,
+          user_id: userId,
+          vendor_id: vendorId,
+          payment_method: "razorpay",
+          razorpay_order_id: razorpayOrder.id,
+          amount: totalAmount,
+          vendor_earning: totalAmount * 0.8,
+          platform_fee: totalAmount * 0.2,
+          payment_status: "pending",
+          payment_date: new Date(),
+          payment_info: razorpayOrder,
+          currency: razorpayOrder.currency,
+        },
+        { transaction }
+      );
+    }
 
     await transaction.commit();
-    logger.info(`Razorpay order created: ${razorpayOrder.id} for user ${userId}`);
+
+    logger.info(
+      existingPayment
+        ? `Reused existing pending payment ${payment.razorpay_order_id} for user ${userId}`
+        : `Created new Razorpay order ${razorpayOrder.id} for user ${userId}`
+    );
 
     return {
       status: true,
@@ -177,7 +235,7 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
     }
     await payment.update(
       {
-        status: "success",
+        payment_status: "success", // Corrected from 'status'
         razorpay_payment_id,
         razorpay_signature,
         transaction_id: razorpay_payment_id,
@@ -196,6 +254,67 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
   } catch (error) {
     await transaction.rollback();
     logger.error(`verifyPaymentService error for user ${userId}:`, error);
+    return { status: false, message: error.message };
+  }
+};
+
+export const cancelPaymentService = async (userId, razorpayOrderId, orderIds) => {
+  const transaction = await sequelize.transaction();
+  try {
+    // Validate orders
+    for (const orderId of orderIds) {
+      const order = await Order.findOne({
+        where: { id: orderId, user_id: userId, payment_status: "pending" }, // Added status check
+        transaction,
+      });
+      if (!order) {
+        await transaction.rollback();
+        return { status: false, message: `Order ${orderId} not found or not cancellable` };
+      }
+      await order.update(
+        {
+          payment_status: "failed",
+          order_status: "cancelled",
+          updated_at: new Date(),
+        },
+        { transaction }
+      );
+    }
+
+    // Update payment status
+    const payment = await Payment.findOne({
+      where: { razorpay_order_id: razorpayOrderId, payment_status: "pending" }, // Added status check
+      transaction,
+    });
+    if (!payment) {
+      await transaction.rollback();
+      return { status: false, message: "Payment record not found or not cancellable" };
+    }
+    await payment.update(
+      {
+        payment_status: "failed", // Corrected from 'status'
+        failure_reason: "Payment cancelled by user",
+        updated_at: new Date(),
+      },
+      { transaction }
+    );
+
+    // Restore product stock
+    for (const orderId of orderIds) {
+      const order = await Order.findByPk(orderId, { transaction });
+      const product = await Product.findByPk(order.product_id, { transaction });
+      await product.update(
+        { stock: product.stock + order.quantity },
+        { transaction }
+      );
+    }
+
+    await transaction.commit();
+    logger.info(`Payment cancelled for Razorpay order ${razorpayOrderId}`);
+    return { status: true, message: "Payment and order cancelled successfully" };
+  } catch (error) {
+    await transaction.rollback();
+    logger.error(`cancelPaymentService error for user ${userId}:`, error);
     return { status: false, message: error.message };
   }
 };

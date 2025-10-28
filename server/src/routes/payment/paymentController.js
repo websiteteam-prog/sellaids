@@ -1,4 +1,4 @@
-import { createOrderService, verifyPaymentService } from "../payment/paymentService.js";
+import { createOrderService, verifyPaymentService, cancelPaymentService } from "../payment/paymentService.js";
 import logger from "../../config/logger.js";
 import { Order } from "../../models/orderModel.js";
 import { Payment } from "../../models/paymentModel.js";
@@ -49,23 +49,60 @@ export const verifyPaymentController = async (req, res) => {
   }
 };
 
+export const cancelPaymentController = async (req, res) => {
+  const userId = req.session?.user?.userId;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "User not logged in or session expired" });
+  }
+
+  const { razorpayOrderId, orderIds } = req.body;
+
+  try {
+    const result = await cancelPaymentService(userId, razorpayOrderId, orderIds);
+
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+
+    logger.info(`Payment cancelled for user ${userId}`);
+    return res.status(200).json({ success: true, message: "Payment cancelled successfully" });
+  } catch (error) {
+    logger.error(`cancelPaymentController error for user ${userId}:`, error);
+    return res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
+  }
+};
+
 export const getLatestOrder = async (req, res) => {
   try {
     const userId = req.params.userId;
+
     const latestOrder = await Order.findOne({
-      where: { user_id: userId, payment_status: "unpaid" },
+      where: { user_id: userId, payment_status: "pending" },
       order: [["created_at", "DESC"]],
-      include: [{ model: Payment, where: { status: "pending" } }],
+      include: [
+        {
+          model: Payment,
+          as: "payment",
+          where: { payment_status: "pending" },
+          required: false,
+        },
+      ],
     });
-    if (!latestOrder) {
-      return res.status(404).json({ success: false, message: "No pending order found" });
+
+    if (!latestOrder || !latestOrder.payment) {
+      return res.status(404).json({
+        success: false,
+        message: "No pending order or payment found",
+      });
     }
-    const payment = latestOrder.Payment;
+
+    const payment = latestOrder.payment;
+
     return res.status(200).json({
       success: true,
       data: {
         razorpayOrderId: payment.razorpay_order_id,
-        amount: payment.amount * 100, // Convert to paise
+        amount: payment.amount * 100,
         currency: payment.currency,
         key: process.env.RAZORPAY_KEY_ID,
         orderIds: [latestOrder.id],
@@ -73,6 +110,10 @@ export const getLatestOrder = async (req, res) => {
     });
   } catch (error) {
     logger.error(`getLatestOrder error for user ${req.params.userId}:`, error);
-    return res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };

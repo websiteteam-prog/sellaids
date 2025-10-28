@@ -10,11 +10,35 @@ function UserLogin() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [loginError, setLoginError] = useState("");
   const { login } = useUserStore();
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    let isValid = true;
+    setEmailError("");
+    setPasswordError("");
+    setLoginError("");
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address.");
+      isValid = false;
+    }
+
+    if (password.length < 6) {
+      setPasswordError("Password must be at least 6 characters long.");
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
 
     try {
@@ -24,20 +48,26 @@ function UserLogin() {
         { withCredentials: true }
       );
 
-      const { success, data, message } = res.data;
+      const { success, data, message, errorType } = res.data;
       if (success) {
         login(data);
         setEmail("");
         setPassword("");
-        
+        setLoginError("");
         toast.success(message || "Login Successful ✅");
         navigate("/user");
       } else {
-        toast.error(message || "Login Failed ❌");
+        if (errorType === "email") {
+          setLoginError("Invalid email address ❌");
+        } else if (errorType === "password") {
+          setLoginError("Invalid password ❌");
+        } else {
+          setLoginError("Login failed ❌");
+        }
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      toast.error("Invalid Credentials ❌");
+      setLoginError(err.response?.data?.message || "Invalid Credentials ❌");
     } finally {
       setLoading(false);
     }
@@ -56,6 +86,10 @@ function UserLogin() {
             className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
             required
           />
+          {emailError && (
+            <div className="text-red-500 text-sm mb-2">{emailError}</div>
+          )}
+
           <div className="relative mb-2">
             <input
               type={showPassword ? "text" : "password"}
@@ -74,17 +108,22 @@ function UserLogin() {
               </span>
             )}
           </div>
+          {passwordError && (
+            <div className="text-red-500 text-sm mb-2">{passwordError}</div>
+          )}
 
-          {/* Forgot Password Link with Debugging */}
-          <div className="text-right mb-4">
-            <Link
-              to="/UserAuth/forgot-password"
-              className="text-blue-500 hover:underline"
-              onClick={() => console.log("Forgot Password link clicked")}
+          {loginError && (
+            <div className="text-red-500 text-sm mb-4">{loginError}</div>
+          )}
+
+         <p className="text-right mt-4 mb-2">
+            <a
+              href="/UserAuth/UserForgot"
+              className="text-red-500 text-sm hover:text-orange-600"
             >
               Forgot Password?
-            </Link>
-          </div>
+            </a>
+          </p>
 
           <button
             type="submit"

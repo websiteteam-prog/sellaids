@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import useWishlistStore from "../../stores/useWishlistStore";
 
-
 export default function Support() {
   const { user } = useWishlistStore(); // logged-in user info
 

@@ -26,11 +26,11 @@ export const userLoginController = async (req, res) => {
 
         const user = await loginUser(validatedData);
 
-        req.session.user = { userId: user.id, email: user.email };
+        req.session.user = { userId: user.id, email: user.email, name: user.name }; // Add name here
         req.session.cookie.maxAge = 30 * 60 * 1000; // 30 min 
-        console.log(req.session.user.userId)
+        console.log(req.session.user);
 
-        logger.info(`User logged in: ${user.email}`);
+        logger.info(`User logged in: ${user.email} (Name: ${user.name})`);
         return successResponse(res, 200, `${user.name} login successfully`, { id: user.id, name: user.name, email: user.email });
     } catch (err) {
         logger.error(`Login error: ${err.message}`);

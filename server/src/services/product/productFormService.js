@@ -159,13 +159,13 @@ export const getDashboardStatsService = async (vendorId) => {
     const pendingOrders = await Order.count({ where: { order_status: "pending" , vendor_id: vendorId } });
 
     const totalEarnings = await Payment.sum("vendor_earning", {
-      where: { vendor_id: vendorId, status: "success" },
+      where: { vendor_id: vendorId, payment_status: "success" },
     });
 
     const thisMonthSales = await Payment.sum("vendor_earning", {
       where: {
         vendor_id: vendorId,
-        status: "success",
+        payment_status: "success",
         payment_date: {
           [Op.between]: [
             new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -189,21 +189,21 @@ export const getDashboardStatsService = async (vendorId) => {
 export const getEarningsStatsService = async (vendorId) => {
   try {
     const totalEarning = await Payment.sum("vendor_earning", {
-      where: { vendor_id: vendorId, status: "success" },
+      where: { vendor_id: vendorId, payment_status: "success" },
     });
 
     const pendingEarnings = await Payment.sum("vendor_earning", {
-      where: { vendor_id: vendorId, status: "pending" },
+      where: { vendor_id: vendorId, payment_status: "pending" },
     });
 
     const failedEarnings = await Payment.sum("vendor_earning", {
-      where: { vendor_id: vendorId, status: "failed" },
+      where: { vendor_id: vendorId, payment_status: "failed" },
     });
 
     const thisMonthEarning = await Payment.sum("vendor_earning", {
       where: {
         vendor_id: vendorId,
-        status: "success",
+        payment_status: "success",
         payment_date: {
           [Op.between]: [
             new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -218,7 +218,7 @@ export const getEarningsStatsService = async (vendorId) => {
         [sequelize.fn("DATE_FORMAT", sequelize.col("payment_date"), "%Y-%m"), "month"],
         [sequelize.fn("SUM", sequelize.col("vendor_earning")), "total"],
       ],
-      where: { vendor_id: vendorId, status: "success" },
+      where: { vendor_id: vendorId, payment_status: "success" },
       group: ["month"],
       order: [[sequelize.literal("month"), "ASC"]],
       raw: true,
