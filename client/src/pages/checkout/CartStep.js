@@ -3,9 +3,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../../stores/useCartStore";
 import useWishlistStore from "../../stores/useWishlistStore";
-import axios from "axios";
+import api from "../../api/axiosInstance";
 import { toast, Toaster } from "react-hot-toast";
 import { MapPin, Heart, X, Truck, Package } from "lucide-react";
+
+const STORAGE_KEY = "orderData";
 
 export default function CartStep({ onNext }) {
   const { cart, fetchCart, removeFromCart } = useCartStore();
@@ -15,18 +17,22 @@ export default function CartStep({ onNext }) {
   const [shippingAddress, setShippingAddress] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [addr, setAddr] = useState({ line: "", city: "", pin: "" });
+  const [originalAddr, setOriginalAddr] = useState("");
 
-  // ── fetch address ─────────────────────────────────────
+  // CLEAR OLD CHECKOUT DATA ON MOUNT
   useEffect(() => {
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/user/profile/list`, {
-        withCredentials: true,
-      })
+    sessionStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  useEffect(() => {
+    api
+      .get("/api/user/profile/list")
       .then((res) => {
         const d = res.data.data;
         if (d.address_line && d.city && d.pincode) {
           const full = `${d.address_line}, ${d.city}, ${d.pincode}`;
           setShippingAddress(full);
+          setOriginalAddr(full);
           setAddr({ line: d.address_line, city: d.city, pin: d.pincode });
         }
       })
@@ -34,25 +40,15 @@ export default function CartStep({ onNext }) {
       .finally(() => fetchCart().then(() => setLoading(false)));
   }, [fetchCart]);
 
-  // ── quantity ───────────────────────────────────────────
   const updateQty = async (pid, qty) => {
     if (qty < 1) return removeFromCart(pid);
-    await axios.put(
-      `${process.env.REACT_APP_API_URL}/api/user/cart/${pid}`,
-      { quantity: qty },
-      { withCredentials: true }
-    );
+    await api.put(`/api/user/cart/${pid}`, { quantity: qty });
     await fetchCart();
   };
 
-  // ── wishlist / remove ───────────────────────────────────
   const moveToWishlist = async (pidId) => {
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
-        { product_id: pidId },
-        { withCredentials: true }
-      );
+      await api.post("/api/user/wishlist", { product_id: pidId });
       await addToWishlist(pidId);
       await removeFromCart(pidId);
       toast.success("Moved to wishlist");
@@ -61,21 +57,41 @@ export default function CartStep({ onNext }) {
     }
   };
 
-  // ── save address ───────────────────────────────────────
   const saveAddress = async () => {
     const { line, city, pin } = addr;
+    if (!line || !city || !pin) {
+      toast.error("Please fill all address fields");
+      return;
+    }
+
     const full = `${line}, ${city}, ${pin}`;
-    await axios.put(
-      `${process.env.REACT_APP_API_URL}/api/user/profile/edit`,
-      { address_line: line, city, pincode: pin },
-      { withCredentials: true }
-    );
-    setShippingAddress(full);
-    setIsEditing(false);
-    toast.success("Address saved");
+
+    try {
+      await api.put("/api/user/profile/edit", {
+        address_line: line,
+        city,
+        pincode: pin,
+      });
+
+      setShippingAddress(full);
+      setOriginalAddr(full);
+      setIsEditing(false);
+      toast.success("Address saved");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save address");
+    }
   };
 
-  // ── continue ───────────────────────────────────────────
+  const cancelEdit = () => {
+    const parts = originalAddr.split(", ");
+    if (parts.length === 3) {
+      setAddr({ line: parts[0], city: parts[1], pin: parts[2] });
+    } else {
+      setAddr({ line: "", city: "", pin: "" });
+    }
+    setIsEditing(false);
+  };
+
   const handleContinue = () => {
     if (!shippingAddress) return toast.error("Add a shipping address");
 
@@ -99,7 +115,6 @@ export default function CartStep({ onNext }) {
     });
   };
 
-  // ── UI ─────────────────────────────────────────────────
   if (loading) return <p className="text-center py-10">Loading…</p>;
 
   const totalProductPrice = cart.reduce(
@@ -116,7 +131,7 @@ export default function CartStep({ onNext }) {
     <div className="space-y-6">
       <Toaster />
 
-      {/* ── ADDRESS CARD ── */}
+      {/* ADDRESS CARD */}
       <div className="bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3">
         <MapPin className="w-5 h-5 text-purple-600 mt-1" />
         <div className="flex-1">
@@ -124,38 +139,48 @@ export default function CartStep({ onNext }) {
             <p className="font-semibold">Delivery Address</p>
             <button
               onClick={() => setIsEditing(true)}
-              className="text-purple-600 text-sm underline"
+              className="text-purple-600 text-sm underline hover:text-purple-700"
             >
               Change
             </button>
           </div>
 
           {isEditing ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-              <input
-                placeholder="Address line"
-                value={addr.line}
-                onChange={(e) => setAddr({ ...addr, line: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-              <input
-                placeholder="City"
-                value={addr.city}
-                onChange={(e) => setAddr({ ...addr, city: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-              <input
-                placeholder="Pincode"
-                value={addr.pin}
-                onChange={(e) => setAddr({ ...addr, pin: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-              <button
-                onClick={saveAddress}
-                className="col-span-full bg-green-600 text-white py-1 rounded"
-              >
-                Save
-              </button>
+            <div className="space-y-3 mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <input
+                  placeholder="Address line"
+                  value={addr.line}
+                  onChange={(e) => setAddr({ ...addr, line: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="City"
+                  value={addr.city}
+                  onChange={(e) => setAddr({ ...addr, city: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Pincode"
+                  value={addr.pin}
+                  onChange={(e) => setAddr({ ...addr, pin: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveAddress}
+                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="px-4 py-1.5 border rounded text-sm hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <p className="text-gray-700">{shippingAddress}</p>
@@ -163,24 +188,19 @@ export default function CartStep({ onNext }) {
         </div>
       </div>
 
-      {/* ── PRODUCT CARDS ── */}
+      {/* PRODUCT CARDS */}
       {cart.map((item) => (
         <div
           key={item.product_id}
           className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
         >
-          {/* Image */}
           <img
             src={item.product.front_photo || "https://placehold.co/80"}
             alt={item.product.name}
             className="w-20 h-20 object-cover rounded"
           />
-
-          {/* Details */}
           <div className="flex-1">
             <p className="font-medium">{item.product.name}</p>
-
-            {/* Price + Discount */}
             <div className="flex items-center gap-2 mt-1">
               <p className="font-semibold">
                 ₹{item.product.price * item.quantity}
@@ -201,26 +221,19 @@ export default function CartStep({ onNext }) {
                 </>
               )}
             </div>
-
-            {/* Size & Qty */}
             <p className="text-sm text-gray-600 mt-1">
               Size: {item.size} | Qty: {item.quantity}
             </p>
-
-            {/* Easy Returns */}
             <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
               <Package className="w-3 h-3" />
               All issue easy returns
             </p>
-
-            {/* Estimated Delivery */}
             <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
               <Truck className="w-4 h-4" />
               Estimated Delivery by Wed, 5th Nov
             </p>
           </div>
 
-          {/* ── ACTIONS: Move | Remove (Meesho style) ── */}
           <div className="flex items-center gap-3 text-sm">
             <button
               onClick={() => moveToWishlist(item.product_id)}
@@ -241,7 +254,7 @@ export default function CartStep({ onNext }) {
         </div>
       ))}
 
-      {/* ── PRICE SUMMARY (NO "VIEW PRICE DETAILS") ── */}
+      {/* PRICE SUMMARY */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <div className="flex justify-between text-sm">
           <span>Total Product Price</span>
@@ -259,11 +272,12 @@ export default function CartStep({ onNext }) {
         </div>
       </div>
 
-      {/* ── CONTINUE ── */}
+      {/* CONTINUE */}
       <div className="flex justify-end">
         <button
           onClick={handleContinue}
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700"
+          disabled={isEditing}
+          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue
         </button>

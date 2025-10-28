@@ -1,26 +1,71 @@
-// src/pages/checkout/CheckoutLayout.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CartStep from "./CartStep";
 import ReviewStep from "./ReviewStep";
 import PaymentStep from "./PaymentStep";
 
 const steps = ["Cart", "Review", "Payment"];
+const STORAGE_KEY = "checkout_order_data";
 
 export default function CheckoutLayout() {
   const [step, setStep] = useState(0);
   const [orderData, setOrderData] = useState(null);
   const navigate = useNavigate();
 
+  // Restore only if valid cart exists
+  useEffect(() => {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.cartItems && Array.isArray(parsed.cartItems) && parsed.cartItems.length > 0) {
+          setOrderData(parsed);
+          if (parsed.razorpayOrderId) setStep(2);
+          else if (parsed.shippingAddress) setStep(1);
+          else setStep(0);
+        } else {
+          sessionStorage.removeItem(STORAGE_KEY);
+          setOrderData(null);
+          setStep(0);
+        }
+      } catch (err) {
+        sessionStorage.removeItem(STORAGE_KEY);
+        setOrderData(null);
+        setStep(0);
+      }
+    } else {
+      setStep(0);
+    }
+  }, []);
+
+  // Save to sessionStorage
+  useEffect(() => {
+    if (orderData) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(orderData));
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, [orderData]);
+
   const goNext = (data) => {
     setOrderData(data);
     setStep((s) => s + 1);
   };
-  const goPrev = () => setStep((s) => s - 1);
+
+  const goPrev = () => setStep((s) => Math.max(0, s - 1));
+
+  const handleAddressUpdate = (newAddress) => {
+    setOrderData((prev) => ({ ...prev, shippingAddress: newAddress }));
+  };
+
+  const handleCheckoutComplete = () => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    navigate("/user/orders");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ── PROGRESS BAR ── */}
+      {/* PROGRESS BAR */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           {steps.map((label, i) => (
@@ -55,9 +100,16 @@ export default function CheckoutLayout() {
             orderData={orderData}
             onPrev={goPrev}
             onNext={goNext}
+            onAddressUpdate={handleAddressUpdate}
           />
         )}
-        {step === 2 && <PaymentStep orderData={orderData} onPrev={goPrev} />}
+        {step === 2 && (
+          <PaymentStep
+            orderData={orderData}
+            onPrev={goPrev}
+            onCheckoutComplete={handleCheckoutComplete}
+          />
+        )}
       </div>
     </div>
   );
