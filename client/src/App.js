@@ -77,6 +77,7 @@ import AdminLogin from "./pages/Admin/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import VendorProtectedRoute from "./components/vendor/VendorProtectedRoute";
 import VendorPublicRoute from "./components/vendor/VendorPublicRoute";
+import CheckoutLayout from "./pages/checkout/CheckoutLayout";
 
 const App = () => {
   return (
@@ -119,7 +120,8 @@ const App = () => {
           <Route path="addresses" element={<Addresses />} />
           <Route path="user-payments" element={<Payments />} />
           <Route path="wishlist" element={<Wishlist />} />
-          <Route path="cart" element={<Cart />} />
+          <Route path="cart" element={<Navigate to="/user/checkout" replace />} />
+          <Route path="checkout" element={<CheckoutLayout />} />
           <Route path="support" element={<Support />} />
           <Route path="raise-ticket" element={<RaiseTicket />} />
         </Route>

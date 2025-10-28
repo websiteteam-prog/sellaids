@@ -50,10 +50,12 @@ export const getCartService = async (userId) => {
     const formattedCart = cartItems.map((item) => ({
       product_id: item.product_id,
       quantity: item.quantity,
+      size: item.size || 'XL',
       product: {
         id: item.product?.id,
         name: item.product?.product_type || 'Unknown Product', 
-        price: item.product?.purchase_price || 'N/A', 
+        price: parseFloat(item.product?.selling_price) || parseFloat(item.product?.purchase_price) || 0, // ✅ Use selling_price first
+        original_price: parseFloat(item.product?.purchase_price) || 0, // ✅ For discount calculation        front_photo: item.product?.front_photo || 'N/A', 
         front_photo: item.product?.front_photo || 'N/A', 
         back_photo: item.product.back_photo,
         label_photo: item.product.label_photo,
