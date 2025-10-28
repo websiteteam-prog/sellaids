@@ -12,40 +12,22 @@ export default function CheckoutLayout() {
   const [orderData, setOrderData] = useState(null);
   const navigate = useNavigate();
 
-  // Restore only if valid cart exists
+  // **ALWAYS START ON CART - CLEAR OLD DATA**
   useEffect(() => {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.cartItems && Array.isArray(parsed.cartItems) && parsed.cartItems.length > 0) {
-          setOrderData(parsed);
-          if (parsed.razorpayOrderId) setStep(2);
-          else if (parsed.shippingAddress) setStep(1);
-          else setStep(0);
-        } else {
-          sessionStorage.removeItem(STORAGE_KEY);
-          setOrderData(null);
-          setStep(0);
-        }
-      } catch (err) {
-        sessionStorage.removeItem(STORAGE_KEY);
-        setOrderData(null);
-        setStep(0);
-      }
-    } else {
-      setStep(0);
-    }
+    // Clear any existing checkout data
+    sessionStorage.removeItem(STORAGE_KEY);
+    setOrderData(null);
+    setStep(0); // FORCE STEP 0 (CART)
   }, []);
 
-  // Save to sessionStorage
+  // Save to sessionStorage ONLY when moving forward
   useEffect(() => {
-    if (orderData) {
+    if (orderData && step > 0) {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(orderData));
-    } else {
+    } else if (step === 0) {
       sessionStorage.removeItem(STORAGE_KEY);
     }
-  }, [orderData]);
+  }, [orderData, step]);
 
   const goNext = (data) => {
     setOrderData(data);
@@ -60,6 +42,8 @@ export default function CheckoutLayout() {
 
   const handleCheckoutComplete = () => {
     sessionStorage.removeItem(STORAGE_KEY);
+    setOrderData(null);
+    setStep(0);
     navigate("/user/orders");
   };
 

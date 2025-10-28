@@ -1,4 +1,3 @@
-// src/pages/checkout/PaymentStep.jsx
 import React, { useEffect, useState } from "react";
 import Payments from "../../pages/dashboard/Payments";
 
@@ -7,7 +6,6 @@ const STORAGE_KEY = "checkout_order_data";
 export default function PaymentStep({ orderData, onPrev, onCheckoutComplete }) {
   const [finalOrderData, setFinalOrderData] = useState(orderData);
 
-  // Restore from sessionStorage if parent gave null
   useEffect(() => {
     if (!orderData) {
       const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -15,7 +13,6 @@ export default function PaymentStep({ orderData, onPrev, onCheckoutComplete }) {
     }
   }, [orderData]);
 
-  // Save to sessionStorage (different key!)
   useEffect(() => {
     if (finalOrderData) {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(finalOrderData));
@@ -24,7 +21,6 @@ export default function PaymentStep({ orderData, onPrev, onCheckoutComplete }) {
     }
   }, [finalOrderData]);
 
-  // Inject into location.state (optional, not used by Payments any more)
   useEffect(() => {
     if (finalOrderData && !window.location.state?.orderData) {
       window.history.replaceState(

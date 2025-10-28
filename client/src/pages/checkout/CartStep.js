@@ -1,4 +1,3 @@
-// src/pages/checkout/CartStep.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../../stores/useCartStore";
@@ -18,6 +17,55 @@ export default function CartStep({ onNext }) {
   const [isEditing, setIsEditing] = useState(false);
   const [addr, setAddr] = useState({ line: "", city: "", pin: "" });
   const [originalAddr, setOriginalAddr] = useState("");
+
+  /* ---------- IMAGE SLIDER LOGIC ---------- */
+  const [activeImages, setActiveImages] = useState({});
+
+  // Helper – collect every possible image for a product
+  const getProductImages = (product) => {
+    if (!product) return [];
+
+    const moreImages = (() => {
+      try {
+        return JSON.parse(product.more_images || "[]") || [];
+      } catch {
+        return [];
+      }
+    })();
+
+    return [
+      product.front_photo,
+      product.back_photo,
+      product.label_photo,
+      product.inside_photo,
+      product.button_photo,
+      product.wearing_photo,
+      ...moreImages,
+    ].filter(Boolean);
+  };
+
+  // Change active image
+  const changeImage = (productId, offsetOrIndex) => {
+    setActiveImages((prev) => {
+      const current = prev[productId] ?? 0;
+      const images = getProductImages(
+        cart.find((i) => i.product_id === productId)?.product || {}
+      );
+      let newIdx;
+      if (typeof offsetOrIndex === "number" && offsetOrIndex < 0) {
+        newIdx = (current + offsetOrIndex + images.length) % images.length;
+      } else {
+        newIdx = typeof offsetOrIndex === "number"
+          ? offsetOrIndex
+          : (current + 1) % images.length;
+      }
+      return { ...prev, [productId]: newIdx };
+    });
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = "https://via.placeholder.com/96";
+  };
 
   // CLEAR OLD CHECKOUT DATA ON MOUNT
   useEffect(() => {
@@ -189,70 +237,150 @@ export default function CartStep({ onNext }) {
       </div>
 
       {/* PRODUCT CARDS */}
-      {cart.map((item) => (
-        <div
-          key={item.product_id}
-          className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
-        >
-          <img
-            src={item.product.front_photo || "https://placehold.co/80"}
-            alt={item.product.name}
-            className="w-20 h-20 object-cover rounded"
-          />
-          <div className="flex-1">
-            <p className="font-medium">{item.product.name}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="font-semibold">
-                ₹{item.product.price * item.quantity}
-              </p>
-              {item.product.original_price > item.product.price && (
-                <>
-                  <p className="text-sm text-gray-500 line-through">
-                    ₹{item.product.original_price * item.quantity}
-                  </p>
-                  <p className="text-sm text-green-600">
-                    {Math.round(
-                      ((item.product.original_price - item.product.price) /
-                        item.product.original_price) *
-                        100
-                    )}
-                    % Off
-                  </p>
-                </>
-              )}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              Size: {item.size} | Qty: {item.quantity}
-            </p>
-            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-              <Package className="w-3 h-3" />
-              All issue easy returns
-            </p>
-            <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-              <Truck className="w-4 h-4" />
-              Estimated Delivery by Wed, 5th Nov
-            </p>
-          </div>
+      {cart.map((item) => {
+        const product = item.product;
+        const images = getProductImages(product);
+        const activeIdx = activeImages[item.product_id] ?? 0;
 
-          <div className="flex items-center gap-3 text-sm">
-            <button
-              onClick={() => moveToWishlist(item.product_id)}
-              className="flex items-center gap-1 text-gray-700 hover:text-purple-600"
-            >
-              <Heart className="w-4 h-4" />
-              Move to Wishlist
-            </button>
-            <span className="text-gray-400">|</span>
-            <button
-              onClick={() => removeFromCart(item.product_id)}
-              className="flex items-center gap-1 text-gray-700 hover:text-red-600"
-            >
-              <X className="w-4 h-4" />
-              Remove
-            </button>
+        return (
+          <div
+            key={item.product_id}
+            className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
+          >
+            {/* ---- IMAGE SLIDER ---- */}
+            <div className="flex-shrink-0 w-48">
+              <div className="relative">
+                {/* Main image */}
+                <div className="flex justify-center mb-2 min-h-[192px]">
+                  <img
+                    src={images[activeIdx] || "https://via.placeholder.com/96"}
+                    alt={product?.name}
+                    className="max-w-full h-auto max-h-48 object-contain rounded-md"
+                    onError={handleImageError}
+                  />
+                </div>
+
+                {/* Navigation arrows */}
+                {images.length > 1 && (
+                  <div className="flex justify-between mt-2">
+                    <button
+                      onClick={() => changeImage(item.product_id, -1)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => changeImage(item.product_id, 1)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {/* Thumbnail strip */}
+                {images.length > 1 && (
+                  <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
+                    {images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`${product?.name} thumb ${idx + 1}`}
+                        className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
+                          activeIdx === idx ? "border-2 border-blue-600" : ""
+                        }`}
+                        onClick={() => changeImage(item.product_id, idx)}
+                        onError={handleImageError}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ---- PRODUCT DETAILS ---- */}
+            <div className="flex-1">
+              <p className="font-medium">{product?.name}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="font-semibold">
+                  ₹{product?.price * item.quantity}
+                </p>
+                {product?.original_price > product?.price && (
+                  <>
+                    <p className="text-sm text-gray-500 line-through">
+                      ₹{product?.original_price * item.quantity}
+                    </p>
+                    <p className="text-sm text-green-600">
+                      {Math.round(
+                        ((product?.original_price - product?.price) /
+                          product?.original_price) *
+                          100
+                      )}
+                      % Off
+                    </p>
+                  </>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Size: {item.size} | Qty: {item.quantity}
+              </p>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <Package className="w-3 h-3" />
+                All issue easy returns
+              </p>
+              <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                Estimated Delivery by Wed, 5th Nov
+              </p>
+            </div>
+
+            {/* ---- ACTIONS ---- */}
+            <div className="flex items-center gap-3 text-sm">
+              <button
+                onClick={() => moveToWishlist(item.product_id)}
+                className="flex items-center gap-1 text-gray-700 hover:text-purple-600"
+              >
+                <Heart className="w-4 h-4" />
+                Move to Wishlist
+              </button>
+              <span className="text-gray-400">|</span>
+              <button
+                onClick={() => removeFromCart(item.product_id)}
+                className="flex items-center gap-1 text-gray-700 hover:text-red-600"
+              >
+                <X className="w-4 h-4" />
+                Remove
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* PRICE SUMMARY */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
