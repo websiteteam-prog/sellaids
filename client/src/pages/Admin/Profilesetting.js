@@ -1,19 +1,140 @@
+// import React, { useState, useEffect } from "react";
+// import axios from "axios";
+
+// const ProfileSettings = () => {
+//   const [admin, setAdmin] = useState({ name: "", password: "" });
+//   const [message, setMessage] = useState("");
+
+//   // Fetch current admin info (you can store it in localStorage after login)
+//   useEffect(() => {
+//     const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
+//     if (storedAdmin) {
+//       setAdmin({
+//         name: storedAdmin.name,
+//         password: storedAdmin.password,
+//       });
+//     }
+//   }, []);
+
+//   const handleChange = (e) => {
+//     setAdmin({ ...admin, [e.target.name]: e.target.value });
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
+//     try {
+//       const res = await axios.put(
+//         `http://localhost:5000/api/admin/update-profile/${storedAdmin.id}`,
+//         admin
+//       );
+//       setMessage(res.data.message);
+//       // Update localStorage
+//       localStorage.setItem(
+//         "adminInfo",
+//         JSON.stringify({ ...storedAdmin, ...admin })
+//       );
+//     } catch (error) {
+//       console.error(error);
+//       setMessage("Error updating profile");
+//     }
+//   };
+
+//   return (
+//     <div className="max-w-lg mx-auto mt-10 bg-white shadow-lg rounded-lg p-6">
+//       <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+//         Profile Settings
+//       </h2>
+
+//       {message && (
+//         <div className="mb-4 text-center text-sm text-green-600">{message}</div>
+//       )}
+
+//       <form onSubmit={handleSubmit} className="space-y-4">
+//         <div>
+//           <label className="block text-sm font-medium text-gray-700">
+//             Name
+//           </label>
+//           <input
+//             type="text"
+//             name="name"
+//             value={admin.name}
+//             onChange={handleChange}
+//             className="w-full mt-1 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+//           />
+//         </div>
+
+//         <div>
+//           <label className="block text-sm font-medium text-gray-700">
+//             Password
+//           </label>
+//           <input
+//             type="password"
+//             name="password"
+//             value={admin.password}
+//             onChange={handleChange}
+//             className="w-full mt-1 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+//           />
+//         </div>
+
+//         <button
+//           type="submit"
+//           className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition"
+//         >
+//           Save Changes
+//         </button>
+//       </form>
+//     </div>
+//   );
+// };
+
+// export default ProfileSettings;
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { logoutAdminAPI } from "../../components/admindashboard/Logout"
+import { useAdminStore } from "../../stores/useAdminStore";
 
 const ProfileSettings = () => {
-  const [admin, setAdmin] = useState({ name: "", password: "" });
+  const [admin, setAdmin] = useState({
+    name: "",
+    phone: "",
+    newPassword: "",
+  });
+  const [originalAdmin, setOriginalAdmin] = useState({});
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Fetch current admin info (you can store it in localStorage after login)
+  const { logout } = useAdminStore()
+
   useEffect(() => {
-    const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
-    if (storedAdmin) {
-      setAdmin({
-        name: storedAdmin.name,
-        password: storedAdmin.password,
-      });
-    }
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/admin/profile`,
+          { withCredentials: true }
+        );
+
+        if (data.success && data.data) {
+          setAdmin({
+            name: data.data.name || "",
+            phone: data.data.phone || "",
+            newPassword: "",
+          });
+          setOriginalAdmin({
+            name: data.data.name || "",
+            phone: data.data.phone || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching admin:", error);
+        setMessage("Failed to load profile data.");
+      }
+    };
+
+    fetchAdmin();
   }, []);
 
   const handleChange = (e) => {
@@ -22,29 +143,46 @@ const ProfileSettings = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
+
+    const updates = {};
+
+    // Only include changed fields
+    if (admin.name && admin.name !== originalAdmin.name) updates.name = admin.name;
+    if (admin.phone && admin.phone !== originalAdmin.phone) updates.phone = admin.phone;
+    if (admin.newPassword) updates.password = admin.newPassword;
+
+    if (Object.keys(updates).length === 0) {
+      setMessage("No changes detected.");
+      return;
+    }
+
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/admin/update-profile/${storedAdmin.id}`,
-        admin
+      const { data } = await axios.put(
+        `${process.env.REACT_APP_API_URL}/api/admin/profile`,
+        updates,
+        { withCredentials: true }
       );
-      setMessage(res.data.message);
-      // Update localStorage
-      localStorage.setItem(
-        "adminInfo",
-        JSON.stringify({ ...storedAdmin, ...admin })
-      );
+
+      if (data.success) {
+        setMessage("Profile updated successfully!");
+        setOriginalAdmin({ name: admin.name, phone: admin.phone });
+        setAdmin({ ...admin, newPassword: "" });
+        logoutAdminAPI()
+        logout()
+        localStorage.removeItem("admin-store")
+        window.location.replace("/admin-login");
+      } else {
+        setMessage(data.message || "Failed to update profile.");
+      }
     } catch (error) {
-      console.error(error);
-      setMessage("Error updating profile");
+      console.error("Update error:", error);
+      setMessage("Error updating profile.");
     }
   };
 
   return (
     <div className="max-w-lg mx-auto mt-10 bg-white shadow-lg rounded-lg p-6">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-        Profile Settings
-      </h2>
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">Profile Settings</h2>
 
       {message && (
         <div className="mb-4 text-center text-sm text-green-600">{message}</div>
@@ -52,9 +190,7 @@ const ProfileSettings = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Name
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Name</label>
           <input
             type="text"
             name="name"
@@ -65,16 +201,34 @@ const ProfileSettings = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Phone</label>
           <input
-            type="password"
-            name="password"
-            value={admin.password}
+            type="text"
+            name="phone"
+            value={admin.phone}
             onChange={handleChange}
             className="w-full mt-1 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">New Password</label>
+          <div className="relative mb-4">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="newPassword"
+              value={admin.newPassword}
+              onChange={handleChange}
+              className="w-full mt-1 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Leave blank if not changing"
+            />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-400"
+            >
+              {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+            </span>
+          </div>
         </div>
 
         <button

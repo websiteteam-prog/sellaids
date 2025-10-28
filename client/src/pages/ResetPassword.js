@@ -20,8 +20,9 @@ function ResetPassword() {
     try {
       setLoading(true);
       const res = await axios.post(
-        `http://localhost:5000/api/user/reset-password`,
-        { token, newPassword } // backend expects { token, newPassword }
+        `http://localhost:5000/api/admin/auth/reset-password`,
+        { token, newPassword }, // backend expects { token, newPassword },
+        { withCredentials: true }
       );
 
       if (res.data.success) {

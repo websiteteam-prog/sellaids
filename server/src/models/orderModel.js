@@ -89,3 +89,4 @@ export const Order = sequelize.define(
 // Associations
 Order.belongsTo(User, { foreignKey: "user_id"});
 Order.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+Order.belongsTo(Vendor, { foreignKey: "vendor_id"});

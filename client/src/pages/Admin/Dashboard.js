@@ -6,10 +6,10 @@ import {
   FaBoxOpen,
   FaShoppingCart,
 } from "react-icons/fa";
+import toast from "react-hot-toast";
+import { Package, TrendingUp } from "lucide-react";
 
-// Admin Dashboard Overview:
-// Displays key metrics (total users, vendors, products, orders),
-// top selling products, and recent orders for admin monitoring.
+const productImage = "https://cdn-icons-png.flaticon.com/512/3081/3081559.png"
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -30,17 +30,32 @@ const AdminDashboard = () => {
   const fetchAdminDashboard = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/admin/dashboard");
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`, { withCredentials: true });
 
-      setStats({
-        totalUsers: res.data.totalUsers || 0,
-        totalVendors: res.data.totalVendors || 0,
-        totalProducts: res.data.totalProducts || 0,
-        totalOrders: res.data.totalOrders || 0,
-      });
-
-      setTopProducts(res.data.topProducts || []);
-      setRecentOrders(res.data.recentOrders || []);
+      const { success, data, message } = res?.data;
+      console.log(data)
+      if (success) {
+        setStats({
+          totalUsers: data.total_users || 0,
+          totalVendors: data.total_vendors || 0,
+          totalProducts: data.total_products || 0,
+          totalOrders: data.total_orders || 0,
+        });
+        setTopProducts(
+          data.top_products?.map((p, i) => ({
+            id: p.id,
+            name: p.name,
+            // img: <img src={p.img} className="w-[70px] h-[70px] rounded-lg" />,
+            img : p.img,
+            sales: p.sales,
+            price: p.price,
+            info: p.info,
+          })) || []
+        );
+        toast.success(message)
+      } else {
+        toast.error(message)
+      }
     } catch (err) {
       console.error("Error fetching admin dashboard:", err.response?.data || err.message);
     } finally {
@@ -55,15 +70,17 @@ const AdminDashboard = () => {
     { title: "Total Orders", value: stats.totalOrders, icon: <FaShoppingCart size={20} />, color: "#FACC15" },
   ];
 
+  const maxSales = Math.max(...topProducts.map(p => p.sales), 1);
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       {/* Top Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {topStats.map((stat, i) => (
+        {topStats?.map((stat, i) => (
           <div key={i} className="bg-white shadow rounded-lg p-5 flex items-center justify-between">
             <div>
-              <h3 className="text-gray-500 text-sm">{stat.title}</h3>
-              <p className="text-2xl font-bold text-gray-800">{loading ? 0 : stat.value}</p>
+              <h3 className="text-gray-500 text-sm">{stat?.title}</h3>
+              <p className="text-2xl font-bold text-gray-800">{loading ? 0 : stat?.value}</p>
               <p className={`text-xs mt-1 ${stat.trendColor === "green" ? "text-green-600" : "text-red-600"}`}>
                 {stat.trend}
               </p>
@@ -75,26 +92,56 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Middle Section */}
+      {/* List */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        {/* Top Selling Products */}
+        {/* Card */}
         <div className="bg-white shadow rounded-lg p-5">
-          <h3 className="text-gray-700 font-semibold mb-4">Top Selling Products</h3>
-          {(topProducts.length > 0 ? topProducts : Array(5).fill({ name: "-", sales: 0 })).map((item, i) => (
-            <div key={i} className="flex items-center justify-between mb-3">
-              <span className="w-28 text-sm">{item.name}</span>
-              <div className="flex-1 mx-3 bg-gray-200 rounded-full h-3">
-                <div className="bg-[#FF6A00] h-3 rounded-full" style={{ width: `${(item.sales / 1300) * 100}%` }}></div>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-gray-700 font-semibold flex items-center gap-2">
+              <TrendingUp className="text-[#FF6A00]" size={20} />
+              Top Selling Products
+            </h3>
+            <span className="text-sm text-gray-500">This Month</span>
+          </div>
+
+          {/* Product List */}
+          <div className="space-y-4">
+            {topProducts.map((item, i) => (
+              <div key={i} className="flex items-center justify-between h-[80px]">
+                {/* Product Info */}
+                <div className="flex items-start gap-3 w-60">
+                  <img src={item.img ? item.img : productImage} className="text-2xl w-[70px] h-[70px] rounded-lg"/>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800 mt-0">{item.name}</p>
+                    <p className="text-sm font-medium text-gray-800 mt-0">{item.info}</p>
+                    <p className="text-xs text-gray-500 mt-0">#{i + 1} best seller</p>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="flex-1 mx-4 bg-gray-200 rounded-full h-3 relative">
+                  <div
+                    className="bg-gradient-to-r from-[#FF6A00] to-orange-600 h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${(item.sales / maxSales) * 100}%` }}
+                  ></div>
+                </div>
+
+                {/* Sales Count */}
+                <div className="flex items-center gap-1 w-20 justify-end">
+                  <Package size={15} className="text-gray-500" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    {item.sales}
+                  </span>
+                </div>
               </div>
-              <span className="text-sm font-medium text-gray-700">{item.sales}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        {/* Recent Orders */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         <div className="bg-white shadow rounded-lg p-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-gray-700 font-semibold">Recent Orders</h3>
@@ -120,7 +167,7 @@ const AdminDashboard = () => {
             ))
           )}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
