@@ -95,9 +95,9 @@ const ProductManagement = () => {
       products.map((p, index) => ({
         SR_No: (currentPage - 1) * itemsPerPage + index + 1,
         SKU: p.sku,
-        Model_Name: p.model_name,
+        Product_Name: p.product_type,
         Brand: p.brand,
-        Price: p.price,
+        Price: p.selling_price,
         Status: p.status,
       }))
     );
@@ -122,10 +122,10 @@ const ProductManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="mb-4 flex gap-2 flex-wrap">
+      <div className="mb-4 flex gap-2 flex-wrap bg-white shadow-sm p-4 rounded-lg">
         <input
           type="text"
-          placeholder="Search by SKU or Model"
+          placeholder="Search by SKU or Product Name"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 border rounded-lg flex-1 focus:ring focus:ring-blue-200"
@@ -158,7 +158,7 @@ const ProductManagement = () => {
             <tr>
               <th className="px-4 py-3 border">SR.</th>
               <th className="px-4 py-3 border">SKU</th>
-              <th className="px-4 py-3 border">Model</th>
+              <th className="px-4 py-3 border">Product Name</th>
               <th className="px-4 py-3 border">Brand</th>
               <th className="px-4 py-3 border">Price</th>
               <th className="px-4 py-3 border">Status</th>
@@ -179,13 +179,13 @@ const ProductManagement = () => {
                 </td>
               </tr>
             ) : (
-              products.map((p, index) => (
+              products?.map((p, index) => (
                 <tr key={p.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 border">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
                   <td className="px-4 py-3 border font-medium">{p.sku}</td>
-                  <td className="px-4 py-3 border">{p.model_name}</td>
+                  <td className="px-4 py-3 border">{p.product_type}</td>
                   <td className="px-4 py-3 border">{p.brand}</td>
                   <td className="px-4 py-3 border">{p.selling_price}</td>
                   <td className="px-4 py-3 border">

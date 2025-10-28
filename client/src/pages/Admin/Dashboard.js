@@ -9,9 +9,7 @@ import {
 import toast from "react-hot-toast";
 import { Package, TrendingUp } from "lucide-react";
 
-// Admin Dashboard Overview:
-// Displays key metrics (total users, vendors, products, orders),
-// top selling products, and recent orders for admin monitoring.
+const productImage = "https://cdn-icons-png.flaticon.com/512/3081/3081559.png"
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -21,13 +19,7 @@ const AdminDashboard = () => {
     totalOrders: 0,
   });
 
-  const [topProducts, setTopProducts] = useState([
-    { id: 1, name: "Wireless Headphones", sales: 1240, img: "🎧" },
-    { id: 2, name: "Smart Watch", sales: 980, img: "⌚" },
-    { id: 3, name: "Bluetooth Speaker", sales: 875, img: "🔊" },
-    { id: 4, name: "Gaming Mouse", sales: 650, img: "🖱️" },
-    { id: 5, name: "Laptop Stand", sales: 520, img: "💻" },
-  ]);
+  const [topProducts, setTopProducts] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,8 +45,11 @@ const AdminDashboard = () => {
           data.top_products?.map((p, i) => ({
             id: p.id,
             name: p.name,
-            img: "🔥", // or use <img src={p.img} /> if you want actual image
+            // img: <img src={p.img} className="w-[70px] h-[70px] rounded-lg" />,
+            img : p.img,
             sales: p.sales,
+            price: p.price,
+            info: p.info,
           })) || []
         );
         toast.success(message)
@@ -97,22 +92,6 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Middle Section */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        <div className="bg-white shadow rounded-lg p-5">
-          <h3 className="text-gray-700 font-semibold mb-4">Top Selling Products</h3>
-          {(topProducts.length > 0 ? topProducts : Array(5).fill({ name: "-", sales: 0 })).map((item, i) => (
-            <div key={i} className="flex items-center justify-between mb-3">
-              <span className="w-28 text-sm">{item.name}</span>
-              <div className="flex-1 mx-3 bg-gray-200 rounded-full h-3">
-                <div className="bg-[#FF6A00] h-3 rounded-full" style={{ width: `${(item.sales / 1300) * 100}%` }}></div>
-              </div>
-              <span className="text-sm font-medium text-gray-700">{item.sales}</span>
-            </div>
-          ))}
-        </div>
-      </div> */}
-
       {/* List */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         {/* Card */}
@@ -129,13 +108,14 @@ const AdminDashboard = () => {
           {/* Product List */}
           <div className="space-y-4">
             {topProducts.map((item, i) => (
-              <div key={i} className="flex items-center justify-between">
+              <div key={i} className="flex items-center justify-between h-[80px]">
                 {/* Product Info */}
-                <div className="flex items-center gap-3 w-48">
-                  <span className="text-2xl">{item.img}</span>
+                <div className="flex items-start gap-3 w-60">
+                  <img src={item.img ? item.img : productImage} className="text-2xl w-[70px] h-[70px] rounded-lg"/>
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{item.name}</p>
-                    <p className="text-xs text-gray-500">#{i + 1} best seller</p>
+                    <p className="text-sm font-medium text-gray-800 mt-0">{item.name}</p>
+                    <p className="text-sm font-medium text-gray-800 mt-0">{item.info}</p>
+                    <p className="text-xs text-gray-500 mt-0">#{i + 1} best seller</p>
                   </div>
                 </div>
 
@@ -161,8 +141,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        {/* Recent Orders */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         <div className="bg-white shadow rounded-lg p-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-gray-700 font-semibold">Recent Orders</h3>
@@ -188,7 +167,7 @@ const AdminDashboard = () => {
             ))
           )}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

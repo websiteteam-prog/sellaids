@@ -4,6 +4,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
 
+const fallbackImage = "https://placehold.co/300x200/EEE/555?text=No+Image";
+
 const ProductDetails = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -79,9 +81,7 @@ const ProductDetails = () => {
     );
 
   // Convert JSON string to array safely
-  const moreImages = product.more_images
-    ? JSON.parse(product.more_images)
-    : [];
+  const moreImages = product.more_images ? JSON.parse(product.more_images) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -101,54 +101,62 @@ const ProductDetails = () => {
       <div className="bg-white rounded-2xl shadow p-6 grid md:grid-cols-2 gap-6">
         {/* Left Side - Images */}
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <img
-              src={product.front_photo}
+              src={product.front_photo || fallbackImage}
               alt="Front"
-              className="w-full h-32 object-cover rounded-lg border"
+              className="w-full h-40 object-cover rounded-lg border"
+              onError={(e) => (e.target.src = fallbackImage)}
             />
             <img
-              src={product.back_photo}
+              src={product.back_photo || fallbackImage}
               alt="Back"
-              className="w-full h-32 object-cover rounded-lg border"
-            />
-            <img
-              src={product.label_photo}
-              alt="Label"
-              className="w-full h-32 object-cover rounded-lg border"
+              className="w-full h-40 object-cover rounded-lg border"
+              onError={(e) => (e.target.src = fallbackImage)}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <img
-              src={product.inside_photo}
+              src={product.label_photo || fallbackImage}
+              alt="Label"
+              className="w-full h-40 object-cover rounded-lg border"
+              onError={(e) => (e.target.src = fallbackImage)}
+            />
+            <img
+              src={product.inside_photo || fallbackImage}
               alt="Inside"
-              className="w-full h-32 object-cover rounded-lg border"
+              className="w-full h-40 object-cover rounded-lg border"
+              onError={(e) => (e.target.src = fallbackImage)}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <img
-              src={product.button_photo}
+              src={product.button_photo || fallbackImage}
               alt="Button"
-              className="w-full h-32 object-cover rounded-lg border"
+              className="w-full h-40 object-cover rounded-lg border"
+              onError={(e) => (e.target.src = fallbackImage)}
             />
             <img
-              src={product.wearing_photo}
+              src={product.wearing_photo || fallbackImage}
               alt="Wearing"
-              className="w-full h-32 object-cover rounded-lg border"
+              className="w-full h-40 object-cover rounded-lg border"
+              onError={(e) => (e.target.src = fallbackImage)}
             />
           </div>
 
           {moreImages.length > 0 && (
             <div>
-              <h3 className="font-semibold mb-2 text-gray-800">
-                More Images
-              </h3>
+              <h3 className="font-semibold mb-2 text-gray-800">More Images</h3>
               <div className="grid grid-cols-3 gap-3">
                 {moreImages.map((img, i) => (
                   <img
                     key={i}
-                    src={img}
+                    src={img || fallbackImage}
                     alt={`More ${i}`}
-                    className="w-full h-32 object-cover rounded-lg border"
+                    className="w-full h-40 object-cover rounded-lg border"
+                    onError={(e) => (e.target.src = fallbackImage)}
                   />
                 ))}
               </div>

@@ -19,8 +19,10 @@ export const getAdminDashboardService = async () => {
       SELECT 
         o.product_id,
         p.brand,
-        p.model_name,
+        p.product_type,
         p.front_photo,
+        p.selling_price,
+        p.additional_info,
         SUM(o.quantity) AS totalSales
       FROM orders o
       JOIN products p ON o.product_id = p.id
@@ -31,9 +33,11 @@ export const getAdminDashboardService = async () => {
 
     const topProducts = results.map(item => ({
       id: item.product_id,
-      name: `${item.brand || "Unknown"} ${item.model_name || ""}`.trim(),
+      name: `${item.product_type || ""}`.trim(),
       img: item.front_photo || null,
       sales: Number(item.totalSales),
+      price: item.selling_price || null,
+      info: item.additional_info || null,
     }));
 
     return {
@@ -136,7 +140,7 @@ export const getAllProductsService = async ({ search, status, page, limit }) => 
   // Search filter
   if (search) {
     where[Op.or] = [
-      { model_name: { [Op.like]: `%${search}%` } },
+      { product_type: { [Op.like]: `%${search}%` } },
       { sku: { [Op.like]: `%${search}%` } },
     ];
   }
@@ -151,7 +155,7 @@ export const getAllProductsService = async ({ search, status, page, limit }) => 
     offset,
     limit,
     order: [["created_at", "DESC"]],
-    attributes: ["id", "sku", "model_name", "brand", "selling_price", "status"],
+    attributes: ["id", "sku", "product_type", "brand", "selling_price", "status"],
   });
 
   return { total: count, products: rows };
@@ -190,15 +194,15 @@ export const getAllOrdersService = async ({ order_id, status, start_date, end_da
     start.setHours(0, 0, 0, 0);
     const end = new Date(end_date);
     end.setHours(23, 59, 59, 999);
-    where.created_at = { [Op.between]: [start, end] };
+    where.order_date = { [Op.between]: [start, end] };
   } else if (start_date) {
     const start = new Date(start_date);
     start.setHours(0, 0, 0, 0);
-    where.created_at = { [Op.gte]: start };
+    where.order_date = { [Op.gte]: start };
   } else if (end_date) {
     const end = new Date(end_date);
     end.setHours(23, 59, 59, 999);
-    where.created_at = { [Op.lte]: end };
+    where.order_date = { [Op.lte]: end };
   }
 
   // Fetch orders with User & Product
@@ -207,7 +211,7 @@ export const getAllOrdersService = async ({ order_id, status, start_date, end_da
     include: [
       { model: User, attributes: ["name"] },
       { model: Vendor, attributes: ["name"] },
-      { model: Product, as: "product", attributes: ["id", "model_name", "brand", "selling_price", "front_photo"] },
+      { model: Product, as: "product", attributes: ["id", "product_type", "brand", "selling_price", "front_photo"] },
     ],
     order: [["created_at", "DESC"]],
     offset,
@@ -364,7 +368,7 @@ export const getPaymentsWithFiltersService = async ({ transaction_id, status, st
 
     // Filter by status
     if (status && status.toLowerCase() !== "all") {
-      where.status = status.toLowerCase();
+      where.payment_status = status.toLowerCase();
     }
 
     // Filter by payment_date
@@ -403,7 +407,7 @@ export const getPaymentsWithFiltersService = async ({ transaction_id, status, st
         "vendor_earning",
         "platform_fee",
         "currency",
-        "status",
+        "payment_status",
         "payment_method",
         "transaction_id",
         "payment_date",

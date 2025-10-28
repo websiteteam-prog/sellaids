@@ -94,6 +94,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import toast from "react-hot-toast";
+import { logoutAdminAPI } from "../../components/admindashboard/Logout"
+import { useAdminStore } from "../../stores/useAdminStore";
 
 const ProfileSettings = () => {
   const [admin, setAdmin] = useState({
@@ -104,6 +106,8 @@ const ProfileSettings = () => {
   const [originalAdmin, setOriginalAdmin] = useState({});
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const { logout } = useAdminStore()
 
   useEffect(() => {
     const fetchAdmin = async () => {
@@ -163,6 +167,10 @@ const ProfileSettings = () => {
         setMessage("Profile updated successfully!");
         setOriginalAdmin({ name: admin.name, phone: admin.phone });
         setAdmin({ ...admin, newPassword: "" });
+        logoutAdminAPI()
+        logout()
+        localStorage.removeItem("admin-store")
+        window.location.replace("/admin-login");
       } else {
         setMessage(data.message || "Failed to update profile.");
       }

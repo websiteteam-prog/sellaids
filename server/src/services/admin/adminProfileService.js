@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 export const getAdminProfileService = async (adminId) => {
     const admin = await Admin.findByPk(adminId, {
-      attributes: ["name", "phone", "password"]
+      attributes: ["name", "phone"]
     });
   
     if (!admin) {

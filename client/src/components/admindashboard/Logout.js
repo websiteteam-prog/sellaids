@@ -4,24 +4,44 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useAdminStore } from "../../stores/useAdminStore";
 
+export const logoutAdminAPI = async () => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/admin/auth/logout`,
+      {},
+      { withCredentials: true }
+    );
+
+    const { success, message } = res.data;
+    // console.log(res.data)
+
+    console.log("Logout response:", res.data);
+
+    return { success, message };
+  } catch (error) {
+    console.error("Logout API failed:", error);
+    return { success: false, message: "Logout request failed" };
+  }
+};
+
+
 const LogoutAdmin = () => {
   const { logout, lastActivity, updateActivity, isAuthenticated } = useAdminStore();
 
   const handleLogout = async () => {
     try {
       // Backend logout API call
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/admin/auth/logout`, {},{ withCredentials: true });
+      // const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/admin/auth/logout`, {}, { withCredentials: true });
 
-      const { success, message } = res.data
+      // const { success, message } = res.data
 
-      console.log(res.data)
+      const { success, message } = await logoutAdminAPI()
 
       if (success) {
         console.log(success)
         logout()
         localStorage.removeItem("admin-store")
         toast.success(message);
-        // navigate("/admin-login", { replace: true });
         window.location.replace("/admin-login");
       }
     } catch (error) {

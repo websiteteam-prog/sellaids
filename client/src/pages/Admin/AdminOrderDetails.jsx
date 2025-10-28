@@ -18,6 +18,7 @@ const AdminOrderDetails = () => {
           { withCredentials: true }
         );
         const { success, data } = res.data;
+        console.log(data)
         if (success && data) {
           setOrder(data);
         } else {

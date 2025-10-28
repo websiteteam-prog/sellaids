@@ -9,7 +9,6 @@ import {
   FaBoxOpen,
   FaShoppingCart,
   FaMoneyCheckAlt,
-  FaChartBar,
   FaUserCircle,
 } from "react-icons/fa";
 
@@ -27,9 +26,11 @@ const Sidebar = () => {
   const [admin, setAdmin] = useState(null);
 
   useEffect(() => {
-    const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
-    if (storedAdmin) setAdmin(storedAdmin);
+    const storedAdmin = JSON.parse(localStorage.getItem("admin-store"));
+    if (storedAdmin) setAdmin(storedAdmin?.state);
   }, []);
+
+  console.log(admin)
 
   return (
     <aside className="w-64 h-screen bg-black text-gray-300 flex flex-col justify-between fixed left-0 top-0 shadow-lg">
@@ -75,10 +76,10 @@ const Sidebar = () => {
           </div>
           <div>
             <div className="text-sm font-semibold text-white">
-              {admin?.username || "Admin User"}
+              {admin?.admin?.name || "Admin User"}
             </div>
             <div className="text-xs text-gray-400">
-              {admin?.email || "admin@example.com"}
+              {admin?.admin?.email || "admin@example.com"}
             </div>
           </div>
         </div>

@@ -1,4 +1,3 @@
-// src/pages/Payments.jsx
 import React, { useState, useEffect } from "react";
 import { Eye, Download } from "lucide-react";
 import axios from "axios";
@@ -7,32 +6,29 @@ import toast from "react-hot-toast";
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
-  const [search, setSearch] = useState(""); // Single search input for order_id or transaction_id
+  const [transactionId, setTransactionId] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
 
-  const [triggerFetch, setTriggerFetch] = useState(false); // Trigger search
-
   // Fetch payments
-  const fetchPayments = async (page = 1) => {
+  const fetchPayments = async () => {
     setLoading(true);
     try {
       const res = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/admin/management/payment`,
         {
           params: {
-            search: search || undefined, // backend should handle search by transaction_id
-            status: statusFilter !== "all" ? statusFilter.toLowerCase() : undefined,
-            start_date: startDate || undefined,
-            end_date: endDate || undefined,
-            page,
+            transaction_id: transactionId, // ✅ backend expects this name
+            status: statusFilter, // ✅ matches backend
+            start_date: startDate, // ✅ matches backend
+            end_date: endDate, // ✅ matches backend
+            page: currentPage,
             limit,
           },
           withCredentials: true,
@@ -44,7 +40,7 @@ const Payments = () => {
       if (success) {
         setPayments(data.data || []);
         setTotalPages(data.pagination?.totalPages || 1);
-        toast.success(message);
+        if (message) toast.success(message);
       } else {
         setPayments([]);
         toast.error(message || "Failed to fetch payments");
@@ -57,13 +53,15 @@ const Payments = () => {
     }
   };
 
+  // Auto-fetch on filter/pagination change (not typing)
   useEffect(() => {
-    fetchPayments(currentPage);
-  }, [currentPage, triggerFetch, statusFilter, startDate, endDate]);
+    fetchPayments();
+  }, [currentPage, statusFilter, startDate, endDate]);
 
+  // Search button handler
   const handleSearch = () => {
     setCurrentPage(1);
-    setTriggerFetch(prev => !prev);
+    fetchPayments();
   };
 
   const exportExcel = () => {
@@ -78,7 +76,7 @@ const Payments = () => {
         Amount: p.amount,
         Commission: p.platform_fee,
         "Vendor Payout": p.vendor_earning,
-        Status: p.status,
+        Status: p.payment_status,
         Method: p.payment_method,
         "Transaction ID": p.transaction_id,
         "Payment Date": p.payment_date,
@@ -103,36 +101,13 @@ const Payments = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 items-center bg-white shadow-sm p-4 rounded-lg w-full flex-wrap">
+      <div className="mb-4 flex gap-2 w-full bg-white shadow-sm p-4 rounded-lg">
         <input
           type="text"
           placeholder="Search by Transaction ID..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-full md:w-auto"
-        />
-        <select
-          className="border rounded-lg px-3 py-2"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">All</option>
-          <option value="success">Success</option>
-          <option value="failed">Failed</option>
-          <option value="pending">Pending</option>
-          <option value="refunded">Refunded</option>
-        </select>
-        <input
-          type="date"
-          className="border rounded-lg px-3 py-2"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
-        <input
-          type="date"
-          className="border rounded-lg px-3 py-2"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
+          value={transactionId}
+          onChange={(e) => setTransactionId(e.target.value)}
+          className="border rounded-lg px-3 py-2 w-full"
         />
         <button
           onClick={handleSearch}
@@ -140,14 +115,50 @@ const Payments = () => {
         >
           Search
         </button>
+        <select
+          className="border rounded-lg px-3 py-2"
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="success">Success</option>
+          <option value="failed">Failed</option>
+          <option value="refunded">Refunded</option>
+        </select>
+        <input
+          type="date"
+          className="border rounded-lg px-3 py-2"
+          value={startDate}
+          onChange={(e) => {
+            setStartDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <input
+          type="date"
+          className="border rounded-lg px-3 py-2"
+          value={endDate}
+          onChange={(e) => {
+            setEndDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
       </div>
 
       {/* Table */}
       <div className="bg-white shadow rounded-lg overflow-x-auto">
         {loading ? (
-          <div className="text-center p-6 text-gray-500">Loading payments...</div>
+          <div className="text-center p-6 text-gray-500">
+            Loading payments...
+          </div>
         ) : payments.length === 0 ? (
-          <div className="text-center p-6 text-gray-500">No transactions available.</div>
+          <div className="text-center p-6 text-gray-500">
+            No transactions available.
+          </div>
         ) : (
           <table className="w-full border-collapse">
             <thead className="bg-gray-100 text-left">
@@ -169,14 +180,33 @@ const Payments = () => {
             <tbody>
               {payments.map((p, index) => (
                 <tr key={p.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 border">{(currentPage - 1) * limit + index + 1}</td>
+                  <td className="px-4 py-3 border">
+                    {(currentPage - 1) * limit + index + 1}
+                  </td>
                   <td className="p-3 border text-blue-600">{p.id}</td>
                   <td className="p-3 border">{p.order_id}</td>
                   <td className="p-3 border">{p.vendor_id}</td>
                   <td className="p-3 border font-bold">{p.amount}</td>
                   <td className="p-3 border text-green-600">{p.platform_fee}</td>
-                  <td className="p-3 border text-blue-600">{p.vendor_earning}</td>
-                  <td className="p-3 border capitalize">{p.status}</td>
+                  <td className="p-3 border text-blue-600">
+                    {p.vendor_earning}
+                  </td>
+                  <td className="p-3 border capitalize">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${p.payment_status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : p.payment_status === "success"
+                            ? "bg-green-100 text-green-800"
+                            : p.payment_status === "failed"
+                              ? "bg-red-100 text-red-800"
+                              : p.payment_status === "refunded"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                        }`}
+                    >
+                      {p.payment_status}
+                    </span>
+                  </td>
                   <td className="p-3 border">{p.payment_method}</td>
                   <td className="p-3 border">{p.transaction_id}</td>
                   <td className="p-3 border">
@@ -211,13 +241,16 @@ const Payments = () => {
             <button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-blue-600 text-white" : ""}`}
+              className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+                }`}
             >
               {i + 1}
             </button>
           ))}
           <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
             disabled={currentPage === totalPages}
             className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
           >
@@ -239,7 +272,8 @@ const Payments = () => {
             <h3 className="text-lg font-bold mb-4">Payment Details</h3>
             {Object.entries(selectedPayment).map(([key, value]) => (
               <p key={key} className="text-sm mb-1">
-                <strong className="capitalize">{key}:</strong> {value?.toString()}
+                <strong className="capitalize">{key}:</strong>{" "}
+                {value?.toString()}
               </p>
             ))}
           </div>
