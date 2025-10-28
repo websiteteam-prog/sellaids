@@ -45,23 +45,32 @@ export default function CartStep({ onNext }) {
   };
 
   // Change active image
-  const changeImage = (productId, offsetOrIndex) => {
-    setActiveImages((prev) => {
-      const current = prev[productId] ?? 0;
-      const images = getProductImages(
-        cart.find((i) => i.product_id === productId)?.product || {}
-      );
-      let newIdx;
-      if (typeof offsetOrIndex === "number" && offsetOrIndex < 0) {
+const changeImage = (productId, offsetOrIndex) => {
+  setActiveImages((prev) => {
+    const current = prev[productId] ?? 0;
+    const images = getProductImages(
+      cart.find((i) => i.product_id === productId)?.product || {}
+    );
+
+    if (images.length === 0) return prev;
+
+    let newIdx;
+
+    if (typeof offsetOrIndex === "number") {
+      if (offsetOrIndex < 0) {
         newIdx = (current + offsetOrIndex + images.length) % images.length;
+      } else if (offsetOrIndex === 1) {
+        newIdx = (current + 1) % images.length;
       } else {
-        newIdx = typeof offsetOrIndex === "number"
-          ? offsetOrIndex
-          : (current + 1) % images.length;
+        newIdx = offsetOrIndex;
       }
-      return { ...prev, [productId]: newIdx };
-    });
-  };
+    } else {
+      newIdx = (current + 1) % images.length;
+    }
+
+    return { ...prev, [productId]: newIdx };
+  });
+};
 
   const handleImageError = (e) => {
     e.target.src = "https://via.placeholder.com/96";

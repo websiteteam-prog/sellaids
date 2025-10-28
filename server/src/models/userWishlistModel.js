@@ -24,5 +24,5 @@ export const Wishlist = sequelize.define(
     { tableName: "wishlists", timestamps: false }
 );
 
-Wishlist.belongsTo(Product, { foreignKey: 'product_id' });
+Wishlist.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Wishlist.belongsTo(User, { foreignKey: 'user_id' });

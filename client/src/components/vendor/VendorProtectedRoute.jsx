@@ -1,18 +1,23 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useVendorStore } from "../../stores/useVendorStore";
 import { useEffect } from "react";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 const VendorProtectedRoute = () => {
   const { isAuthenticated } = useVendorStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error("Please login to access vendor panel");
+      // Delay slightly to avoid flicker / multiple calls
+      const timeout = setTimeout(() => {
+        toast.error("Please login to access vendor panel");
+      }, 200);
+      return () => clearTimeout(timeout);
     }
   }, [isAuthenticated]);
 
-  // ✅ Agar login hai to child routes render karo
+  // ✅ If logged in → render child routes
+  // ❌ Otherwise → redirect to vendor login
   return isAuthenticated ? <Outlet /> : <Navigate to="/vendor/login" replace />;
 };
 
