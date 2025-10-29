@@ -143,13 +143,49 @@ export const getAllProductsService = async (query, vendorId, isAdmin) => {
   };
 };
 
-export const getProductByIdService = async (id) => {
+export const getProductByIdService = async (id, vendorId, isAdmin) => {
   const product = await Product.findOne({
     where: { id },
-    include: ["vendor", "category"],
+    include: [
+      {
+        model: Vendor,
+        as: "vendor",
+        attributes: { exclude: ["password", "reset_token", "reset_token_expires"] }, // security
+      },
+      {
+        model: Category,
+        as: "category",
+      },
+    ],
   });
 
-  return product;
+  if (!product) return { product: null, related: [] };
+
+  const relatedWhere = {
+    id: { [Op.ne]: product.id },
+    category_id: product.category_id,
+    status: 'approved',
+    is_active: true,
+  };
+
+  const related = await Product.findAll({
+    where: relatedWhere,
+    limit: 6,
+    order: [["created_at", "DESC"]],
+    include: [
+      {
+        model: Vendor,
+        as: "vendor",
+        attributes: { exclude: ["password", "reset_token", "reset_token_expires"] },
+      },
+      {
+        model: Category,
+        as: "category",
+      },
+    ],
+  });
+
+  return { product, related };
 };
 
 export const getDashboardStatsService = async (vendorId) => {
