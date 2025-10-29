@@ -1,11 +1,13 @@
-// src/pages/checkout/CartStep.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../../stores/useCartStore";
 import useWishlistStore from "../../stores/useWishlistStore";
-import axios from "axios";
+import api from "../../api/axiosInstance";
 import { toast, Toaster } from "react-hot-toast";
 import { MapPin, Heart, X, Truck, Package } from "lucide-react";
+import QuantitySelector from "../../pages/checkout/QuantitySelector"
+
+const STORAGE_KEY = "orderData";
 
 export default function CartStep({ onNext }) {
   const { cart, fetchCart, removeFromCart } = useCartStore();
@@ -15,18 +17,80 @@ export default function CartStep({ onNext }) {
   const [shippingAddress, setShippingAddress] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [addr, setAddr] = useState({ line: "", city: "", pin: "" });
+  const [originalAddr, setOriginalAddr] = useState("");
 
-  // ── fetch address ─────────────────────────────────────
+  /* ---------- IMAGE SLIDER LOGIC ---------- */
+  const [activeImages, setActiveImages] = useState({});
+
+  // Helper – collect every possible image for a product
+  const getProductImages = (product) => {
+    if (!product) return [];
+
+    const moreImages = (() => {
+      try {
+        return JSON.parse(product.more_images || "[]") || [];
+      } catch {
+        return [];
+      }
+    })();
+
+    return [
+      product.front_photo,
+      product.back_photo,
+      product.label_photo,
+      product.inside_photo,
+      product.button_photo,
+      product.wearing_photo,
+      ...moreImages,
+    ].filter(Boolean);
+  };
+
+  // Change active image
+  const changeImage = (productId, offsetOrIndex) => {
+    setActiveImages((prev) => {
+      const current = prev[productId] ?? 0;
+      const images = getProductImages(
+        cart.find((i) => i.product_id === productId)?.product || {}
+      );
+
+      if (images.length === 0) return prev;
+
+      let newIdx;
+
+      if (typeof offsetOrIndex === "number") {
+        if (offsetOrIndex < 0) {
+          newIdx = (current + offsetOrIndex + images.length) % images.length;
+        } else if (offsetOrIndex === 1) {
+          newIdx = (current + 1) % images.length;
+        } else {
+          newIdx = offsetOrIndex;
+        }
+      } else {
+        newIdx = (current + 1) % images.length;
+      }
+
+      return { ...prev, [productId]: newIdx };
+    });
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = "https://via.placeholder.com/96";
+  };
+
+  // CLEAR OLD CHECKOUT DATA ON MOUNT
   useEffect(() => {
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/user/profile/list`, {
-        withCredentials: true,
-      })
+    sessionStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  useEffect(() => {
+    api
+      .get("/api/user/profile/list")
       .then((res) => {
         const d = res.data.data;
         if (d.address_line && d.city && d.pincode) {
           const full = `${d.address_line}, ${d.city}, ${d.pincode}`;
           setShippingAddress(full);
+          setOriginalAddr(full);
           setAddr({ line: d.address_line, city: d.city, pin: d.pincode });
         }
       })
@@ -34,25 +98,9 @@ export default function CartStep({ onNext }) {
       .finally(() => fetchCart().then(() => setLoading(false)));
   }, [fetchCart]);
 
-  // ── quantity ───────────────────────────────────────────
-  const updateQty = async (pid, qty) => {
-    if (qty < 1) return removeFromCart(pid);
-    await axios.put(
-      `${process.env.REACT_APP_API_URL}/api/user/cart/${pid}`,
-      { quantity: qty },
-      { withCredentials: true }
-    );
-    await fetchCart();
-  };
-
-  // ── wishlist / remove ───────────────────────────────────
   const moveToWishlist = async (pidId) => {
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
-        { product_id: pidId },
-        { withCredentials: true }
-      );
+      await api.post("/api/user/wishlist", { product_id: pidId });
       await addToWishlist(pidId);
       await removeFromCart(pidId);
       toast.success("Moved to wishlist");
@@ -61,21 +109,41 @@ export default function CartStep({ onNext }) {
     }
   };
 
-  // ── save address ───────────────────────────────────────
   const saveAddress = async () => {
     const { line, city, pin } = addr;
+    if (!line || !city || !pin) {
+      toast.error("Please fill all address fields");
+      return;
+    }
+
     const full = `${line}, ${city}, ${pin}`;
-    await axios.put(
-      `${process.env.REACT_APP_API_URL}/api/user/profile/edit`,
-      { address_line: line, city, pincode: pin },
-      { withCredentials: true }
-    );
-    setShippingAddress(full);
-    setIsEditing(false);
-    toast.success("Address saved");
+
+    try {
+      await api.put("/api/user/profile/edit", {
+        address_line: line,
+        city,
+        pincode: pin,
+      });
+
+      setShippingAddress(full);
+      setOriginalAddr(full);
+      setIsEditing(false);
+      toast.success("Address saved");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save address");
+    }
   };
 
-  // ── continue ───────────────────────────────────────────
+  const cancelEdit = () => {
+    const parts = originalAddr.split(", ");
+    if (parts.length === 3) {
+      setAddr({ line: parts[0], city: parts[1], pin: parts[2] });
+    } else {
+      setAddr({ line: "", city: "", pin: "" });
+    }
+    setIsEditing(false);
+  };
+
   const handleContinue = () => {
     if (!shippingAddress) return toast.error("Add a shipping address");
 
@@ -99,7 +167,6 @@ export default function CartStep({ onNext }) {
     });
   };
 
-  // ── UI ─────────────────────────────────────────────────
   if (loading) return <p className="text-center py-10">Loading…</p>;
 
   const totalProductPrice = cart.reduce(
@@ -116,7 +183,7 @@ export default function CartStep({ onNext }) {
     <div className="space-y-6">
       <Toaster />
 
-      {/* ── ADDRESS CARD ── */}
+      {/* ADDRESS CARD */}
       <div className="bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3">
         <MapPin className="w-5 h-5 text-purple-600 mt-1" />
         <div className="flex-1">
@@ -124,38 +191,48 @@ export default function CartStep({ onNext }) {
             <p className="font-semibold">Delivery Address</p>
             <button
               onClick={() => setIsEditing(true)}
-              className="text-purple-600 text-sm underline"
+              className="text-purple-600 text-sm underline hover:text-purple-700"
             >
               Change
             </button>
           </div>
 
           {isEditing ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-              <input
-                placeholder="Address line"
-                value={addr.line}
-                onChange={(e) => setAddr({ ...addr, line: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-              <input
-                placeholder="City"
-                value={addr.city}
-                onChange={(e) => setAddr({ ...addr, city: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-              <input
-                placeholder="Pincode"
-                value={addr.pin}
-                onChange={(e) => setAddr({ ...addr, pin: e.target.value })}
-                className="border rounded px-2 py-1"
-              />
-              <button
-                onClick={saveAddress}
-                className="col-span-full bg-green-600 text-white py-1 rounded"
-              >
-                Save
-              </button>
+            <div className="space-y-3 mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <input
+                  placeholder="Address line"
+                  value={addr.line}
+                  onChange={(e) => setAddr({ ...addr, line: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="City"
+                  value={addr.city}
+                  onChange={(e) => setAddr({ ...addr, city: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Pincode"
+                  value={addr.pin}
+                  onChange={(e) => setAddr({ ...addr, pin: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveAddress}
+                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="px-4 py-1.5 border rounded text-sm hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <p className="text-gray-700">{shippingAddress}</p>
@@ -163,85 +240,162 @@ export default function CartStep({ onNext }) {
         </div>
       </div>
 
-      {/* ── PRODUCT CARDS ── */}
-      {cart.map((item) => (
-        <div
-          key={item.product_id}
-          className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
-        >
-          {/* Image */}
-          <img
-            src={item.product.front_photo || "https://placehold.co/80"}
-            alt={item.product.name}
-            className="w-20 h-20 object-cover rounded"
-          />
+      {/* PRODUCT CARDS */}
+      {cart.map((item) => {
+        const product = item.product;
+        const images = getProductImages(product);
+        const activeIdx = activeImages[item.product_id] ?? 0;
 
-          {/* Details */}
-          <div className="flex-1">
-            <p className="font-medium">{item.product.name}</p>
+        return (
+          <div
+            key={item.product_id}
+            className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
+          >
+            {/* ---- IMAGE SLIDER ---- */}
+            <div className="flex-shrink-0 w-48">
+              <div className="relative">
+                {/* Main image */}
+                <div className="flex justify-center mb-2 min-h-[192px]">
+                  <img
+                    src={images[activeIdx] || "https://via.placeholder.com/96"}
+                    alt={product?.name}
+                    className="max-w-full h-auto max-h-48 object-contain rounded-md"
+                    onError={handleImageError}
+                  />
+                </div>
 
-            {/* Price + Discount */}
-            <div className="flex items-center gap-2 mt-1">
-              <p className="font-semibold">
-                ₹{item.product.price * item.quantity}
-              </p>
-              {item.product.original_price > item.product.price && (
-                <>
-                  <p className="text-sm text-gray-500 line-through">
-                    ₹{item.product.original_price * item.quantity}
-                  </p>
-                  <p className="text-sm text-green-600">
-                    {Math.round(
-                      ((item.product.original_price - item.product.price) /
-                        item.product.original_price) *
-                        100
-                    )}
-                    % Off
-                  </p>
-                </>
-              )}
+                {/* Navigation arrows */}
+                {images.length > 1 && (
+                  <div className="flex justify-between mt-2">
+                    <button
+                      onClick={() => changeImage(item.product_id, -1)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => changeImage(item.product_id, 1)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {/* Thumbnail strip */}
+                {images.length > 1 && (
+                  <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
+                    {images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`${product?.name} thumb ${idx + 1}`}
+                        className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
+                          activeIdx === idx ? "border-2 border-blue-600" : ""
+                        }`}
+                        onClick={() => changeImage(item.product_id, idx)}
+                        onError={handleImageError}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Size & Qty */}
-            <p className="text-sm text-gray-600 mt-1">
-              Size: {item.size} | Qty: {item.quantity}
-            </p>
+            {/* ---- PRODUCT DETAILS ---- */}
+            <div className="flex-1">
+              <p className="font-medium">{product?.name}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="font-semibold">
+                  ₹{product?.price * item.quantity}
+                </p>
+                {product?.original_price > product?.price && (
+                  <>
+                    <p className="text-sm text-gray-500 line-through">
+                      ₹{product?.original_price * item.quantity}
+                    </p>
+                    <p className="text-sm text-green-600">
+                      {Math.round(
+                        ((product?.original_price - product?.price) /
+                          product?.original_price) *
+                          100
+                      )}
+                      % Off
+                    </p>
+                  </>
+                )}
+              </div>
 
-            {/* Easy Returns */}
-            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-              <Package className="w-3 h-3" />
-              All issue easy returns
-            </p>
+              {/* ← ONLY THIS LINE CHANGED → */}
+              <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+                Size: {item.size} | Qty:
+                <QuantitySelector
+                  productId={item.product_id}
+                  initialQty={item.quantity}
+                  disabled={isEditing}
+                />
+              </p>
+              {/* ← END CHANGE → */}
 
-            {/* Estimated Delivery */}
-            <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-              <Truck className="w-4 h-4" />
-              Estimated Delivery by Wed, 5th Nov
-            </p>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <Package className="w-3 h-3" />
+                All issue easy returns
+              </p>
+              <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                Estimated Delivery by Wed, 5th Nov
+              </p>
+            </div>
+
+            {/* ---- ACTIONS ---- */}
+            <div className="flex items-center gap-3 text-sm">
+              <button
+                onClick={() => moveToWishlist(item.product_id)}
+                className="flex items-center gap-1 text-gray-700 hover:text-purple-600"
+              >
+                <Heart className="w-4 h-4" />
+                Move to Wishlist
+              </button>
+              <span className="text-gray-400">|</span>
+              <button
+                onClick={() => removeFromCart(item.product_id)}
+                className="flex items-center gap-1 text-gray-700 hover:text-red-600"
+              >
+                <X className="w-4 h-4" />
+                Remove
+              </button>
+            </div>
           </div>
+        );
+      })}
 
-          {/* ── ACTIONS: Move | Remove (Meesho style) ── */}
-          <div className="flex items-center gap-3 text-sm">
-            <button
-              onClick={() => moveToWishlist(item.product_id)}
-              className="flex items-center gap-1 text-gray-700 hover:text-purple-600"
-            >
-              <Heart className="w-4 h-4" />
-              Move to Wishlist
-            </button>
-            <span className="text-gray-400">|</span>
-            <button
-              onClick={() => removeFromCart(item.product_id)}
-              className="flex items-center gap-1 text-gray-700 hover:text-red-600"
-            >
-              <X className="w-4 h-4" />
-              Remove
-            </button>
-          </div>
-        </div>
-      ))}
-
-      {/* ── PRICE SUMMARY (NO "VIEW PRICE DETAILS") ── */}
+      {/* PRICE SUMMARY */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <div className="flex justify-between text-sm">
           <span>Total Product Price</span>
@@ -259,11 +413,12 @@ export default function CartStep({ onNext }) {
         </div>
       </div>
 
-      {/* ── CONTINUE ── */}
+      {/* CONTINUE */}
       <div className="flex justify-end">
         <button
           onClick={handleContinue}
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700"
+          disabled={isEditing}
+          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue
         </button>

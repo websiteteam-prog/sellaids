@@ -1,10 +1,12 @@
+// src/pages/dashboard/Cart.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../../stores/useCartStore";
 import { useUserStore } from "../../stores/useUserStore";
 import useWishlistStore from "../../stores/useWishlistStore";
 import axios from "axios";
-import { toast, Toaster } from "react-hot-toast"; // Import toast and Toaster
+import { toast, Toaster } from "react-hot-toast";
+import QuantitySelector from "../../pages/checkout/QuantitySelector";
 
 export default function Cart() {
   const { cart, fetchCart, removeFromCart } = useCartStore();
@@ -24,381 +26,168 @@ export default function Cart() {
   useEffect(() => {
     if (isUserLoading) return;
     if (!isAuthenticated || !user?.id) {
-      if (window.location.pathname !== "/UserAuth/UserLogin") {
-        console.log("Redirecting to login due to auth failure");
-        navigate("/UserAuth/UserLogin", {
-          state: { from: window.location.pathname },
-        });
-      }
+      navigate("/UserAuth/UserLogin", { state: { from: window.location.pathname } });
       return;
-    } else {
-      setLoading(true);
-      axios
-        .get(`${process.env.REACT_APP_API_URL}/api/user/profile/list`, {
-          withCredentials: true,
-        })
-        .then((response) => {
-          const { data } = response.data;
-          if (data.address_line && data.city && data.pincode) {
-            const profileAddress = `${data.address_line}, ${data.city}, ${data.pincode}`;
-            setShippingAddress(profileAddress);
-            setAddressFields({
-              address_line: data.address_line,
-              city: data.city,
-              pincode: data.pincode,
-            });
-          } else {
-            setShippingAddress("");
-            setAddressFields({
-              address_line: "",
-              city: "",
-              pincode: "",
-            });
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to fetch user profile:", err);
-          setShippingAddress("");
-        })
-        .finally(() => {
-          fetchCart()
-            .then(() => {
-              console.log("Cart fetched", cart);
-              const initialActiveImages = cart.reduce((acc, item) => {
-                acc[item.product_id] = 0;
-                return acc;
-              }, {});
-              setActiveImages(initialActiveImages);
-            })
-            .catch((err) => console.error("FetchCart error", err))
-            .finally(() => setLoading(false));
-        });
     }
-  }, [user, isAuthenticated, isUserLoading, navigate, fetchCart]);
 
-  const handleUpdateQuantity = async (productId, newQuantity) => {
-    if (newQuantity < 1) {
-      removeFromCart(productId);
-      return;
-    }
-    try {
-      await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/user/cart/${productId}`,
-        { quantity: newQuantity },
-        { withCredentials: true }
-      );
-      await fetchCart();
-      toast.success("Quantity updated successfully! ✅");
-    } catch (err) {
-      console.error("Failed to update quantity:", err);
-      toast.error(err.response?.data?.message || "Failed to update quantity ❌");
-    }
-  };
+    setLoading(true);
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/api/user/profile/list`, { withCredentials: true })
+      .then((res) => {
+        const { data } = res.data;
+        if (data.address_line && data.city && data.pincode) {
+          const addr = `${data.address_line}, ${data.city}, ${data.pincode}`;
+          setShippingAddress(addr);
+          setAddressFields({ address_line: data.address_line, city: data.city, pincode: data.pincode });
+        }
+      })
+      .catch(() => setShippingAddress(""))
+      .finally(() => {
+        fetchCart().then(() => {
+          const init = cart.reduce((acc, i) => ({ ...acc, [i.product_id]: 0 }), {});
+          setActiveImages(init);
+          setLoading(false);
+        });
+      });
+  }, [user, isAuthenticated, isUserLoading, navigate, fetchCart, cart]);
 
   const handleMoveToWishlist = async (productId) => {
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
-        { product_id: productId },
-        { withCredentials: true }
-      );
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/user/wishlist`, { product_id: productId }, { withCredentials: true });
       await addToWishlist(productId);
       await removeFromCart(productId);
-      toast.success(
-        response.data.action === "added"
-          ? "Added to wishlist! ✅"
-          : "Already in wishlist! ✅"
-      );
-      setTimeout(() => {
-        navigate("/user/cart");
-      }, 1500); // Delay navigation to show toast
+      toast.success("Moved to wishlist");
+      setTimeout(() => navigate("/user/cart"), 1500);
     } catch (err) {
-      console.error("Failed to move to wishlist:", err);
-      toast.error(err.response?.data?.message || "Failed to move to wishlist ❌");
+      toast.error("Failed to move");
     }
   };
 
   const handleRemove = async (productId) => {
-    try {
-      await removeFromCart(productId);
-      toast.success("Item removed from cart! ✅");
-      setTimeout(() => {
-        navigate("/user/cart");
-      }, 1500); // Delay navigation to show toast
-    } catch (err) {
-      console.error("Failed to remove item:", err);
-      toast.error("Failed to remove item from cart ❌");
-    }
+    await removeFromCart(productId);
+    toast.success("Removed from cart");
+    setTimeout(() => navigate("/user/cart"), 1500);
   };
 
   const handleContinue = async () => {
-    if (!shippingAddress.trim()) {
-      toast.error("Please enter a shipping address ❌");
-      return;
-    }
-
+    if (!shippingAddress) return toast.error("Add shipping address");
     try {
-      const response = await axios.post(
+      const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/payment/create-order`,
         { cartItems: cart, shippingAddress },
         { withCredentials: true }
       );
-      navigate("/user/user-payments", {
-        state: { orderData: response.data.data },
-      });
+      navigate("/user/user-payments", { state: { orderData: res.data.data } });
     } catch (err) {
-      console.error("Failed to create order:", err);
-      toast.error(err.response?.data?.message || "Failed to initiate payment ❌");
+      toast.error("Failed to proceed");
     }
   };
 
-  const handleEditAddress = () => {
-    setIsEditingAddress(true);
-  };
-
   const handleSaveAddress = async () => {
+    const { address_line, city, pincode } = addressFields;
+    const newAddr = `${address_line}, ${city}, ${pincode}`;
     try {
-      const { address_line, city, pincode } = addressFields;
-      const newAddress = `${address_line}, ${city}, ${pincode}`;
-      setShippingAddress(newAddress);
       await axios.put(
         `${process.env.REACT_APP_API_URL}/api/user/profile/edit`,
         { address_line, city, pincode },
         { withCredentials: true }
       );
+      setShippingAddress(newAddr);
       setIsEditingAddress(false);
-      toast.success("Address updated successfully! ✅");
+      toast.success("Address saved");
     } catch (err) {
-      console.error("Failed to update address:", err);
-      toast.error(err.response?.data?.message || "Failed to update address ❌");
+      toast.error("Failed to save address");
     }
   };
 
-  const handleAddressChange = (e) => {
-    const { name, value } = e.target;
-    setAddressFields((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageError = (e) => {
-    e.target.src = "https://placehold.co/150x150"; // Fallback image
-  };
-
   const getProductImages = (product) => {
-    const images = [
+    const more = JSON.parse(product.more_images || "[]") || [];
+    return [
       product.front_photo,
       product.back_photo,
       product.label_photo,
       product.inside_photo,
       product.button_photo,
       product.wearing_photo,
-      ...(JSON.parse(product.more_images || "[]") || []),
+      ...more,
     ].filter(Boolean);
-    return images;
   };
 
   const changeImage = (productId, offset) => {
     setActiveImages((prev) => {
-      const currentIndex = prev[productId] || 0;
-      const images = getProductImages(
-        cart.find((item) => item.product_id === productId)?.product || {}
-      );
-      const newIndex = (currentIndex + offset + images.length) % images.length;
-      return { ...prev, [productId]: newIndex };
+      const cur = prev[productId] || 0;
+      const imgs = getProductImages(cart.find((i) => i.product_id === productId)?.product || {});
+      const len = imgs.length;
+      const newIdx = (cur + offset + len) % len;
+      return { ...prev, [productId]: newIdx };
     });
   };
 
-  if (isUserLoading)
-    return <p className="text-center mt-10">Loading user...</p>;
-  if (loading) return <p className="text-center mt-10">Loading cart...</p>;
-  if (!isAuthenticated || !user?.id)
-    return (
-      <p className="text-center mt-10">Please log in to view your cart.</p>
-    );
+  if (isUserLoading || loading) return <p className="text-center mt-10">Loading...</p>;
+  if (!isAuthenticated) return <p className="text-center mt-10">Please log in.</p>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <Toaster /> {/* Add Toaster component to render toasts */}
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-        My Cart
-      </h1>
+      <Toaster />
+      <h1 className="text-3xl font-bold mb-8 text-center">My Cart</h1>
+
       {cart.length === 0 ? (
-        <div className="flex flex-col items-center justify-center mt-20 text-gray-500">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 mb-4 text-red-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-          <p className="text-xl font-semibold">Your cart is currently empty.</p>
+        <div className="text-center mt-20 text-gray-500">
+          <p className="text-xl">Your cart is empty.</p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {cart.map((item) => {
               const images = getProductImages(item.product);
-              const activeIndex = activeImages[item.product_id] || 0;
+              const activeIdx = activeImages[item.product_id] || 0;
 
               return (
-                <div
-                  key={item.product_id}
-                  className="bg-white p-4 rounded-xl shadow-lg flex flex-col items-center hover:shadow-xl transition-shadow duration-200"
-                >
-                  <div className="mb-4 text-center sm:text-left w-full">
-                    <div className="relative">
-                      <div className="flex justify-center mb-2 min-h-[192px]">
-                        <img
-                          src={
-                            images[activeIndex] ||
-                            "https://placehold.co/150x150"
-                          }
-                          alt={item.product?.name || "Product Image"}
-                          className="max-w-full h-auto max-h-48 object-contain rounded-md"
-                          onError={handleImageError}
-                        />
-                      </div>
-                      <div className="flex justify-between mt-2">
+                <div key={item.product_id} className="bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition">
+                  <div className="relative mb-4">
+                    <img
+                      src={images[activeIdx] || "https://placehold.co/150x150"}
+                      alt={item.product.name}
+                      className="w-full h-48 object-contain rounded-md"
+                    />
+                    {images.length > 1 && (
+                      <>
                         <button
                           onClick={() => changeImage(item.product_id, -1)}
-                          className="text-gray-600 hover:text-gray-800 disabled:text-gray-300"
-                          disabled={images.length <= 1}
+                          className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 19l-7-7 7-7"
-                            />
-                          </svg>
+                          ←
                         </button>
                         <button
                           onClick={() => changeImage(item.product_id, 1)}
-                          className="text-gray-600 hover:text-gray-800 disabled:text-gray-300"
-                          disabled={images.length <= 1}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
+                          →
                         </button>
-                      </div>
-                      <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
-                        {images.map((img, index) => (
-                          <img
-                            key={index}
-                            src={img}
-                            alt={`${item.product?.name} Thumbnail ${index + 1}`}
-                            className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
-                              activeIndex === index
-                                ? "border-2 border-blue-600"
-                                : ""
-                            }`}
-                            onClick={() =>
-                              changeImage(item.product_id, index - activeIndex)
-                            }
-                            onError={handleImageError}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="font-semibold text-lg text-gray-900 mt-4">
-                      {item.product?.name || "Unknown Product"}
-                    </p>
-                    <p className="text-gray-700">
-                      ₹{item.product?.price || "N/A"}
-                    </p>
-                    <div className="flex items-center mt-2 justify-center sm:justify-start">
-                      <p className="text-gray-600 mr-2">Quantity:</p>
-                      <button
-                        onClick={() =>
-                          handleUpdateQuantity(
-                            item.product_id,
-                            item.quantity - 1
-                          )
-                        }
-                        className="bg-gray-200 text-gray-700 px-2 py-1 rounded-l"
-                      >
-                        -
-                      </button>
-                      <span className="px-3 py-1 bg-gray-100">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleUpdateQuantity(
-                            item.product_id,
-                            item.quantity + 1
-                          )
-                        }
-                        className="bg-gray-200 text-gray-700 px-2 py-1 rounded-r"
-                      >
-                        +
-                      </button>
-                    </div>
+                      </>
+                    )}
                   </div>
-                  <div className="w-full mt-4 flex justify-between">
+
+                  <p className="font-semibold text-lg">{item.product.name}</p>
+                  <p className="text-gray-700">₹{item.product.price}</p>
+
+                  {/* QUANTITY SELECTOR */}
+                  <div className="flex items-center mt-3">
+                    <span className="text-gray-600 mr-2">Qty:</span>
+                    <QuantitySelector productId={item.product_id} initialQty={item.quantity} />
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => handleRemove(item.product_id)}
-                      className="flex items-center justify-center bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-red-700 transition-colors w-1/2 mr-2"
+                      className="flex-1 bg-red-600 text-white py-2 rounded-md text-sm hover:bg-red-700"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 mr-1"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
                       Remove
                     </button>
                     <button
                       onClick={() => handleMoveToWishlist(item.product_id)}
-                      className="flex items-center justify-center bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors w-1/2 ml-2"
+                      className="flex-1 bg-green-600 text-white py-2 rounded-md text-sm hover:bg-green-700"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 mr-1"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                        />
-                      </svg>
                       Move to Wishlist
                     </button>
                   </div>
@@ -406,68 +195,51 @@ export default function Cart() {
               );
             })}
           </div>
-          <div className="mt-6">
+
+          {/* ADDRESS & CONTINUE */}
+          <div className="mt-8 bg-white p-4 rounded-lg shadow">
             <div className="mb-4">
-              <label className="block text-gray-700 font-semibold mb-2">
-                Shipping Address
-              </label>
+              <label className="block font-semibold mb-2">Shipping Address</label>
               {isEditingAddress ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
                     <input
-                      type="text"
                       name="address_line"
                       value={addressFields.address_line}
-                      onChange={handleAddressChange}
-                      className="w-full border px-3 py-2 rounded"
-                      placeholder="Address Line"
-                      required
+                      onChange={(e) => setAddressFields({ ...addressFields, [e.target.name]: e.target.value })}
+                      className="border p-2 rounded"
+                      placeholder="Address"
                     />
                     <input
-                      type="text"
                       name="city"
                       value={addressFields.city}
-                      onChange={handleAddressChange}
-                      className="w-full border px-3 py-2 rounded"
+                      onChange={(e) => setAddressFields({ ...addressFields, [e.target.name]: e.target.value })}
+                      className="border p-2 rounded"
                       placeholder="City"
-                      required
                     />
                     <input
-                      type="text"
                       name="pincode"
                       value={addressFields.pincode}
-                      onChange={handleAddressChange}
-                      className="w-full border px-3 py-2 rounded"
+                      onChange={(e) => setAddressFields({ ...addressFields, [e.target.name]: e.target.value })}
+                      className="border p-2 rounded"
                       placeholder="Pincode"
-                      required
                     />
                   </div>
-                  <button
-                    onClick={handleSaveAddress}
-                    className="mt-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    Save Address
+                  <button onClick={handleSaveAddress} className="bg-green-600 text-white px-4 py-1 rounded">
+                    Save
                   </button>
                 </>
               ) : (
                 <>
-                  <p className="w-full border px-3 py-2 rounded bg-gray-100 text-gray-700">
-                    {shippingAddress || "No address provided"}
-                  </p>
-                  <button
-                    onClick={handleEditAddress}
-                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    {shippingAddress ? "Edit Address" : "Add Address"}
+                  <p className="p-2 bg-gray-100 rounded">{shippingAddress || "No address"}</p>
+                  <button onClick={() => setIsEditingAddress(true)} className="text-blue-600 text-sm mt-1">
+                    {shippingAddress ? "Edit" : "Add"} Address
                   </button>
                 </>
               )}
             </div>
             <div className="text-right">
-              <button
-                onClick={handleContinue}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-semibold"
-              >
+              <button onClick={handleContinue} className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700">
                 Continue
               </button>
             </div>
@@ -476,4 +248,4 @@ export default function Cart() {
       )}
     </div>
   );
-}
+} 

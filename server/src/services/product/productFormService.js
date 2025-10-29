@@ -188,16 +188,19 @@ export const getDashboardStatsService = async (vendorId) => {
 
 export const getEarningsStatsService = async (vendorId) => {
   try {
-    const totalEarning = await Payment.sum("vendor_earning", {
+    const completedEarning = await Payment.sum("vendor_earning", {
       where: { vendor_id: vendorId, payment_status: "success" },
     });
 
-    const pendingEarnings = await Payment.sum("vendor_earning", {
+    const pendingEarning = await Payment.sum("vendor_earning", {
       where: { vendor_id: vendorId, payment_status: "pending" },
     });
 
-    const failedEarnings = await Payment.sum("vendor_earning", {
-      where: { vendor_id: vendorId, payment_status: "failed" },
+    const failedOrRefundedEarning = await Payment.sum("vendor_earning", {
+      where: {
+        vendor_id: vendorId,
+        payment_status: { [Op.in]: ["failed", "refunded"] },
+      },
     });
 
     const thisMonthEarning = await Payment.sum("vendor_earning", {
@@ -213,7 +216,7 @@ export const getEarningsStatsService = async (vendorId) => {
       },
     });
 
-    const monthlyEarnings = await Payment.findAll({
+    const monthlyEarningSummary = await Payment.findAll({
       attributes: [
         [sequelize.fn("DATE_FORMAT", sequelize.col("payment_date"), "%Y-%m"), "month"],
         [sequelize.fn("SUM", sequelize.col("vendor_earning")), "total"],
@@ -225,11 +228,11 @@ export const getEarningsStatsService = async (vendorId) => {
     });
 
     return {
-      total_earning: totalEarning || 0,
+      completed_earning: completedEarning || 0,
+      pending_earning: pendingEarning || 0,
+      failed_or_refunded_earning: failedOrRefundedEarning || 0,
       this_month_earning: thisMonthEarning || 0,
-      pending_earning: pendingEarnings || 0,
-      failed_earning: failedEarnings || 0,
-      monthly_earning_graph: monthlyEarnings,
+      monthly_earning_summary: monthlyEarningSummary,
     };
   } catch (error) {
     throw new Error(error.message);

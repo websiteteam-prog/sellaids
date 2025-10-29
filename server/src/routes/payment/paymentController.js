@@ -76,36 +76,36 @@ export const getLatestOrder = async (req, res) => {
   try {
     const userId = req.params.userId;
 
-    const latestOrder = await Order.findOne({
+    const orders = await Order.findAll({
       where: { user_id: userId, payment_status: "pending" },
-      order: [["created_at", "DESC"]],
       include: [
         {
           model: Payment,
           as: "payment",
           where: { payment_status: "pending" },
-          required: false,
+          required: true,
         },
       ],
+      order: [["created_at", "DESC"]],
     });
 
-    if (!latestOrder || !latestOrder.payment) {
+    if (!orders.length) {
       return res.status(404).json({
         success: false,
         message: "No pending order or payment found",
       });
     }
 
-    const payment = latestOrder.payment;
+    const payment = orders[0].payment; 
 
     return res.status(200).json({
       success: true,
       data: {
         razorpayOrderId: payment.razorpay_order_id,
-        amount: payment.amount * 100,
+        amount: payment.amount,              
         currency: payment.currency,
         key: process.env.RAZORPAY_KEY_ID,
-        orderIds: [latestOrder.id],
+        orderIds: orders.map((o) => o.id),    
       },
     });
   } catch (error) {

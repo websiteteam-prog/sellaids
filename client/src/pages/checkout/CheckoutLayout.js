@@ -1,26 +1,55 @@
-// src/pages/checkout/CheckoutLayout.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CartStep from "./CartStep";
 import ReviewStep from "./ReviewStep";
 import PaymentStep from "./PaymentStep";
 
 const steps = ["Cart", "Review", "Payment"];
+const STORAGE_KEY = "checkout_order_data";
 
 export default function CheckoutLayout() {
   const [step, setStep] = useState(0);
   const [orderData, setOrderData] = useState(null);
   const navigate = useNavigate();
 
+  // **ALWAYS START ON CART - CLEAR OLD DATA**
+  useEffect(() => {
+    // Clear any existing checkout data
+    sessionStorage.removeItem(STORAGE_KEY);
+    setOrderData(null);
+    setStep(0); // FORCE STEP 0 (CART)
+  }, []);
+
+  // Save to sessionStorage ONLY when moving forward
+  useEffect(() => {
+    if (orderData && step > 0) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(orderData));
+    } else if (step === 0) {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, [orderData, step]);
+
   const goNext = (data) => {
     setOrderData(data);
     setStep((s) => s + 1);
   };
-  const goPrev = () => setStep((s) => s - 1);
+
+  const goPrev = () => setStep((s) => Math.max(0, s - 1));
+
+  const handleAddressUpdate = (newAddress) => {
+    setOrderData((prev) => ({ ...prev, shippingAddress: newAddress }));
+  };
+
+  const handleCheckoutComplete = () => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    setOrderData(null);
+    setStep(0);
+    navigate("/user/orders");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ── PROGRESS BAR ── */}
+      {/* PROGRESS BAR */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           {steps.map((label, i) => (
@@ -55,9 +84,16 @@ export default function CheckoutLayout() {
             orderData={orderData}
             onPrev={goPrev}
             onNext={goNext}
+            onAddressUpdate={handleAddressUpdate}
           />
         )}
-        {step === 2 && <PaymentStep orderData={orderData} onPrev={goPrev} />}
+        {step === 2 && (
+          <PaymentStep
+            orderData={orderData}
+            onPrev={goPrev}
+            onCheckoutComplete={handleCheckoutComplete}
+          />
+        )}
       </div>
     </div>
   );

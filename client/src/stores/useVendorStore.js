@@ -28,70 +28,89 @@
 //   )
 // );
 
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
 
-// Define the Zustand store
+// ✅ Custom adapter so Zustand understands Cookies as a storage
+const cookieStorage = {
+  getItem: (name) => {
+    try {
+      const value = Cookies.get(name);
+      return value ? value : null;
+    } catch (error) {
+      console.error("Error reading cookie:", error);
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      Cookies.set(name, value, { expires: 7 }); // store for 7 days
+    } catch (error) {
+      console.error("Error setting cookie:", error);
+    }
+  },
+  removeItem: (name) => {
+    try {
+      Cookies.remove(name);
+    } catch (error) {
+      console.error("Error removing cookie:", error);
+    }
+  },
+};
+
+// ✅ Zustand store definition
 export const useVendorStore = create(
   persist(
     (set, get) => ({
-      // Initial State
-      vendor: null,         // Vendor data (can be an object with specific vendor fields)
-      isAuthenticated: false,  // Boolean to check if the vendor is logged in
-      loading: false,        // Boolean to show a loading state if necessary
-      lastActivity: null,    // Timestamp of the last activity
-      token: null,           // Store the authentication token (JWT or session token)
+      vendor: null,              // Vendor info object
+      token: null,               // Auth token
+      isAuthenticated: false,    // Boolean to check login
+      lastActivity: null,        // For activity tracking
 
-      // Method to set vendor data and token (for login)
-      setVendorData: (vendor, token) => 
+      // ✅ Login or set vendor data
+      setVendorData: (vendor, token) => {
+        Cookies.set("session_cookie_name", token, { expires: 7 });
         set({
           vendor,
           token,
-          isAuthenticated: true,  // Mark as logged in
-          lastActivity: Date.now(),  // Set the last activity timestamp
-        }),
+          isAuthenticated: true,
+          lastActivity: Date.now(),
+        });
+      },
 
-      // Login method to set vendor info and authentication state
-      login: (vendorData, token) => 
-        set(() => {
-          Cookies.set("session_cookie_name", token, { expires: 7 });  // Save token in cookies for 7 days
-          return {
-            vendor: vendorData,
-            token,
-            isAuthenticated: true,
-            lastActivity: Date.now(),
-          };
-        }),
+      // ✅ Login shortcut (same effect as above)
+      login: (vendorData, token) => {
+        Cookies.set("session_cookie_name", token, { expires: 7 });
+        set({
+          vendor: vendorData,
+          token,
+          isAuthenticated: true,
+          lastActivity: Date.now(),
+        });
+      },
 
-      // Logout method to clear cookies and reset state
+      // ✅ Logout (clear both Zustand & cookies)
       logout: () => {
-        // Remove session cookie
         Cookies.remove("session_cookie_name");
-
-        // Reset state to initial values
-        return {
+        set({
           vendor: null,
           token: null,
           isAuthenticated: false,
           lastActivity: null,
-        };
+        });
       },
 
-      // Update activity timestamp when vendor interacts
+      // ✅ Update activity timestamp
       updateActivity: () => {
         if (get().isAuthenticated) {
-          set({ lastActivity: Date.now() });  // Update last activity time
+          set({ lastActivity: Date.now() });
         }
       },
-
-      // Optional loading state to manage loading spinner or async operations
-      setLoading: (isLoading) => set({ loading: isLoading }),
     }),
     {
-      name: "vendor-store",  // LocalStorage key to persist the store
-      getStorage: () => Cookies,  // Use cookies to persist the state
+      name: "vendor-store",
+      getStorage: () => cookieStorage, // ✅ custom cookie adapter
     }
   )
 );

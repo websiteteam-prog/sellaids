@@ -7,6 +7,7 @@ import userOrderRoutes from './userOrderRoutes.js'
 import userSupportRoutes from './userSupportRoutes.js'
 import userRoutes from './userRoutes.js'
 import userDashboardRoutes from "./userDashboardRoutes.js"
+import userSearchProductRoutes from "./userSearchRoutes.js"
 
 const router = express.Router()
 
@@ -18,5 +19,6 @@ router.use("/order", userOrderRoutes)
 router.use("/support", userSupportRoutes)
 router.use("/profile", userRoutes)
 router.use("/dashboard", userDashboardRoutes)
+router.use("/search", userSearchProductRoutes)
 
 export default router
