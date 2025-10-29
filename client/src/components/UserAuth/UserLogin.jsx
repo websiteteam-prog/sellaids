@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+// src/pages/UserAuth/UserLogin.jsx
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useUserStore } from "../../stores/useUserStore";
+import useCartStore  from "../../stores/useCartStore";
+import { useCartActions } from "../../stores/useCartActions";
 import toast from "react-hot-toast";
 
 function UserLogin() {
@@ -13,8 +16,13 @@ function UserLogin() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loginError, setLoginError] = useState("");
-  const { login } = useUserStore();
+
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { login, isAuthenticated } = useUserStore();
+  const { fetchCart } = useCartStore();
+  const { pendingAdd, clearPending } = useCartActions();
 
   const validateForm = () => {
     let isValid = true;
@@ -48,30 +56,51 @@ function UserLogin() {
         { withCredentials: true }
       );
 
-      const { success, data, message, errorType } = res.data;
+      const { success, data, message } = res.data;
       if (success) {
         login(data);
-        setEmail("");
-        setPassword("");
-        setLoginError("");
-        toast.success(message || "Login Successful ✅");
-        navigate("/user");
-      } else {
-        if (errorType === "email") {
-          setLoginError("Invalid email address ❌");
-        } else if (errorType === "password") {
-          setLoginError("Invalid password ❌");
+        toast.success(message || "Login Successful");
+
+        // Check for pending cart item
+        if (pendingAdd) {
+          try {
+            await axios.post(
+              `${process.env.REACT_APP_API_URL}/api/user/cart`,
+              { product_id: pendingAdd.product.id },
+              { withCredentials: true }
+            );
+
+            await fetchCart();
+            clearPending();
+
+            // Redirect to ATC page
+            navigate("/add-to-cart");
+          } catch (err) {
+            console.error("Auto add to cart failed", err);
+            toast.error("Failed to add item to cart");
+            navigate(pendingAdd.from || "/");
+          }
         } else {
-          setLoginError("Login failed ❌");
+          // Normal redirect
+          navigate(location.state?.from || "/user");
         }
+      } else {
+        setLoginError("Invalid credentials");
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      setLoginError(err.response?.data?.message || "Invalid Credentials ❌");
+      setLoginError(err.response?.data?.message || "Invalid Credentials");
     } finally {
       setLoading(false);
     }
   };
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(location.state?.from || "/user");
+    }
+  }, [isAuthenticated, navigate, location]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -86,9 +115,7 @@ function UserLogin() {
             className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
             required
           />
-          {emailError && (
-            <div className="text-red-500 text-sm mb-2">{emailError}</div>
-          )}
+          {emailError && <div className="text-red-500 text-sm mb-2">{emailError}</div>}
 
           <div className="relative mb-2">
             <input
@@ -108,19 +135,11 @@ function UserLogin() {
               </span>
             )}
           </div>
-          {passwordError && (
-            <div className="text-red-500 text-sm mb-2">{passwordError}</div>
-          )}
+          {passwordError && <div className="text-red-500 text-sm mb-2">{passwordError}</div>}
+          {loginError && <div className="text-red-500 text-sm mb-4">{loginError}</div>}
 
-          {loginError && (
-            <div className="text-red-500 text-sm mb-4">{loginError}</div>
-          )}
-
-         <p className="text-right mt-4 mb-2">
-            <a
-              href="/UserAuth/UserForgot"
-              className="text-red-500 text-sm hover:text-orange-600"
-            >
+          <p className="text-right mt-4 mb-2">
+            <a href="/UserAuth/UserForgot" className="text-red-500 text-sm hover:text-orange-600">
               Forgot Password?
             </a>
           </p>

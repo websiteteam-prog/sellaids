@@ -32,6 +32,7 @@ import Register from "./components/vendor/MultiStepRegister";
 import VendorForgot from "./components/vendor/VendorForgot";
 import VendorReset from "./components/vendor/VendorReset";
 
+
 // ✅ User Auth Pages
 import UserLogin from "./components/UserAuth/UserLogin";
 import UserRegister from "./components/UserAuth/UserRegister";
@@ -40,6 +41,8 @@ import ResetPassword from "./components/UserAuth/UserReset";
 import UserLogout from "./components/UserAuth/UserLogout";
 import UserPublicRoute from "./components/UserAuth/UserPublicRoute";
 import UserProtectedRoute from "./components/UserAuth/UserProtectedRoute";
+import AddToCartPage from './pages/AddToCartPage';
+import CheckoutPage from './pages/CheckoutPage';
 
 // ✅ Vendor Dashboard Pages
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
@@ -85,6 +88,7 @@ import AdminResetPassword from "./pages/Admin/AdminResetPassword";
 import ProductDetails from "./pages/Admin/ProductDetails";
 import AdminVendorDetails from "./pages/Admin/AdminVendorDetails";
 import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
+// import AddToCart from "./pages/UserCheckout/AddToCart";
 
 const App = () => {
   return (
@@ -117,7 +121,9 @@ const App = () => {
       </Route>
       {/* Move UserLogout outside UserPublicRoute to allow logout from any state */}
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
-
+{/* === USER CHECKOUT FLOW === */}
+           <Route path="/add-to-cart" element={<AddToCartPage />} />
+  <Route path="/checkout" element={<CheckoutPage />} />
       {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
