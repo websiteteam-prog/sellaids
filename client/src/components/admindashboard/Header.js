@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaBars, FaUserCircle } from "react-icons/fa"; // FaBell removed
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import LogoutAdmin from "./Logout";
 
 
@@ -8,10 +8,11 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [admin, setAdmin] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const storedAdmin = JSON.parse(localStorage.getItem("adminInfo"));
-    if (storedAdmin) setAdmin(storedAdmin);
+    const storedAdmin = JSON.parse(localStorage.getItem("admin-store"));
+    if (storedAdmin) setAdmin(storedAdmin?.state);
   }, []);
 
   return (
@@ -41,15 +42,15 @@ const Header = () => {
             <div className="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-md py-2 z-50">
               <div className="px-4 py-2 border-b">
                 <div className="text-sm font-medium text-gray-800">
-                  {admin?.username || "Admin User"}
+                  {admin?.admin?.name || "Admin User"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {admin?.email || "admin@example.com"}
+                  {admin?.admin?.email || "admin@example.com"}
                 </div>
               </div>
 
               <button
-                onClick={() => navigate("/admin/profile-settings")}
+                onClick={() => { if (location.pathname !== "/admin/profile-settings") navigate("/admin/profile-settings"); setIsOpen(false) }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Profile Settings

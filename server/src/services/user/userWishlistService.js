@@ -41,15 +41,14 @@ export const removeFromWishlistService = async (userId, productId) => {
         });
 
         if (!deleted) {
-            logger.warn(`Product ${productId} not found in wishlist of user ${userId}`);
-            return { status: false, message: "Product not found in wishlist" };
+            return { success: false, message: "Product not found in wishlist" };
         }
 
-        logger.info(`Product ${productId} removed successfully from wishlist`);
-        return { status: true };
+        logger.info(`Wishlist removed: user ${userId}, product ${productId}`);
+        return { success: true };
     } catch (error) {
-        logger.error(`Error in removeFromWishlistService: ${error.message}`);
-        throw new Error("Failed to remove product from wishlist");
+        logger.error("Error in removeFromWishlistService:", error);
+        throw error;
     }
 };
 

@@ -3,45 +3,48 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useAdminStore } from "../../stores/useAdminStore";
+import toast from "react-hot-toast";
+import Cookies from "js-cookie";
 
 function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, admin } = useAdminStore(); // admin state from store
+  const { login } = useAdminStore(); // admin state from store
   const navigate = useNavigate();
 
   // ✅ Redirect if already logged in
-  useEffect(() => {
-    if (admin) {
-      navigate("/admin");
-    }
-  }, [admin, navigate]);
+  // useEffect(() => {
+  //   if (admin) {
+  //     navigate("/admin");
+  //   }
+  // }, [admin, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/admin/auth/login",
+        `${process.env.REACT_APP_API_URL}/api/admin/auth/login`,
         { email, password },
         { withCredentials: true }
       );
 
-      const { success, data } = res.data;
+      const { success, data, message } = res.data;
+      console.log("res.data", res.data)
       if (success) {
         login(data); // store admin data
         setEmail("");
         setPassword("");
-
-        alert("Admin Login Successful ✅");
-        navigate("/admin"); // redirect to dashboard
+        // Cookies.set("session_cookie_name", JSON.stringify(data))
+        toast.success(message)
+        navigate("/admin", { replace: true }); // redirect to dashboard
       } else {
-        alert("Login Failed ❌");
+        toast.error(message)
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Invalid Credentials ❌");
+      toast.error("Invalid Credentials ❌");
     }
   };
 
