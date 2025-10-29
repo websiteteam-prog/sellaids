@@ -5,6 +5,7 @@ import useWishlistStore from "../../stores/useWishlistStore";
 import api from "../../api/axiosInstance";
 import { toast, Toaster } from "react-hot-toast";
 import { MapPin, Heart, X, Truck, Package } from "lucide-react";
+import QuantitySelector from "../../pages/checkout/QuantitySelector"
 
 const STORAGE_KEY = "orderData";
 
@@ -45,32 +46,32 @@ export default function CartStep({ onNext }) {
   };
 
   // Change active image
-const changeImage = (productId, offsetOrIndex) => {
-  setActiveImages((prev) => {
-    const current = prev[productId] ?? 0;
-    const images = getProductImages(
-      cart.find((i) => i.product_id === productId)?.product || {}
-    );
+  const changeImage = (productId, offsetOrIndex) => {
+    setActiveImages((prev) => {
+      const current = prev[productId] ?? 0;
+      const images = getProductImages(
+        cart.find((i) => i.product_id === productId)?.product || {}
+      );
 
-    if (images.length === 0) return prev;
+      if (images.length === 0) return prev;
 
-    let newIdx;
+      let newIdx;
 
-    if (typeof offsetOrIndex === "number") {
-      if (offsetOrIndex < 0) {
-        newIdx = (current + offsetOrIndex + images.length) % images.length;
-      } else if (offsetOrIndex === 1) {
-        newIdx = (current + 1) % images.length;
+      if (typeof offsetOrIndex === "number") {
+        if (offsetOrIndex < 0) {
+          newIdx = (current + offsetOrIndex + images.length) % images.length;
+        } else if (offsetOrIndex === 1) {
+          newIdx = (current + 1) % images.length;
+        } else {
+          newIdx = offsetOrIndex;
+        }
       } else {
-        newIdx = offsetOrIndex;
+        newIdx = (current + 1) % images.length;
       }
-    } else {
-      newIdx = (current + 1) % images.length;
-    }
 
-    return { ...prev, [productId]: newIdx };
-  });
-};
+      return { ...prev, [productId]: newIdx };
+    });
+  };
 
   const handleImageError = (e) => {
     e.target.src = "https://via.placeholder.com/96";
@@ -96,12 +97,6 @@ const changeImage = (productId, offsetOrIndex) => {
       .catch(() => toast.error("Could not load address"))
       .finally(() => fetchCart().then(() => setLoading(false)));
   }, [fetchCart]);
-
-  const updateQty = async (pid, qty) => {
-    if (qty < 1) return removeFromCart(pid);
-    await api.put(`/api/user/cart/${pid}`, { quantity: qty });
-    await fetchCart();
-  };
 
   const moveToWishlist = async (pidId) => {
     try {
@@ -356,9 +351,18 @@ const changeImage = (productId, offsetOrIndex) => {
                   </>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-1">
-                Size: {item.size} | Qty: {item.quantity}
+
+              {/* ← ONLY THIS LINE CHANGED → */}
+              <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+                Size: {item.size} | Qty:
+                <QuantitySelector
+                  productId={item.product_id}
+                  initialQty={item.quantity}
+                  disabled={isEditing}
+                />
               </p>
+              {/* ← END CHANGE → */}
+
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                 <Package className="w-3 h-3" />
                 All issue easy returns
