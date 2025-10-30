@@ -92,7 +92,7 @@ const Header = () => {
     if (cartCount === 0) {
       setShowEmptyCart(true);
     } else {
-      navigate("/add-to-cart");
+      navigate("/user/checkout");
     }
   };
 

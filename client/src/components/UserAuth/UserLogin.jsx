@@ -4,7 +4,7 @@ import axios from "axios";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useUserStore } from "../../stores/useUserStore";
-import useCartStore  from "../../stores/useCartStore";
+import useCartStore from "../../stores/useCartStore";
 import { useCartActions } from "../../stores/useCartActions";
 import toast from "react-hot-toast";
 
@@ -59,9 +59,14 @@ function UserLogin() {
       const { success, data, message } = res.data;
       if (success) {
         login(data);
-        toast.success(message || "Login Successful");
 
-        // Check for pending cart item
+        // DISMISS ALL PREVIOUS TOASTS (Red "Please log in" wala gayab!)
+        toast.dismiss();
+
+        // Show success toast
+        toast.success(message || "Login Successful!", { duration: 2000 });
+
+        // Check for pending cart item (from Bestsellers, etc.)
         if (pendingAdd) {
           try {
             await axios.post(
@@ -73,16 +78,53 @@ function UserLogin() {
             await fetchCart();
             clearPending();
 
-            // Redirect to ATC page
-            navigate("/add-to-cart");
+            // Redirect to checkout
+            navigate("/user/checkout");
           } catch (err) {
             console.error("Auto add to cart failed", err);
             toast.error("Failed to add item to cart");
-            navigate(pendingAdd.from || "/");
+            navigate("/user/checkout"); // Still go to checkout
           }
-        } else {
-          // Normal redirect
-          navigate(location.state?.from || "/user");
+        }
+        // Check for state-based addToCart (from Bestsellers)
+        else if (location.state?.addToCart) {
+          const productId = location.state.addToCart;
+          try {
+            await axios.post(
+              `${process.env.REACT_APP_API_URL}/api/user/cart`,
+              { product_id: productId },
+              { withCredentials: true }
+            );
+
+            await fetchCart();
+            toast.success("Product added to cart!");
+            navigate("/user/checkout");
+          } catch (err) {
+            toast.error("Failed to add to cart");
+            navigate("/user/checkout");
+          }
+        }
+        // Check for wishlist
+        else if (location.state?.addToWishlist) {
+          const productId = location.state.addToWishlist;
+          try {
+            await axios.post(
+              `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+              { product_id: productId },
+              { withCredentials: true }
+            );
+
+            toast.success("Added to wishlist!");
+            navigate("/user/wishlist");
+          } catch (err) {
+            toast.error("Failed to add to wishlist");
+            navigate("/user/wishlist");
+          }
+        }
+        // Normal redirect
+        else {
+          const from = location.state?.from || "/user";
+          navigate(from);
         }
       } else {
         setLoginError("Invalid credentials");
@@ -98,6 +140,7 @@ function UserLogin() {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
+      toast.dismiss(); // Extra safety
       navigate(location.state?.from || "/user");
     }
   }, [isAuthenticated, navigate, location]);

@@ -42,29 +42,33 @@ function Bestsellers() {
     fetchProducts();
   }, []);
 
-  // AUTO-ADD AFTER LOGIN (ONLY when state has addToCart)
+  // AUTO-ADD AFTER LOGIN (Cart & Wishlist)
   useEffect(() => {
-    if (isUserLoading) return; // Wait for user to load
+    if (isUserLoading) return;
 
-    const pendingProductId = location.state?.addToCart;
+    const addToCartId = location.state?.addToCart;
+    const addToWishlistId = location.state?.addToWishlist;
 
-    if (pendingProductId && isAuthenticated && products.length > 0) {
-      const product = products.find(p => p.id === pendingProductId);
+    if (addToCartId && isAuthenticated && products.length > 0) {
+      const product = products.find(p => p.id === addToCartId);
       if (product) {
         addToCartDirectly(product);
-        // Clean state to prevent re-run
         navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+
+    if (addToWishlistId && isAuthenticated && products.length > 0) {
+      const product = products.find(p => p.id === addToWishlistId);
+      if (product) {
+        addToWishlistDirectly(product);
+        navigate("/user/wishlist");
       }
     }
   }, [isAuthenticated, isUserLoading, products, location, navigate]);
 
-  // API CALL — SECURE & CLEAN
+  // CART: Add to Cart
   const addToCartDirectly = async (product) => {
-    // Double safety check
-    if (isUserLoading || !isAuthenticated) {
-      toast.error("Please wait, user is loading...");
-      return;
-    }
+    if (isUserLoading || !isAuthenticated) return;
 
     try {
       await axios.post(
@@ -80,15 +84,14 @@ function Bestsellers() {
       });
 
       await fetchCart();
-      navigate("/add-to-cart");
+      navigate("/user/checkout");
 
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to add to cart";
       toast.error(msg);
 
-      // If 401 → redirect to login
       if (error.response?.status === 401) {
-        setPendingAdd({ product, from: location.pathname });
+        setPendingAdd({ product, from: location.pathname, type: "cart" });
         navigate("/UserAuth/UserLogin", {
           state: { from: location.pathname, addToCart: product.id }
         });
@@ -96,7 +99,6 @@ function Bestsellers() {
     }
   };
 
-  // MAIN HANDLER — SYNC (NO ASYNC!)
   const handleAddToCart = (product) => {
     if (isUserLoading) {
       toast.error("Please wait...");
@@ -104,7 +106,7 @@ function Bestsellers() {
     }
 
     if (!isAuthenticated) {
-      setPendingAdd({ product, from: location.pathname });
+      setPendingAdd({ product, from: location.pathname, type: "cart" });
       toast.error("Please log in to add to cart");
       navigate("/UserAuth/UserLogin", {
         state: { from: location.pathname, addToCart: product.id }
@@ -112,8 +114,52 @@ function Bestsellers() {
       return;
     }
 
-    // Only authenticated user reaches here
     addToCartDirectly(product);
+  };
+
+  // WISHLIST: Add to Wishlist
+  const addToWishlistDirectly = async (product) => {
+    if (isUserLoading || !isAuthenticated) return;
+
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+        { product_id: product.id },
+        { withCredentials: true }
+      );
+
+      toast.success(`${product.name} added to wishlist!`);
+      navigate("/user/wishlist");
+
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to add to wishlist";
+      toast.error(msg);
+
+      if (error.response?.status === 401) {
+        setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+        navigate("/UserAuth/UserLogin", {
+          state: { from: location.pathname, addToWishlist: product.id }
+        });
+      }
+    }
+  };
+
+  const handleWishlist = (product) => {
+    if (isUserLoading) {
+      toast.error("Please wait...");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+      toast.error("Please log in to add to wishlist");
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname, addToWishlist: product.id }
+      });
+      return;
+    }
+
+    addToWishlistDirectly(product);
   };
 
   // Auto-close popup
@@ -187,32 +233,35 @@ function Bestsellers() {
           />
 
           <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
+            {/* WISHLIST */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                toast("Wishlist coming soon!");
+                handleWishlist(product);
               }}
-              className="text-gray-600 hover:text-red-500"
+              className="text-gray-600 hover:text-red-500 transition"
             >
               <Heart size={20} />
             </button>
 
+            {/* CART */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleAddToCart(product);
               }}
-              className="text-gray-600 hover:text-green-600"
+              className="text-gray-600 hover:text-green-600 transition"
             >
               <ShoppingCart size={20} />
             </button>
 
+            {/* VIEW */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/product/${product.id}`);
               }}
-              className="text-gray-600 hover:text-orange-600"
+              className="text-gray-600 hover:text-orange-600 transition"
             >
               <Eye size={20} />
             </button>
@@ -285,7 +334,7 @@ function Bestsellers() {
             <button
               onClick={() => {
                 setCartPopup(null);
-                navigate("/add-to-cart");
+                navigate("/user/checkout");
               }}
               className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
             >

@@ -7,7 +7,7 @@ const AddToCartPage = () => {
   const { isAuthenticated } = useUserStore();
 
   if (!isAuthenticated) {
-    return <Navigate to="/UserAuth/UserLogin" state={{ from: '/add-to-cart' }} />;
+    return <Navigate to="/UserAuth/UserLogin" state={{ from: '/user/checkout' }} />;
   }
 
   return <ATCSection />;
