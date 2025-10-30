@@ -8,7 +8,7 @@ const CategoryPage = () => {
   const { "*": slugPath } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(3);
   const loaderRef = useRef(null);
 
   const [selectedCondition, setSelectedCondition] = useState([]);
