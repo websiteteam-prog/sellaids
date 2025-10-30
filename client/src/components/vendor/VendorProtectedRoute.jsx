@@ -16,6 +16,8 @@ const VendorProtectedRoute = () => {
     }
   }, [isAuthenticated]);
 
+
+// ✅ Render child routes if authenticated, otherwise navigate to login
   // ✅ If logged in → render child routes
   // ❌ Otherwise → redirect to vendor login
   return isAuthenticated ? <Outlet /> : <Navigate to="/vendor/login" replace />;
