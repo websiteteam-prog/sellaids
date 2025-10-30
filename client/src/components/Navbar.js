@@ -30,7 +30,7 @@ export default function Navbar() {
       {/* Right: Cart Icon with Count */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate("/user/cart")}
+          onClick={() => navigate("/user/checkout")}
           className="relative text-gray-600 hover:text-blue-600 transition-colors"
           title="Cart"
         >
