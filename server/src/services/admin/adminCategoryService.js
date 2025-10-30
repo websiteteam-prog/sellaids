@@ -229,9 +229,9 @@ export const getProductsByCategoryService = async (path, options = {}) => {
             return {
                 _id: p.id,
                 sku: p.sku,
-                name: p.product_group || `${p.brand || ""} ${p.product_type || ""}`.trim() || "Product",
-                product_img: product_img || "/images/placeholder.png",
-                product_type: p.product_type,
+                product_name: p.product_type,
+                product_img: product_img,
+                product_group: p.product_group,
                 product_additionalInfo: p.additional_info || p.description || "",
                 product_price: p.selling_price,
                 product_condition: p.product_condition,
@@ -244,17 +244,37 @@ export const getProductsByCategoryService = async (path, options = {}) => {
 
         // apply size filter in JS when necessary (matches size enum OR size_other)
         if (applySizeFilterInJS) {
-            const normalized = sizeFilters.map(s => s.toString().trim());
             products = products.filter((p) => {
-                const sizeValue = (p.size === "Other" && p.size_other) ? p.size_other : p.size;
-                // match if any requested size equals sizeValue (case-insensitive)
-                return normalized.some(req => req.toLowerCase() === (sizeValue || "").toString().toLowerCase());
+                const sizeValue =
+                    p.size?.toString().toLowerCase() === "other"
+                        ? p.size_other?.toString().toLowerCase()
+                        : p.size?.toString().toLowerCase();
+
+                return sizeFilters.some(
+                    (req) => req.toLowerCase() === (sizeValue || "").toLowerCase()
+                );
             });
         }
 
         // build filters to return (unique conditions & sizes from the result set)
-        const productConditions = Array.from(new Set(products.map(p => p.product_condition).filter(Boolean)));
-        const sizes = Array.from(new Set(products.map(p => (p.size === "Other" && p.size_other) ? p.size_other : p.size).filter(Boolean)));
+        // const productConditions = Array.from(new Set(products.map(p => p.product_condition).filter(Boolean)));
+        const productConditions = Array.from(
+            new Set(products.map((p) => p.product_condition).filter(Boolean))
+        );
+        // const sizes = Array.from(new Set(products.map(p => (p.size === "Other" && p.size_other) ? p.size_other : p.size).filter(Boolean)));
+
+        const sizeSet = new Set();
+
+        for (const p of products) {
+            if (p.size?.toLowerCase() === "other" && p.size_other) {
+                const parts = p.size_other.split(",").map(s => s.trim()).filter(Boolean);
+                parts.forEach(val => sizeSet.add(val));
+            } else if (p.size) {
+                sizeSet.add(p.size);
+            }
+        }
+
+        const sizes = Array.from(sizeSet);
 
         logger.info(`Service: returning ${products.length} products for category id=${foundCategory.id}`);
 
@@ -277,86 +297,3 @@ export const getProductsByCategoryService = async (path, options = {}) => {
         throw error;
     }
 };
-
-// export const getProductsByCategoryService = async (path, sort) => {
-//     try {
-//         logger.info(`Fetching products for category path: ${path}`);
-
-//         // Get all categories
-//         const categories = await Category.findAll({ raw: true });
-
-//         const slugs = path.split("/").map((slug) => slug.toLowerCase());
-//         let parent = null;
-//         let foundCategory = null;
-
-//         // Match category via slug hierarchy
-//         for (const slug of slugs) {
-//             foundCategory = categories.find(
-//                 (cat) =>
-//                     cat.slug?.toLowerCase() === slug &&
-//                     (parent ? cat.parent_id === parent.id : cat.parent_id === null)
-//             );
-
-//             if (!foundCategory) {
-//                 logger.warn(`No category found for slug: ${slug}`);
-//                 return [];
-//             }
-
-//             parent = foundCategory;
-//         }
-
-//         // Get all nested category IDs (current + children)
-//         const allCategoryIds = getAllSubCategoryIds(categories, foundCategory.id);
-
-//         // Sort condition
-//         let order = [];
-//         if (sort === "low-to-high") order = [["selling_price", "ASC"]];
-//         else if (sort === "high-to-low") order = [["selling_price", "DESC"]];
-
-//         // Fetch all products in those categories
-//         const products = await Product.findAll({
-//             where: {
-//                 category_id: { [Op.in]: allCategoryIds },
-//                 is_active: true,
-//                 status: "approved",
-//             },
-//             order,
-//             attributes: [
-//                 "id",
-//                 "sku",
-//                 "product_condition",
-//                 "product_color",
-//                 "brand",
-//                 "selling_price",
-//                 "front_photo",
-//                 "back_photo",
-//                 "description",
-//                 "category_id",
-//             ],
-//             raw: true,
-//         });
-
-//         logger.info(
-//             `Fetched ${products.length} products for category path: ${path}`
-//         );
-
-//         // Extract unique product conditions (for left-side filter)
-//         const conditions = [
-//             ...new Set(products.map((p) => p.product_condition)),
-//         ];
-
-//         return {
-//             category: {
-//                 id: foundCategory.id,
-//                 name: foundCategory.name,
-//                 slug: foundCategory.slug,
-//             },
-//             totalProducts: products.length,
-//             filters: { product_conditions: conditions },
-//             products,
-//         };
-//     } catch (error) {
-//         logger.error("Error fetching products by category:", error);
-//         throw error;
-//     }
-// };

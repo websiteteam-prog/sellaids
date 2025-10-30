@@ -8,7 +8,7 @@ const CategoryPage = () => {
   const { "*": slugPath } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(10); // 🔹10-10 products
+  const [visibleCount, setVisibleCount] = useState(12);
   const loaderRef = useRef(null);
 
   const [selectedCondition, setSelectedCondition] = useState([]);
@@ -17,6 +17,7 @@ const CategoryPage = () => {
 
   const pathSegments = slugPath ? slugPath.split("/") : [];
 
+  // 🧠 Category + Product Fetch
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -27,9 +28,10 @@ const CategoryPage = () => {
         );
 
         const { success, data, message } = res.data;
-        console.log(data)
+        console.log("API Response:", data);
+
         if (success && data) {
-          toast.success(message || "Category loaded successfully 🎉");
+          // toast.success(message || "Category loaded successfully 🎉");
           setData({
             category: data.category || {},
             subCategories: data.subCategories || [],
@@ -59,17 +61,19 @@ const CategoryPage = () => {
     fetchCategory();
   }, [slugPath]);
 
-  // 🔹 Filter + Sort
+  // 🧠 Filtered + Sorted Products
   const filteredProducts = data?.products?.filter((p) => {
     const conditionMatch =
       selectedCondition.length === 0 ||
       selectedCondition.includes(p.product_condition);
+
     const sizeValue =
       p.size === "Other" && p.size_other ? p.size_other : p.size;
     const sizeMatch =
       selectedSizes.length === 0 ||
       selectedSizes.includes(sizeValue) ||
       (p.size === "Other" && selectedSizes.includes(p.size_other));
+
     return conditionMatch && sizeMatch;
   });
 
@@ -79,7 +83,7 @@ const CategoryPage = () => {
     return 0;
   });
 
-  // 🔹 Infinite Scroll (frontend)
+  // 🧠 Infinite Scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -98,6 +102,7 @@ const CategoryPage = () => {
     return () => observer.disconnect();
   }, [sortedProducts]);
 
+  // Toggle Filters
   const toggleCondition = (cond) => {
     setSelectedCondition((prev) =>
       prev.includes(cond) ? prev.filter((c) => c !== cond) : [...prev, cond]
@@ -110,7 +115,7 @@ const CategoryPage = () => {
     );
   };
 
-  // 🔹 Loading Skeleton
+  // 🧱 Loading Skeleton
   const SkeletonCard = () => (
     <div className="animate-pulse bg-white rounded-lg shadow-md overflow-hidden">
       <div className="h-72 bg-gray-200"></div>
@@ -131,6 +136,10 @@ const CategoryPage = () => {
       </div>
     );
 
+  // 🧩 Available Filters
+  const availableConditions = ["new", "like_new", "used", "damaged"];
+  const availableSizes = data?.filters?.sizes || [];
+
   return (
     <div className="flex flex-col md:flex-row gap-10 px-8 py-10 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
       {/* Left Filter Sidebar */}
@@ -139,49 +148,55 @@ const CategoryPage = () => {
           Filters
         </h3>
 
-        {/* Condition Filter */}
-        <div className="mb-8">
-          <p className="font-semibold text-gray-700 mb-3 text-lg">Condition</p>
-          <div className="space-y-3 text-base">
-            {["new", "like_new", "used", "damaged"].map((cond) => (
-              <label
-                key={cond}
-                className="flex items-center gap-3 cursor-pointer hover:text-blue-600 transition"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedCondition.includes(cond)}
-                  onChange={() => toggleCondition(cond)}
-                  className="accent-blue-600 w-5 h-5"
-                />
-                <span className="capitalize font-medium">
-                  {cond.replace("_", " ")}
-                </span>
-              </label>
-            ))}
+        {/* 🔹 Condition Filter */}
+        {availableConditions.length > 0 && (
+          <div className="mb-8">
+            <p className="font-semibold text-gray-700 mb-3 text-lg">
+              Condition
+            </p>
+            <div className="space-y-3 text-base">
+              {availableConditions.map((cond) => (
+                <label
+                  key={cond}
+                  className="flex items-center gap-3 cursor-pointer hover:text-blue-600 transition"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedCondition.includes(cond)}
+                    onChange={() => toggleCondition(cond)}
+                    className="accent-blue-600 w-5 h-5"
+                  />
+                  <span className="capitalize font-medium">
+                    {cond.replace("_", " ")}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Size Filter */}
-        <div className="mb-8">
-          <p className="font-semibold text-gray-700 mb-3 text-lg">Size</p>
-          <div className="space-y-3 text-base">
-            {["XS", "S", "M", "L", "XL", "XXL", "Other"].map((size) => (
-              <label
-                key={size}
-                className="flex items-center gap-3 cursor-pointer hover:text-blue-600 transition"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedSizes.includes(size)}
-                  onChange={() => toggleSize(size)}
-                  className="accent-blue-600 w-5 h-5"
-                />
-                <span className="font-medium">{size}</span>
-              </label>
-            ))}
+        {/* 🔹 Size Filter (Dynamic from backend) */}
+        {availableSizes.length > 0 && (
+          <div className="mb-8">
+            <p className="font-semibold text-gray-700 mb-3 text-lg">Size</p>
+            <div className="space-y-3 text-base">
+              {availableSizes.map((size) => (
+                <label
+                  key={size}
+                  className="flex items-center gap-3 cursor-pointer hover:text-blue-600 transition"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.includes(size)}
+                    onChange={() => toggleSize(size)}
+                    className="accent-blue-600 w-5 h-5"
+                  />
+                  <span className="font-medium">{size}</span>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </aside>
 
       {/* Right Products Section */}
@@ -234,53 +249,57 @@ const CategoryPage = () => {
 
         {/* Product Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sortedProducts?.slice(0, visibleCount).map((product) => {
-            return (
-              <div
-                key={product._id}
-                className="group overflow-hidden shadow hover:border-orange-400 relative"
-              >
-                <div className="relative">
-                  <img
-                    src={
-                      product?.product_img
-                        ? product?.product_img
-                        : "https://cdn-icons-png.flaticon.com/512/2748/2748558.png"
-                    }
-                    alt={product.name}
-                    onError={(e)=>{e.target.src = "https://cdn-icons-png.flaticon.com/512/2748/2748558.png"}}
-                    className="object-cover w-full h-72 group-hover:scale-105 transition duration-500"
-                  />
+          {sortedProducts?.slice(0, visibleCount).map((product) => (
+            <div
+              key={product._id}
+              className="group overflow-hidden border-gray-100 transition-all duration-300"
+            >
+              <div className="relative bg-gray-50">
+                <img
+                  src={
+                    product?.product_img
+                      ? product?.product_img
+                      : "https://cdn-icons-png.flaticon.com/512/2748/2748558.png"
+                  }
+                  alt={product.name}
+                  onError={(e) => {
+                    e.target.src =
+                      "https://cdn-icons-png.flaticon.com/512/2748/2748558.png";
+                  }}
+                  className="object-cover w-full h-72 rounded-t-xl transition-transform duration-500 ease-in-out group-hover:scale-105"
+                />
 
-                  {/* Hover Icons */}
-                  <div className="absolute inset-0 flex justify-center items-end gap-4 opacity-0 group-hover:opacity-100 transition duration-300">
-                    <button className="bg-black p-3 rounded text-white hover:bg-orange-500 transition">
-                      <FaHeart />
-                    </button>
-                    <button className="bg-black p-3 rounded text-white hover:bg-orange-500 transition">
-                      <FaShoppingCart />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-5 text-start">
-                  <h3 className="text-base font-semibold text-gray-800 hover:text-blue-700 transition">
-                    {product.name}
-                  </h3>
-                  <div className="mt-2">
-                    {product.original_price && (
-                      <span className="line-through text-gray-400 mr-2 text-sm">
-                        ₹{product.original_price}
-                      </span>
-                    )}
-                    <span className="text-lg font-bold text-gray-900">
-                      ₹{product.product_price}
-                    </span>
-                  </div>
+                {/* Hover Icons */}
+                <div className="absolute inset-0 flex justify-center items-end gap-3 opacity-0 translate-y-5 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-in-out pb-4">
+                  <button className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition duration-200">
+                    <FaHeart className="text-lg" />
+                  </button>
+                  <button className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition duration-200">
+                    <FaShoppingCart className="text-lg" />
+                  </button>
                 </div>
               </div>
-            );
-          })}
+
+              <div className="py-5 ps-1 text-start">
+                <h3 className="text-base font-semibold text-gray-800 hover:text-blue-700 transition">
+                  {product?.product_name}
+                </h3>
+                <h3 className="text-base font-semibold text-gray-800 hover:text-blue-700 transition">
+                  {product?.description}
+                </h3>
+                <div className="mt-2">
+                  {product.original_price && (
+                    <span className="line-through text-gray-400 mr-2 text-sm">
+                      ₹{product.original_price}
+                    </span>
+                  )}
+                  <span className="text-lg font-bold text-gray-900">
+                    ₹{product.product_price}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Infinite Scroll Loader */}
@@ -295,5 +314,3 @@ const CategoryPage = () => {
 };
 
 export default CategoryPage;
-
-// "https://placehold.co/600x800?text=No+Image&font=roboto";

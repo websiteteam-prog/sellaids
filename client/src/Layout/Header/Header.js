@@ -37,13 +37,13 @@ const Header = () => {
           setWomenCategories(women);
           setMenCategories(men);
           setKidsCategories(kids);
-          toast.success(message || "Categories fetched successfully");
+          // toast.success(message || "Categories fetched successfully");
         } else {
           toast.error(message || "Failed to fetch categories");
         }
       } catch (err) {
         console.error("❌ Error fetching categories:", err);
-        toast.error("Error fetching categories");
+        // toast.error("Error fetching categories");
       } finally {
         setLoading(false);
       }
@@ -51,13 +51,6 @@ const Header = () => {
 
     fetchCategories();
   }, []);
-
-  // useEffect(() => {
-  //   console.log(womenCategories)
-  //   console.log(menCategories)
-  //   console.log(kidsCategories)
-  // }, [womenCategories, menCategories, kidsCategories])
-
 
   const handleLogout = async () => {
     try {
