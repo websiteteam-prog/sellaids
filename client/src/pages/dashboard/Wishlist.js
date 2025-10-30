@@ -299,9 +299,9 @@ export default function Wishlist() {
                   <p className="text-gray-700">
                     ₹{item.product?.price || "N/A"}
                   </p>
-                  <p className="text-gray-600">
+                  {/* <p className="text-gray-600">
                     Added by: {item.user?.name || "Unknown User"}
-                  </p>
+                  </p> */}
                 </div>
                 {/* Buttons in a single line at the bottom */}
                 <div className="w-full flex justify-between mt-4">

@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-// import { setLoginRedirect } from "./api/axiosInstance"; // ← Not used → remove if not needed
+import { setLoginRedirect } from "./api/axiosInstance";
 
 // Layouts
 import Layout from "./Layout";
