@@ -1,5 +1,5 @@
-// src/components/ProductDetails.jsx
-import { useState } from "react";
+// src/components/ProductDetails.js
+import { useState, useEffect } from "react";
 import {
   Star,
   StarHalf,
@@ -9,35 +9,10 @@ import {
   ChevronRight,
   Send,
 } from "lucide-react";
+import api from "../api/axiosInstance"; // Correct path after moving api/ inside src/
 
-const ProductDetails = () => {
-  // ==================== MOCK DATA ====================
-  const product = {
-    name: "Premium Leather Handbag",
-    sku: "PHI-2024-001",
-    rating: 4.8,
-    reviewCount: 128,
-    originalPrice: 399.0,
-    discountedPrice: 299.0,
-    discountPercent: 25,
-    description:
-      "Crafted from premium Italian leather, this handbag combines elegance with functionality. Features a spacious interior, multiple compartments, and a comfortable shoulder strap. Perfect for both professional and casual settings.",
-    colors: [
-      { name: "Black", hex: "#000000" },
-      { name: "Brown", hex: "#8B4513" },
-      { name: "Beige", hex: "#F5F5DC" },
-      { name: "Navy", hex: "#000080" },
-    ],
-    sizes: ["Small", "Medium", "Large"],
-    images: [
-      "https://via.placeholder.com/600x700?text=Main+Bag",
-      "https://via.placeholder.com/150?text=1",
-      "https://via.placeholder.com/150?text=2",
-      "https://via.placeholder.com/150?text=3",
-      "https://via.placeholder.com/150?text=4",
-    ],
-  };
-
+const ProductDetails = ({ productId = 2 }) => {
+  // ==================== MOCK REVIEWS (API not available) ====================
   const [allReviews, setAllReviews] = useState([
     { author: "Sarah Johnson", date: "2 weeks ago", rating: 5, text: "Absolutely stunning quality! The leather is incredibly soft and the craftsmanship is exceptional. Worth every penny!" },
     { author: "Michael Chen", date: "1 month ago", rating: 5, text: "Perfect everyday bag. Great size, beautiful design, and very durable." },
@@ -60,9 +35,14 @@ const ProductDetails = () => {
     { id: 6, name: "Sling Bag", price: 99, oldPrice: 150, rating: 4.7 },
   ];
 
-  // ==================== STATE ====================
-  const [selectedColor, setSelectedColor] = useState(product.colors[1]);
-  const [selectedSize, setSelectedSize] = useState(product.sizes[1]);
+  // ==================== API STATE ====================
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ==================== UI STATE ====================
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [mainImgIdx, setMainImgIdx] = useState(0);
 
@@ -79,10 +59,42 @@ const ProductDetails = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({ author: "", rating: 5, text: "" });
 
+  // ==================== FETCH PRODUCT ====================
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/api/product/products/${productId}`);
+        
+        if (response.data.success) {
+          const apiProduct = response.data.data.product;
+          setProduct(apiProduct);
+
+          // Set default color & size after load
+          if (apiProduct.colors && apiProduct.colors.length > 0) {
+            setSelectedColor(apiProduct.colors[0]);
+          }
+          if (apiProduct.sizes && apiProduct.sizes.length > 0) {
+            setSelectedSize(apiProduct.sizes[0]);
+          }
+        } else {
+          setError("Product not found");
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
+
+  // ==================== HANDLE ADD REVIEW ====================
   const handleAddReview = () => {
     if (newReview.author && newReview.text) {
       const updatedReviews = [
-        { author: newReview.author, date: "Just now", rating: newReview.rating, text: newReview.text },
+        { ...newReview, date: "Just now" },
         ...allReviews,
       ];
       setAllReviews(updatedReviews);
@@ -92,7 +104,7 @@ const ProductDetails = () => {
     }
   };
 
-  // Carousel
+  // ==================== CAROUSEL LOGIC ====================
   const [carouselStart, setCarouselStart] = useState(0);
   const visibleCount = 4;
 
@@ -108,8 +120,8 @@ const ProductDetails = () => {
     }
   };
 
-  // ==================== HELPER: renderStars ====================
-  const renderStars = (rating: number, size: string = "sm"): JSX.Element => {
+  // ==================== RENDER STARS ====================
+  const renderStars = (rating, size = "sm") => {
     const full = Math.floor(rating);
     const half = rating % 1 >= 0.5;
 
@@ -143,6 +155,23 @@ const ProductDetails = () => {
       </div>
     );
   };
+
+  // ==================== LOADING & ERROR ====================
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-600">Loading product details...</p>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <p className="text-lg text-red-600">{error || "Product not found"}</p>
+      </div>
+    );
+  }
 
   // ==================== RENDER ====================
   return (
@@ -194,63 +223,71 @@ const ProductDetails = () => {
           <p className="text-sm text-gray-500">SKU: {product.sku}</p>
 
           <div className="flex items-center gap-2">
-            {renderStars(product.rating)}
-            <span className="text-sm text-gray-600">({allReviews.length} reviews)</span>
+            {renderStars(product.rating || 0)}
+            <span className="text-sm text-gray-600">({product.review_count || 0} reviews)</span>
           </div>
 
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-orange-600">
-              ${product.discountedPrice.toFixed(2)}
+              ₹{product.price?.toFixed(2)}
             </span>
-            <span className="text-lg line-through text-gray-400">
-              ${product.originalPrice.toFixed(2)}
-            </span>
-            <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
-              {product.discountPercent}% OFF
-            </span>
+            {product.original_price > product.price && (
+              <>
+                <span className="text-lg line-through text-gray-400">
+                  ₹{product.original_price?.toFixed(2)}
+                </span>
+                <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
+                  {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
+                </span>
+              </>
+            )}
           </div>
 
           <p className="text-gray-700">{product.description}</p>
 
           {/* Color */}
-          <div>
-            <p className="font-medium mb-2 text-gray-800">Color</p>
-            <div className="flex gap-3">
-              {product.colors.map((c) => (
-                <button
-                  key={c.hex}
-                  onClick={() => setSelectedColor(c)}
-                  className={`w-10 h-10 rounded-full border-2 transition-all ${
-                    selectedColor.hex === c.hex
-                      ? "border-orange-500 ring-2 ring-orange-300"
-                      : "border-gray-300"
-                  }`}
-                  style={{ backgroundColor: c.hex }}
-                  aria-label={c.name}
-                />
-              ))}
+          {product.colors && product.colors.length > 0 && (
+            <div>
+              <p className="font-medium mb-2 text-gray-800">Color</p>
+              <div className="flex gap-3">
+                {product.colors.map((c) => (
+                  <button
+                    key={c.hex}
+                    onClick={() => setSelectedColor(c)}
+                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                      selectedColor?.hex === c.hex
+                        ? "border-orange-500 ring-2 ring-orange-300"
+                        : "border-gray-300"
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                    aria-label={c.name}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Size */}
-          <div>
-            <p className="font-medium mb-2 text-gray-800">Size</p>
-            <div className="flex gap-2">
-              {product.sizes.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSelectedSize(s)}
-                  className={`px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
-                    selectedSize === s
-                      ? "bg-orange-600 text-white border-orange-600"
-                      : "border-gray-300 hover:border-orange-400 text-gray-700"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+          {product.sizes && product.sizes.length > 0 && (
+            <div>
+              <p className="font-medium mb-2 text-gray-800">Size</p>
+              <div className="flex gap-2">
+                {product.sizes.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSelectedSize(s)}
+                    className={`px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+                      selectedSize === s
+                        ? "bg-orange-600 text-white border-orange-600"
+                        : "border-gray-300 hover:border-orange-400 text-gray-700"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Quantity */}
           <div className="flex items-center gap-3">
@@ -267,10 +304,9 @@ const ProductDetails = () => {
             >
               +
             </button>
-            {/* STOCK TEXT REMOVED */}
           </div>
 
-          {/* ==================== ADD TO CART + WISHLIST + SHARE (SINGLE ROW) ==================== */}
+          {/* ADD TO CART + WISHLIST + SHARE */}
           <div className="flex gap-3 mt-4">
             <button className="flex-1 bg-orange-600 text-white py-3 rounded-md font-medium hover:bg-orange-700 transition shadow-sm">
               Add to Cart
@@ -297,7 +333,6 @@ const ProductDetails = () => {
           </button>
         </div>
 
-        {/* Add Review Form */}
         {showReviewForm && (
           <div className="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
             <h3 className="font-medium mb-3 text-gray-800">Share Your Experience</h3>
@@ -306,7 +341,7 @@ const ProductDetails = () => {
               placeholder="Your Name"
               value={newReview.author}
               onChange={(e) => setNewReview({ ...newReview, author: e.target.value })}
-              className="w-full mb-3 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full mb-3 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
             />
             <div className="mb-3">
               <p className="text-sm text-gray-700 mb-1">Rating</p>
@@ -333,7 +368,7 @@ const ProductDetails = () => {
               value={newReview.text}
               onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
               rows={3}
-              className="w-full mb-3 p-2 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full mb-3 p-2 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-orange-500"
             />
             <div className="flex gap-2">
               <button
@@ -446,11 +481,11 @@ const ProductDetails = () => {
                     <div className="flex items-center gap-1 mt-1">{renderStars(p.rating)}</div>
                     <div className="flex items-baseline gap-2 mt-1">
                       <span className="text-lg font-bold text-orange-600">
-                        ${p.price.toFixed(2)}
+                        ₹{p.price.toFixed(2)}
                       </span>
                       {p.oldPrice && (
                         <span className="text-sm line-through text-gray-400">
-                          ${p.oldPrice.toFixed(2)}
+                          ₹{p.oldPrice.toFixed(2)}
                         </span>
                       )}
                     </div>
