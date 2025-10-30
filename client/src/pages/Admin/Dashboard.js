@@ -33,7 +33,7 @@ const AdminDashboard = () => {
       const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`, { withCredentials: true });
 
       const { success, data, message } = res?.data;
-      console.log(data)
+      // console.log(data)
       if (success) {
         setStats({
           totalUsers: data.total_users || 0,

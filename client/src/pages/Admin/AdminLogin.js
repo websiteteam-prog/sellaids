@@ -31,7 +31,7 @@ function AdminLogin() {
       );
 
       const { success, data, message } = res.data;
-      console.log("res.data", res.data)
+      // console.log("res.data", res.data)
       if (success) {
         login(data); // store admin data
         setEmail("");

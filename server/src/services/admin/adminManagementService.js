@@ -23,9 +23,11 @@ export const getAdminDashboardService = async () => {
         p.front_photo,
         p.selling_price,
         p.additional_info,
+        p.status,
         SUM(o.quantity) AS totalSales
       FROM orders o
       JOIN products p ON o.product_id = p.id
+      WHERE p.status = 'approved'
       GROUP BY o.product_id
       ORDER BY totalSales DESC
       LIMIT 5;
@@ -38,6 +40,7 @@ export const getAdminDashboardService = async () => {
       sales: Number(item.totalSales),
       price: item.selling_price || null,
       info: item.additional_info || null,
+      status: item.status || null,
     }));
 
     return {

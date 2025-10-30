@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MegaMenu, MensMegaMenu, KidsMegaMenu } from "./MegaMenu";
 import { User, Heart, Search, ShoppingCart, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import useCartStore from "../../stores/useCartStore"; // ← Cart store
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import SearchOverlay from "../../components/SearchOverlay";
 
 const Header = () => {
@@ -16,6 +16,45 @@ const Header = () => {
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [womenCategories, setWomenCategories] = useState([]);
+  const [menCategories, setMenCategories] = useState([]);
+  const [kidsCategories, setKidsCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/admin/category`,
+          { withCredentials: true }
+        );
+
+        const { success, data, message } = res.data;
+        console.log(data)
+
+        if (success && Array.isArray(data)) {
+          const women = data.find(cat => cat.slug === "women");
+          const men = data.find(cat => cat.slug === "men");
+          const kids = data.find(cat => cat.slug === "kids");
+          setWomenCategories(women);
+          setMenCategories(men);
+          setKidsCategories(kids);
+          // toast.success(message || "Categories fetched successfully");
+        } else {
+          toast.error(message || "Failed to fetch categories");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching categories:", err);
+        // toast.error("Error fetching categories");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
   const [showEmptyCart, setShowEmptyCart] = useState(false);
 
   // Optional: Refresh cart on mount if user is logged in
@@ -59,7 +98,6 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow relative z-40">
-      <Toaster position="top-right" />
 
       <nav className="max-w-7xl mx-auto flex justify-between items-center py-2 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
@@ -71,33 +109,60 @@ const Header = () => {
 
         {/* Desktop Menu */}
         <ul className="hidden sm:flex space-x-4 md:space-x-6 font-medium text-gray-700 items-center h-[60px]">
+
+          {/* 🟣 WOMEN */}
           <li className="relative group flex h-full items-center cursor-pointer">
-            <div className="flex items-center hover:text-orange-500 space-x-1">
-              <span>WOMEN</span>
+            <Link
+              to={`/product-category/${womenCategories?.slug}`}
+              className="flex items-center hover:text-orange-500 space-x-1"
+            >
+              <span>{womenCategories?.name}</span>
               <ChevronDown size={16} />
-            </div>
-            <MegaMenu />
-          </li>
-          <li className="relative group flex h-full items-center cursor-pointer">
-            <div className="flex items-center hover:text-orange-500 space-x-1">
-              <span>MEN</span>
-              <ChevronDown size={16} />
-            </div>
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
-              <MensMegaMenu />
-            </div>
-          </li>
-          <li className="relative group flex h-full items-center cursor-pointer">
-            <div className="flex items-center hover:text-orange-500 space-x-1">
-              <span>KIDS</span>
-              <ChevronDown size={16} />
-            </div>
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
-              <KidsMegaMenu />
+            </Link>
+
+            {/* Mega Menu */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 
+                        group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+              <MegaMenu womenCategories={womenCategories} />
             </div>
           </li>
+
+          {/* 🔵 MEN */}
+          <li className="relative group flex h-full items-center cursor-pointer">
+            <Link
+              to={`/product-category/${menCategories?.slug}`}
+              className="flex items-center hover:text-orange-500 space-x-1"
+            >
+              <span>{menCategories?.name}</span>
+              <ChevronDown size={16} />
+            </Link>
+
+            {/* Mega Menu */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 
+                        group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+              <MensMegaMenu menCategories={menCategories} />
+            </div>
+          </li>
+
+          {/* 🟢 KIDS */}
+          <li className="relative group flex h-full items-center cursor-pointer">
+            <Link
+              to={`/product-category/${kidsCategories?.slug}`}
+              className="flex items-center hover:text-orange-500 space-x-1"
+            >
+              <span>{kidsCategories?.name || "KIDS"}</span>
+              <ChevronDown size={16} />
+            </Link>
+
+            {/* Dropdown */}
+            <KidsMegaMenu kidsCategories={kidsCategories} />
+          </li>
+
+          {/* 🟠 SELL WITH US */}
           <li>
-            <Link to="/sellwithus" className="hover:text-orange-500">SELL WITH US</Link>
+            <Link to="/sellwithus" className="hover:text-orange-500">
+              SELL WITH US
+            </Link>
           </li>
         </ul>
 

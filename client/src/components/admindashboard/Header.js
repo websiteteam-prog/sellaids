@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaBars, FaUserCircle } from "react-icons/fa"; // FaBell removed
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoutAdmin from "./Logout";
@@ -7,6 +7,7 @@ import LogoutAdmin from "./Logout";
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [admin, setAdmin] = useState(null);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,8 +16,20 @@ const Header = () => {
     if (storedAdmin) setAdmin(storedAdmin?.state);
   }, []);
 
+  // Click outside detection
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <header className="w-full h-16 bg-white shadow flex items-center justify-between px-6 sticky top-0 z-40">
+    <header className="w-full h-16 bg-white shadow flex items-center justify-between px-6 sticky top-0 z-40" ref={dropdownRef}>
       {/* Left Section */}
       <div className="flex items-center gap-4">
         <button className="text-gray-600 lg:hidden">
@@ -56,7 +69,7 @@ const Header = () => {
                 Profile Settings
               </button>
 
-              {/* ✅ Logout using separate component */}
+              {/* Logout using separate component */}
               <LogoutAdmin />
             </div>
           )}

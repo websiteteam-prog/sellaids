@@ -1,179 +1,140 @@
-import React from 'react';
+import React from "react";
+import { Link } from "react-router-dom";
 
-const SectionColumn = ({ title, items }) => (
+// Divider Component
+export const Divider1 = () => <div className="hidden lg:block w-px bg-gray-300" />;
+
+export const Section = ({ title, items, baseSlug }) => (
     <div>
-        <h5 className="font-medium text-orange-500 mb-1">{title}</h5>
-        <ul className="space-y-1 text-sm text-gray-800 font-body">
-            {items.map((item, idx) => (
-                <li
-                    key={idx}
-                    className={`cursor-pointer ${item === 'View All' ? 'underline text-orange-500' : ''}`}
-                >
-                    {item}
+        <h3 className="text-orange-500 font-semibold mb-2">{title}</h3>
+        <ul className="space-y-1 text-gray-800 text-sm">
+            {items?.map((item, index) => (
+                <li key={index}>
+                    <Link
+                        to={`/product-category/${baseSlug}/${item?.slug}`}
+                        className="hover:text-orange-500 cursor-pointer transition"
+                    >
+                        {item.name}
+                    </Link>
                 </li>
             ))}
+            <li className="mt-2 text-orange-500 font-medium border-b-2 border-orange-500 w-fit cursor-pointer">
+                <Link to={`/product-category/${baseSlug}/${title?.toLowerCase()?.replace(/\s+/g, "-")}`}>
+                    View All
+                </Link>
+            </li>
         </ul>
     </div>
 );
 
-const MegaMenuLayout = ({ title, sections }) => (
-    <div className="w-full lg:w-1/2">
-        <h4 className="text-lg uppercase font-heading mb-6 tracking-wide text-center">{title}</h4>
-        <div className="grid grid-cols-2 gap-8 px-4">
-            {sections.map((section, index) => (
-                <SectionColumn key={index} title={section.title} items={section.items} />
-            ))}
-        </div>
-    </div>
-);
+//
+// -----------------------------
+// 🧒 KIDS MEGA MENU
+// -----------------------------
+export const KidsMegaMenu = ({ kidsCategories }) => {
+    if (!kidsCategories?.slug) return null;
+    const baseSlug = kidsCategories?.slug
+    console.log(kidsCategories)
 
-const Divider = () => <div className="hidden lg:block w-px bg-gray-300" />;
-
-const MenuWrapper = ({ left, right }) => (
-    <div className="absolute top-full left-1/2 -translate-x-1/2 w-[1000px] bg-white shadow-lg py-6 px-8 z-50 hidden group-hover:block border border-gray-200">
-        <div className="flex flex-col lg:flex-row justify-center gap-8">
-            {left}
-            {right && <Divider />}
-            {right}
-        </div>
-    </div>
-);
-
-// WOMEN
-export const MegaMenu = () => (
-    <MenuWrapper
-        left={
-            <MegaMenuLayout
-                title="Designer Aid"
-                sections={[
-                    { title: 'Indian Edit', items: ['Lehengas', 'Skirt Sets', 'Gowns', 'View All'] },
-                    { title: 'Sarees', items: ['Regular Sarees', 'Draped Sarees', 'View All'] },
-                    { title: 'Boutique Fit', items: ['Long Suit Sets', 'Short Suit Sets', 'Indowestern', 'View All'] },
-                    { title: 'Accessories', items: ['Jewelry', 'Ethnic Clutches and Bags', 'Juttis', 'View All'] },
-                ]}
-            />
-        }
-        right={
-            <MegaMenuLayout
-                title="Fashion Aid"
-                sections={[
-                    { title: 'Bags', items: ['Cross-body and Shoulder Bags', 'Totes and Carryalls', 'Clutches and Wallets', 'View All'] },
-                    { title: 'Shoes', items: ['Bellies and Heels', 'Sneakers and Sport Shoes', 'Sandals and Slippers', 'View All'] },
-                    { title: 'Apparel', items: ['Dresses and Jumpsuit', 'Jackets and Coats', 'Tops and T-Shirts', 'Bottoms', 'View All'] },
-                    { title: 'Accessories', items: ['Belts', 'Scarves & Stoles', 'Eyewear and Caps', 'Watches', 'View All'] },
-                ]}
-            />
-        }
-    />
-);
-
-// MEN
-export const MensMegaMenu = () => (
-    <MenuWrapper
-        left={
-            <MegaMenuLayout
-                title="Designer Aid"
-                sections={[
-                    {
-                        title: 'Bespoke Studio',
-                        items: ['Nehru Jacket and Waist Coats', 'Formal Suits', 'Sherwanis and Kurta Sets', 'View All'],
-                    },
-                ]}
-            />
-        }
-        right={
-            <MegaMenuLayout
-                title="Fashion Aid"
-                sections={[
-                    {
-                        title: 'Bags',
-                        items: ['Travel and Laptop Bags', 'Wallets and Pouches', 'Cross body', 'View All'],
-                    },
-                    {
-                        title: 'Shoes',
-                        items: ['Formal and Casual Shoes', 'Sports Shoes and Sneakers', 'Sandals and Slippers', 'View All'],
-                    },
-                    {
-                        title: 'Apparel',
-                        items: ['Jackets and Coats', 'Sweaters and Sweatshirts', 'Shirts and T-Shirts', 'Bottoms', 'View All'],
-                    },
-                    {
-                        title: 'Accessories',
-                        items: ['Ties and Eyewear', 'Belts and Caps', 'Watches', 'View All'],
-                    },
-                ]}
-            />
-        }
-    />
-);
-
-// KIDS
-export const KidsMegaMenu = () => (
-    <MenuWrapper
-        left={
-            <div className="w-full">
-                <h4 className="text-lg uppercase font-heading mb-6 tracking-wide text-center">Kids Collection</h4>
-                <div className="grid grid-cols-3 gap-8 px-4">
-                    {/* Boys */}
-                    <div className="pr-6 border-r border-gray-200">
-                        <SectionColumn
-                            title="Boys"
-                            items={[
-                                'Coats and Jackets',
-                                'Jeans and Joggers',
-                                'Hoodies and Sweatshirts',
-                                'Shirts and T-Shirts',
-                                'Shorts',
-                                'Tracksuits',
-                                'Rompers',
-                                'Co-ord Sets',
-                                'Shoes',
-                                'View All',
-                            ]}
-                        />
-                    </div>
-
-                    {/* Girls */}
-                    <div className="px-6 border-r border-gray-200">
-                        <SectionColumn
-                            title="Girls"
-                            items={[
-                                'Coats and Jackets',
-                                'Denims and Leggings',
-                                'Hoodies and Sweatshirts',
-                                'Tops and Tees',
-                                'Shorts and Skirts',
-                                'Tracksuits and Joggers',
-                                'Dresses',
-                                'Rompers',
-                                'Co-ord Sets',
-                                'Shoes',
-                                'View All',
-                            ]}
-                        />
-                    </div>
-
-                    {/* Baby Gear */}
-                    <div className="pl-6">
-                        <SectionColumn
-                            title="Baby Gear"
-                            items={[
-                                'Bath Tub/Chair',
-                                'Stroller',
-                                'Car Chair',
-                                'Bouncer',
-                                'Cradle',
-                                'Swings',
-                                'Walker',
-                                'High Chair',
-                                'Bottle Warmer',
-                                'Sterilizer',
-                                'View All',
-                            ]}
-                        />
-                    </div>
+    return (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300">
+            <div className="w-[1000px] bg-white shadow-lg py-6 px-8 border border-gray-200">
+                <div className="flex justify-center gap-10">
+                    {kidsCategories.subCategories.map((subCat, index) => (
+                        <React.Fragment key={subCat.id}>
+                            <Section
+                                title={subCat.name}
+                                items={subCat.subCategories || []}
+                                baseSlug={`${baseSlug}/${subCat.slug}`}
+                            />
+                            {index < kidsCategories.subCategories.length - 1 && <Divider1 />}
+                        </React.Fragment>
+                    ))}
                 </div>
             </div>
-        }
-    />
-);
+        </div>
+    );
+};
+
+//
+// -----------------------------
+// 👨 MEN MEGA MENU
+// -----------------------------
+export const MensMegaMenu = ({ menCategories }) => {
+    if (!menCategories?.slug) return null;
+    const baseSlug = menCategories?.slug
+    console.log(menCategories)
+
+    return (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300">
+            <div className="w-[900px] bg-white shadow-lg py-6 px-8 border border-gray-200">
+                <div className="flex justify-center gap-10">
+                    {menCategories.subCategories.map((subCat, index) => (
+                        <React.Fragment key={subCat.id}>
+                            <div>
+                                <h3 className="text-orange-500 font-semibold mb-2">
+                                    {subCat.name}
+                                </h3>
+                                <ul className="text-sm text-gray-800 space-y-1">
+                                    <li>
+                                        <Link
+                                            to={`/product-category/${baseSlug}/${subCat.slug}`}
+                                            className="hover:text-orange-500 transition"
+                                        >
+                                            View All
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {index < menCategories.subCategories.length - 1 && <Divider1 />}
+                        </React.Fragment>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+//
+// -----------------------------
+// 👩 WOMEN MEGA MENU
+// -----------------------------
+export const MegaMenu = ({ womenCategories }) => {
+    if (!womenCategories?.slug) return null;
+    const baseSlug = womenCategories?.slug
+    // console.log(womenCategories)
+
+    return (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300">
+            <div className="w-[1100px] bg-white shadow-lg py-6 px-8 border border-gray-200">
+                <div className="flex justify-center gap-10">
+                    {womenCategories.subCategories.map((mainSection, index) => (
+                        <React.Fragment key={mainSection.id}>
+                            <div>
+                                {/* Main Title: e.g. Designer Aid / Fashion Aid */}
+                                <h2 className="text-center text-lg font-serif tracking-wide mb-4 uppercase">
+                                    {mainSection.name}
+                                </h2>
+
+                                {/* Inner Sections: e.g. Indian Edit, Sarees, etc */}
+                                <div className="flex gap-8">
+                                    {mainSection.subCategories?.map((sub) => (
+                                        <Section
+                                            key={sub.slug}
+                                            title={sub.name}
+                                            items={sub.subCategories || []}
+                                            baseSlug={`${baseSlug}/${mainSection.slug}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {index < womenCategories.subCategories.length - 1 && <Divider1 />}
+                        </React.Fragment>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};

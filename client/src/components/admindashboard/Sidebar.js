@@ -30,7 +30,7 @@ const Sidebar = () => {
     if (storedAdmin) setAdmin(storedAdmin?.state);
   }, []);
 
-  console.log(admin)
+  // console.log(admin)
 
   return (
     <aside className="w-64 h-screen bg-black text-gray-300 flex flex-col justify-between fixed left-0 top-0 shadow-lg">
