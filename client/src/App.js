@@ -1,13 +1,14 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-import { setLoginRedirect } from "./api/axiosInstance";
-// ✅ Layouts
+// import { setLoginRedirect } from "./api/axiosInstance"; // ← Not used → remove if not needed
+
+// Layouts
 import Layout from "./Layout";
 import VendorDashboardLayout from "./Layout/VendorDashboardLayout";
 import DashboardLayout from "./components/DashboardLayout";
 
-// ✅ Public Pages
+// Public Pages
 import About from "./pages/About";
 import LandingPage from "./pages/LandingPage";
 import SellWithUs from "./pages/SellWithUs";
@@ -23,17 +24,27 @@ import AdviceSellers from "./pages/AdviceSellers";
 import Blogs from "./pages/Blogs";
 import Luxury from "./pages/Luxury";
 
-// ✅ User Aids
+// Product Details (User & Admin - Renamed to avoid conflict)
+import UserProductDetails from "./components/ProductDetails";
+import AdminProductDetails from "./pages/Admin/ProductDetails";
+
+// Aids
 import Kidsaids from "./components/aids/Kidsaids";
 
-// ✅ Vendor Auth Pages
+// Checkout Pages
+import AddToCartPage from "./pages/AddToCartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutLayout from "./pages/checkout/CheckoutLayout";
+
+// Vendor Auth
 import Login from "./components/vendor/Login";
 import Register from "./components/vendor/MultiStepRegister";
 import VendorForgot from "./components/vendor/VendorForgot";
 import VendorReset from "./components/vendor/VendorReset";
+import VendorPublicRoute from "./components/vendor/VendorPublicRoute";
+import VendorProtectedRoute from "./components/vendor/VendorProtectedRoute";
 
-
-// ✅ User Auth Pages
+// User Auth
 import UserLogin from "./components/UserAuth/UserLogin";
 import UserRegister from "./components/UserAuth/UserRegister";
 import ForgotPassword from "./components/UserAuth/UserForgot";
@@ -41,10 +52,8 @@ import ResetPassword from "./components/UserAuth/UserReset";
 import UserLogout from "./components/UserAuth/UserLogout";
 import UserPublicRoute from "./components/UserAuth/UserPublicRoute";
 import UserProtectedRoute from "./components/UserAuth/UserProtectedRoute";
-import AddToCartPage from './pages/AddToCartPage';
-import CheckoutPage from './pages/CheckoutPage';
 
-// ✅ Vendor Dashboard Pages
+// Vendor Dashboard
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
 import AddProduct from "./pages/vendor/AddProduct";
 import AllProducts from "./pages/vendor/AllProducts";
@@ -54,19 +63,19 @@ import Earnings from "./pages/vendor/Earnings";
 import ProfileVendor from "./pages/vendor/Profile";
 import VendorView from "./pages/vendor/VendorView";
 
-// ✅ User Dashboard Pages
+// User Dashboard
 import Orders from "./pages/dashboard/Orders";
 import Profile from "./pages/dashboard/Profile";
 import Addresses from "./pages/dashboard/Addresses";
 import Payments from "./pages/dashboard/Payments";
 import Wishlist from "./pages/dashboard/Wishlist";
-import Cart from "./pages/dashboard/Cart";
 import Support from "./pages/dashboard/Support";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import RaiseTicket from "./pages/dashboard/RaiseTicket";
 
-// ✅ Admin Layout and Pages
-import AdminProtectedRoute from "./components/admindashboard/AdminProtectedRoute"
+// Admin
+import AdminPublicRoute from "./components/admindashboard/AdminPublicRoute";
+import AdminProtectedRoute from "./components/admindashboard/AdminProtectedRoute";
 import AdminLayout from "./components/admindashboard/Layout";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminUsers from "./pages/Admin/Users";
@@ -78,22 +87,15 @@ import AdminReports from "./pages/Admin/Reports";
 import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
 import AdminLogin from "./pages/Admin/AdminLogin";
-import ProtectedRoute from "./components/ProtectedRoute";
-import VendorProtectedRoute from "./components/vendor/VendorProtectedRoute";
-import VendorPublicRoute from "./components/vendor/VendorPublicRoute";
-import CheckoutLayout from "./pages/checkout/CheckoutLayout";
-import AdminPublicRoute from "./components/admindashboard/AdminPublicRoute";
 import AdminForgotPassword from "./pages/Admin/AdminForgotPassword";
 import AdminResetPassword from "./pages/Admin/AdminResetPassword";
-import ProductDetails from "./pages/Admin/ProductDetails";
 import AdminVendorDetails from "./pages/Admin/AdminVendorDetails";
 import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
-// import AddToCart from "./pages/UserCheckout/AddToCart";
 
 const App = () => {
   return (
     <Routes>
-      {/* ===================== Public Routes ===================== */}
+      {/* ===================== PUBLIC ROUTES ===================== */}
       <Route path="/" element={<Layout><LandingPage /></Layout>} />
       <Route path="/landingpage" element={<Layout><LandingPage /></Layout>} />
       <Route path="/about" element={<Layout><About /></Layout>} />
@@ -112,19 +114,24 @@ const App = () => {
       <Route path="/Designeraids" element={<Layout><Luxury /></Layout>} />
       <Route path="/kidsaids" element={<Layout><Kidsaids /></Layout>} />
 
-      {/* ===================== User Auth Routes ===================== */}
+      {/* Product Details - User */}
+      <Route path="/product-details" element={<Layout><UserProductDetails /></Layout>} />
+
+      {/* Checkout Flow - Public */}
+      {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />
+      <Route path="/checkout" element={<Layout><CheckoutPage /></Layout>} /> */}
+
+      {/* ===================== USER AUTH ===================== */}
       <Route element={<UserPublicRoute />}>
         <Route path="/UserAuth/UserLogin" element={<UserLogin />} />
         <Route path="/UserAuth/register" element={<UserRegister />} />
         <Route path="/UserAuth/UserForgot" element={<ForgotPassword />} />
         <Route path="/UserAuth/reset-password/:token" element={<ResetPassword />} />
       </Route>
-      {/* Move UserLogout outside UserPublicRoute to allow logout from any state */}
+
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
-{/* === USER CHECKOUT FLOW === */}
-           <Route path="/add-to-cart" element={<AddToCartPage />} />
-  <Route path="/checkout" element={<CheckoutPage />} />
-      {/* ===================== User Dashboard Routes ===================== */}
+
+      {/* ===================== USER DASHBOARD ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
           <Route index element={<DashboardHome />} />
@@ -133,14 +140,16 @@ const App = () => {
           <Route path="addresses" element={<Addresses />} />
           <Route path="user-payments" element={<Payments />} />
           <Route path="wishlist" element={<Wishlist />} />
-          <Route path="cart" element={<Navigate to="/user/checkout" replace />} />
-          <Route path="checkout" element={<CheckoutLayout />} />
+          <Route path="cart" element={<Navigate to="/add-to-cart" replace />} />
+          <Route path="checkout" element={<CheckoutLayout />}>
+            <Route index element={<CheckoutPage />} />
+          </Route>
           <Route path="support" element={<Support />} />
           <Route path="raise-ticket" element={<RaiseTicket />} />
         </Route>
       </Route>
 
-      {/* ===================== Vendor Auth Routes ===================== */}
+      {/* ===================== VENDOR AUTH ===================== */}
       <Route element={<VendorPublicRoute />}>
         <Route path="/vendor/login" element={<Login />} />
         <Route path="/vendor/register" element={<Register />} />
@@ -148,7 +157,7 @@ const App = () => {
         <Route path="/vendor/reset-password/:token" element={<VendorReset />} />
       </Route>
 
-      {/* ===================== Vendor Dashboard Routes ===================== */}
+      {/* ===================== VENDOR DASHBOARD ===================== */}
       <Route element={<VendorProtectedRoute />}>
         <Route path="/vendor" element={<VendorDashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -163,14 +172,14 @@ const App = () => {
         </Route>
       </Route>
 
-      {/* ===================== Admin Login ===================== */}
+      {/* ===================== ADMIN LOGIN ===================== */}
       <Route element={<AdminPublicRoute />}>
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
         <Route path="/admin/reset-password/:token" element={<AdminResetPassword />} />
       </Route>
 
-      {/* ===================== Admin Dashboard Routes ===================== */}
+      {/* ===================== ADMIN DASHBOARD ===================== */}
       <Route element={<AdminProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
@@ -178,7 +187,7 @@ const App = () => {
           <Route path="vendors" element={<AdminVendors />} />
           <Route path="vendors/:vendorId" element={<AdminVendorDetails />} />
           <Route path="products" element={<AdminProducts />} />
-          <Route path="products/:productId" element={<ProductDetails />} />
+          <Route path="products/:productId" element={<AdminProductDetails />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
           <Route path="payments" element={<AdminPayments />} />
@@ -188,7 +197,7 @@ const App = () => {
         </Route>
       </Route>
 
-      {/* ===================== Default Route ===================== */}
+      {/* ===================== 404 ===================== */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
