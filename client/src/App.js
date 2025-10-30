@@ -84,6 +84,7 @@ import AdminResetPassword from "./pages/Admin/AdminResetPassword";
 import ProductDetails from "./pages/Admin/ProductDetails";
 import AdminVendorDetails from "./pages/Admin/AdminVendorDetails";
 import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
+import Category from "./pages/category/Category";
 
 const App = () => {
   return (
@@ -106,6 +107,7 @@ const App = () => {
       <Route path="/Fashionaids" element={<Layout><Luxury /></Layout>} />
       <Route path="/Designeraids" element={<Layout><Luxury /></Layout>} />
       <Route path="/kidsaids" element={<Layout><Kidsaids /></Layout>} />
+      <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
 
       {/* ===================== User Auth Routes ===================== */}
       <Route element={<UserPublicRoute />}>

@@ -98,7 +98,7 @@ const UsersManagement = () => {
       </div>
 
       {/* Search */}
-      <div className="mb-4 flex gap-2 flex-wrap">
+      <div className="mb-4 flex gap-2 flex-wrap bg-white shadow-sm p-4 rounded-lg">
         <input
           type="text"
           placeholder="Search by name, email or phone"

@@ -18,7 +18,7 @@ export const useAdminStore = create(persist((set, get) => ({
         }),
     logout: () => {
         // remove cookie
-        Cookies.remove("session_cookie_name");
+        // Cookies.remove("session_cookie_name");
 
         // reset state
         return {

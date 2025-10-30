@@ -33,7 +33,7 @@ const Orders = () => {
         withCredentials: true,
       });
       const { success, data } = res.data;
-      console.log(data)
+      // console.log(data)
       if (success) {
         setCounts(data.counts || {});
         setOrders(data.orders || []);
