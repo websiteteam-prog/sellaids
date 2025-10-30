@@ -40,7 +40,10 @@ export const Product = sequelize.define(
       defaultValue: "Regular",
     },
     size: {
-      type: DataTypes.ENUM("XS", "S", "M", "L", "XL", "XXL", "Other"),
+      type: DataTypes.ENUM("XS", "S", "M", "L", "XL", "XXL", "XXXL", "4xl", "5xl", "6xl",
+        "Kids-Upto 3 Months", "Kids-Upto 6 Months", "Kids- 6-9 Months", "Kids- 9-12 Months",
+        "Kids- 1-2 Years", "Kids- 3-4 Years", "Kids- 5-6 Years", "Kids- 7-8 Years",
+        "Kids- 9-10 Years", "Kids- 10-12 Years", "Kids- 13-14 Years", "K 15-16 Years", "Kids- 17-18 Years", "Other"),
       defaultValue: "M",
     },
     size_other: DataTypes.STRING(100),
@@ -91,7 +94,7 @@ export const Product = sequelize.define(
     },
     is_active: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true, 
+      defaultValue: true,
     },
 
     created_at: {
