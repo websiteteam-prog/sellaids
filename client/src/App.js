@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-
+import { setLoginRedirect } from "./api/axiosInstance";
 // ✅ Layouts
 import Layout from "./Layout";
 import VendorDashboardLayout from "./Layout/VendorDashboardLayout";
@@ -78,6 +78,7 @@ import AdminLogin from "./pages/Admin/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import VendorProtectedRoute from "./components/vendor/VendorProtectedRoute";
 import VendorPublicRoute from "./components/vendor/VendorPublicRoute";
+import CheckoutLayout from "./pages/checkout/CheckoutLayout";
 import AdminPublicRoute from "./components/admindashboard/AdminPublicRoute";
 import AdminForgotPassword from "./pages/Admin/AdminForgotPassword";
 import AdminResetPassword from "./pages/Admin/AdminResetPassword";
@@ -128,7 +129,8 @@ const App = () => {
           <Route path="addresses" element={<Addresses />} />
           <Route path="user-payments" element={<Payments />} />
           <Route path="wishlist" element={<Wishlist />} />
-          <Route path="cart" element={<Cart />} />
+          <Route path="cart" element={<Navigate to="/user/checkout" replace />} />
+          <Route path="checkout" element={<CheckoutLayout />} />
           <Route path="support" element={<Support />} />
           <Route path="raise-ticket" element={<RaiseTicket />} />
         </Route>

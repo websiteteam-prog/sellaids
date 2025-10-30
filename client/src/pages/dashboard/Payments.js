@@ -5,92 +5,70 @@ import useCartStore from "../../stores/useCartStore";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
 
-export default function Payments() {
+const CHECKOUT_STORAGE_KEY = "checkout_order_data";
+
+export default function Payments({
+  orderData: propOrderData,   // <-- new prop
+  onSuccess,
+  isCheckoutFlow = false,
+}) {
   const { user, isAuthenticated, fetchUser } = useUserStore();
   const { clearCart } = useCartStore();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const savedOrder = sessionStorage.getItem("orderData");
-  const [orderData, setOrderData] = useState(
-    location.state?.orderData || (savedOrder ? JSON.parse(savedOrder) : null)
-  );
+  const [orderData, setOrderData] = useState(propOrderData);
   const [loading, setLoading] = useState(true);
 
+  /* ------------------------------------------------------------------ */
+  /* 1. Prefer prop (checkout flow) → fallback to session → API fetch   */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
-    if (orderData) {
-      sessionStorage.setItem("orderData", JSON.stringify(orderData));
+    const init = async () => {
+      // 1. Checkout flow – we already have the data
+      if (isCheckoutFlow && propOrderData) {
+        setOrderData(propOrderData);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Try session storage (different key for checkout)
+      const saved = sessionStorage.getItem(CHECKOUT_STORAGE_KEY);
+      if (saved) {
+        setOrderData(JSON.parse(saved));
+        setLoading(false);
+        return;
+      }
+
+      // 3. Dashboard flow – fetch latest pending order
+      if (user?.id) {
+        await fetchLatestOrder();
+      }
+      setLoading(false);
+    };
+
+    init();
+  }, [propOrderData, isCheckoutFlow, user?.id]);
+
+  const fetchLatestOrder = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/payment/user/${user.id}/latest-order`,
+        { withCredentials: true }
+      );
+      setOrderData(res.data.data);
+    } catch (err) {
+      console.error("Failed to fetch latest order:", err);
+      toast.error("Could not load order. Redirecting...");
+      setTimeout(() => navigate("/user"), 1500);
     }
-  }, [orderData]);
+  };
 
-  useEffect(() => {
-    const fetchOrderData = async () => {
-      try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/payment/user/${user.id}/latest-order`,
-          { withCredentials: true }
-        );
-        setOrderData(response.data.data);
-      } catch (err) {
-        console.error("Failed to fetch order data:", err);
-        setTimeout(() => {
-          navigate("/user");
-        }, 1500);
-      }
-    };
-
-    const validateUser = async () => {
-      if (!isAuthenticated || !user?.id) {
-        try {
-          await fetchUser();
-          if (!user?.id) {
-            console.warn("User still not authenticated after fetch");
-            toast.error("Please log in to continue ❌");
-            setTimeout(() => {
-              navigate("/UserAuth/UserLogin", {
-                state: { from: "/user/user-payments" },
-              });
-            }, 1500);
-          }
-        } catch (err) {
-          console.error("Failed to fetch user:", err);
-          toast.error("Authentication failed. Please log in ❌");
-          setTimeout(() => {
-            navigate("/UserAuth/UserLogin", {
-              state: { from: "/user/user-payments" },
-            });
-          }, 1500);
-        }
-      }
-    };
-
-    console.log("orderData:", orderData);
-    console.log("user:", user);
-    validateUser().then(() => {
-      if (!orderData) {
-        console.warn("No order data found, attempting to fetch...");
-        fetchOrderData();
-      } else if (
-        !orderData.key ||
-        !orderData.razorpayOrderId ||
-        !orderData.amount ||
-        !orderData.currency ||
-        !orderData.orderIds
-      ) {
-        console.warn("Invalid orderData:", orderData);
-        toast.error("Invalid order data. Redirecting to dashboard... ❌");
-        setTimeout(() => {
-          navigate("/user");
-        }, 1500);
-      } else {
-        loadRazorpay();
-      }
-    });
-  }, [user, isAuthenticated, fetchUser, orderData, navigate]);
-
+  /* ------------------------------------------------------------------ */
+  /* 2. Load Razorpay script (only once)                               */
+  /* ------------------------------------------------------------------ */
   const loadRazorpay = async () => {
     if (window.Razorpay) {
-      setLoading(false);
       openPayment();
       return;
     }
@@ -100,29 +78,18 @@ export default function Payments() {
     script.async = true;
     document.body.appendChild(script);
 
-    script.onload = () => {
-      setLoading(false);
-      openPayment();
-    };
-
+    script.onload = () => openPayment();
     script.onerror = () => {
-      setLoading(false);
-      toast.error("Failed to load Razorpay. Please try again ❌");
-      setTimeout(() => {
-        navigate("/user");
-      }, 1500);
+      toast.error("Failed to load Razorpay");
+      setTimeout(() => navigate("/user"), 1500);
     };
   };
 
-  // ✅ Updated openPayment() with cancel integration
-  const openPayment = async () => {
-    if (!window.Razorpay) {
-      toast.error("Razorpay not loaded yet. Please try again ❌");
-      setTimeout(() => {
-        navigate("/user");
-      }, 1500);
-      return;
-    }
+  /* ------------------------------------------------------------------ */
+  /* 3. Open Razorpay modal                                             */
+  /* ------------------------------------------------------------------ */
+  const openPayment = () => {
+    if (!window.Razorpay) return;
 
     const options = {
       key: orderData.key,
@@ -131,7 +98,7 @@ export default function Payments() {
       currency: orderData.currency,
       name: "Sellaids",
       description: "Payment for your order",
-      handler: async function (response) {
+      handler: async (response) => {
         try {
           const verifyRes = await axios.post(
             `${process.env.REACT_APP_API_URL}/api/payment/verify`,
@@ -145,34 +112,21 @@ export default function Payments() {
           );
 
           if (verifyRes.data.success) {
-            toast.success("Payment Successful! ✅");
+            toast.success("Payment Successful!");
             await clearCart();
-            sessionStorage.removeItem("orderData");
-            setOrderData(null);
-            setTimeout(() => {
-              navigate("/user");
-            }, 1500);
+            sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+            if (onSuccess) onSuccess();
+            setTimeout(() => navigate("/user"), 1500);
           } else {
-            toast.error("Payment verification failed! ❌");
-            setTimeout(() => {
-              navigate("/user");
-            }, 1500);
+            toast.error("Payment verification failed!");
           }
         } catch (err) {
-          console.error("Verification error:", err);
-          toast.error("Payment verification failed! ❌");
-          setTimeout(() => {
-            navigate("/user");
-          }, 1500);
+          toast.error("Payment verification failed!");
         }
       },
-
-      // 🔴 Handle Razorpay modal close (cancel)
       modal: {
         ondismiss: async () => {
-          console.warn("Payment modal closed by user");
           toast.loading("Cancelling payment...");
-
           try {
             await axios.post(
               `${process.env.REACT_APP_API_URL}/api/payment/cancel`,
@@ -182,38 +136,48 @@ export default function Payments() {
               },
               { withCredentials: true }
             );
-
             toast.dismiss();
-            toast.error("Payment cancelled ❌");
-
-            // Clear session + redirect without refresh
-            sessionStorage.removeItem("orderData");
-            setOrderData(null);
-
+            toast.error("Payment cancelled");
+            sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
             setTimeout(() => navigate("/user"), 1000);
           } catch (err) {
-            console.error("Cancel payment error:", err);
             toast.dismiss();
-            toast.error("Failed to cancel payment ❌");
-            setTimeout(() => navigate("/user"), 1000);
+            toast.error("Failed to cancel payment");
           }
         },
       },
-
       prefill: {
         name: user?.name || "",
         email: user?.email || "",
         contact: user?.mobile || "",
       },
-      theme: {
-        color: "#2563eb",
-      },
+      theme: { color: "#2563eb" },
     };
 
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
 
+  /* ------------------------------------------------------------------ */
+  /* 4. Validation – show error UI                                      */
+  /* ------------------------------------------------------------------ */
+  const isValid =
+    orderData?.key &&
+    orderData?.razorpayOrderId &&
+    orderData?.amount &&
+    orderData?.currency &&
+    Array.isArray(orderData?.orderIds) &&
+    orderData.orderIds.length > 0;
+
+  useEffect(() => {
+    if (!loading && isValid) {
+      loadRazorpay();
+    }
+  }, [loading, isValid]);
+
+  /* ------------------------------------------------------------------ */
+  /* 5. Render                                                          */
+  /* ------------------------------------------------------------------ */
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -223,14 +187,7 @@ export default function Payments() {
     );
   }
 
-  if (
-    !orderData ||
-    !orderData.key ||
-    !orderData.razorpayOrderId ||
-    !orderData.amount ||
-    !orderData.currency ||
-    !orderData.orderIds
-  ) {
+  if (!isValid) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Toaster />
