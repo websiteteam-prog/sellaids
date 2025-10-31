@@ -3,51 +3,48 @@ import { MegaMenu, MensMegaMenu, KidsMegaMenu } from "./MegaMenu";
 import { User, Heart, Search, ShoppingCart, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
-import useCartStore from "../../stores/useCartStore"; // ← Cart store
+import useCartStore from "../../stores/useCartStore";
 import axios from "axios";
 import toast from "react-hot-toast";
-import SearchOverlay from "../../components/SearchOverlay";
+import SearchOverlay from '../../components/SearchOverlay';
 
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated } = useUserStore();
-  const { cart, fetchCart } = useCartStore(); // ← Get cart & fetch
+  const { cart, fetchCart } = useCartStore();
   const cartCount = cart?.length || 0;
 
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // Search Modal
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [womenCategories, setWomenCategories] = useState([]);
-  const [menCategories, setMenCategories] = useState([]);
-  const [kidsCategories, setKidsCategories] = useState([]);
+  const [womenCategories, setWomenCategories] = useState({});
+  const [menCategories, setMenCategories] = useState({});
+  const [kidsCategories, setKidsCategories] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showEmptyCart, setShowEmptyCart] = useState(false);
 
+  // Fetch Categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-
         const res = await axios.get(
           `${process.env.REACT_APP_API_URL}/api/admin/category`,
           { withCredentials: true }
         );
 
         const { success, data, message } = res.data;
-        console.log(data)
-
         if (success && Array.isArray(data)) {
-          const women = data.find(cat => cat.slug === "women");
-          const men = data.find(cat => cat.slug === "men");
-          const kids = data.find(cat => cat.slug === "kids");
+          const women = data.find(cat => cat.slug === "women") || {};
+          const men = data.find(cat => cat.slug === "men") || {};
+          const kids = data.find(cat => cat.slug === "kids") || {};
           setWomenCategories(women);
           setMenCategories(men);
           setKidsCategories(kids);
-          // toast.success(message || "Categories fetched successfully");
         } else {
           toast.error(message || "Failed to fetch categories");
         }
       } catch (err) {
-        console.error("❌ Error fetching categories:", err);
-        // toast.error("Error fetching categories");
+        console.error("Error fetching categories:", err);
       } finally {
         setLoading(false);
       }
@@ -55,15 +52,15 @@ const Header = () => {
 
     fetchCategories();
   }, []);
-  const [showEmptyCart, setShowEmptyCart] = useState(false);
 
-  // Optional: Refresh cart on mount if user is logged in
-  React.useEffect(() => {
+  // Refresh Cart on Auth Change
+  useEffect(() => {
     if (isAuthenticated) {
       fetchCart();
     }
   }, [isAuthenticated, fetchCart]);
 
+  // Logout
   const handleLogout = async () => {
     try {
       await axios.post(
@@ -72,11 +69,10 @@ const Header = () => {
         { withCredentials: true }
       );
       logout();
-      toast.success("You have successfully logged out");
+      toast.success("Logged out successfully");
       setTimeout(() => navigate("/UserAuth/UserLogin"), 1500);
     } catch (err) {
-      console.error("Logout failed:", err);
-      toast.error("Logout failed, please try again.");
+      toast.error("Logout failed");
     }
   };
 
@@ -98,7 +94,6 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow relative z-40">
-
       <nav className="max-w-7xl mx-auto flex justify-between items-center py-2 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <div className="flex items-center">
@@ -109,56 +104,52 @@ const Header = () => {
 
         {/* Desktop Menu */}
         <ul className="hidden sm:flex space-x-4 md:space-x-6 font-medium text-gray-700 items-center h-[60px]">
-
-          {/* 🟣 WOMEN */}
+          {/* WOMEN */}
           <li className="relative group flex h-full items-center cursor-pointer">
             <Link
               to={`/product-category/${womenCategories?.slug}`}
               className="flex items-center hover:text-orange-500 space-x-1"
             >
-              <span>{womenCategories?.name}</span>
+              <span>{womenCategories?.name || "Women"}</span>
               <ChevronDown size={16} />
             </Link>
-
-            {/* Mega Menu */}
             <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 
-                        group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+                          group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
               <MegaMenu womenCategories={womenCategories} />
             </div>
           </li>
 
-          {/* 🔵 MEN */}
+          {/* MEN */}
           <li className="relative group flex h-full items-center cursor-pointer">
             <Link
               to={`/product-category/${menCategories?.slug}`}
               className="flex items-center hover:text-orange-500 space-x-1"
             >
-              <span>{menCategories?.name}</span>
+              <span>{menCategories?.name || "Men"}</span>
               <ChevronDown size={16} />
             </Link>
-
-            {/* Mega Menu */}
             <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 
-                        group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+                          group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
               <MensMegaMenu menCategories={menCategories} />
             </div>
           </li>
 
-          {/* 🟢 KIDS */}
+          {/* KIDS */}
           <li className="relative group flex h-full items-center cursor-pointer">
             <Link
               to={`/product-category/${kidsCategories?.slug}`}
               className="flex items-center hover:text-orange-500 space-x-1"
             >
-              <span>{kidsCategories?.name || "KIDS"}</span>
+              <span>{kidsCategories?.name || "Kids"}</span>
               <ChevronDown size={16} />
             </Link>
-
-            {/* Dropdown */}
-            <KidsMegaMenu kidsCategories={kidsCategories} />
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 
+                          group-hover:visible group-hover:opacity-100 transition-opacity duration-300">
+              <KidsMegaMenu kidsCategories={kidsCategories} />
+            </div>
           </li>
 
-          {/* 🟠 SELL WITH US */}
+          {/* SELL WITH US */}
           <li>
             <Link to="/sellwithus" className="hover:text-orange-500">
               SELL WITH US
@@ -211,13 +202,16 @@ const Header = () => {
             <Heart className="w-5 h-5 hover:text-orange-500" />
           </div>
 
-          {/* Search */}
-          <Search
+          {/* Search Icon → Opens Modal */}
+          <button
             className="w-5 h-5 hover:text-orange-500 cursor-pointer"
             onClick={() => setIsSearchOpen(true)}
-          />
+            title="Search Users"
+          >
+            <Search className="w-5 h-5" />
+          </button>
 
-          {/* CART ICON WITH BADGE */}
+          {/* CART */}
           <div
             className="relative cursor-pointer"
             onClick={handleCartClick}
@@ -240,25 +234,21 @@ const Header = () => {
               <span>WOMEN</span>
               <ChevronDown size={16} />
             </div>
-            <MegaMenu />
+            <div className="mt-2"><MegaMenu womenCategories={womenCategories} /></div>
           </li>
           <li className="relative group">
             <div className="flex items-center hover:text-orange-500 space-x-1">
               <span>MEN</span>
               <ChevronDown size={16} />
             </div>
-            <div className="mt-2">
-              <MensMegaMenu />
-            </div>
+            <div className="mt-2"><MensMegaMenu menCategories={menCategories} /></div>
           </li>
           <li className="relative group">
             <div className="flex items-center hover:text-orange-500 space-x-1">
               <span>KIDS</span>
               <ChevronDown size={16} />
             </div>
-            <div className="mt-2">
-              <KidsMegaMenu />
-            </div>
+            <div className="mt-2"><KidsMegaMenu kidsCategories={kidsCategories} /></div>
           </li>
           <li>
             <Link to="/sellwithus" className="hover:text-orange-500">SELL WITH US</Link>
@@ -294,7 +284,13 @@ const Header = () => {
         </div>
       )}
 
-      {/* Animation */}
+      {/* SEARCH MODAL — POPUP ON ICON CLICK */}
+      <SearchOverlay
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
+
+      {/* ANIMATIONS */}
       <style jsx>{`
         @keyframes fade-in {
           from { opacity: 0; transform: scale(0.95); }
@@ -311,8 +307,6 @@ const Header = () => {
           animation: pulse 1.5s infinite;
         }
       `}</style>
-
-      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 };
