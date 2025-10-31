@@ -9,11 +9,10 @@ export const createOrderController = async (req, res) => {
     return res.status(401).json({ success: false, message: "User not logged in or session expired" });
   }
 
-  const { cartItems, shippingAddress } = req.body;
+  const { cartItems, shippingAddress, finalTotal } = req.body;
 
   try {
-    const result = await createOrderService(userId, cartItems, shippingAddress);
-
+    const result = await createOrderService(userId, cartItems, shippingAddress, finalTotal);
     if (!result.status) {
       return res.status(400).json({ success: false, message: result.message });
     }

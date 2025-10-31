@@ -23,7 +23,7 @@ export const createRazorpayInstance = () => {
   }
 };
 
-export const createOrderService = async (userId, cartItems, shippingAddress) => {
+export const createOrderService = async (userId, cartItems, shippingAddress, finalTotalFromFrontend) => {
   const transaction = await sequelize.transaction();
   try {
     if (!cartItems?.length) {
@@ -52,7 +52,14 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       totalAmount += product.purchase_price * item.quantity;
     }
 
-    // 🧩 Check if a pending order/payment already exists for this user
+    const SHIPPING_FEE = 100;
+    const PLATFORM_FEE = 50;
+    const finalAmount = totalAmount + SHIPPING_FEE + PLATFORM_FEE;
+
+    if (finalTotalFromFrontend && Math.abs(finalTotalFromFrontend - finalAmount) > 0.01) {
+      logger.warn(`Frontend total mismatch: ${finalTotalFromFrontend} vs ${finalAmount}`);
+    }
+
     const existingPayment = await Payment.findOne({
       where: { user_id: userId, payment_status: "pending" },
       include: [{ model: Order, as: "order" }],
@@ -61,7 +68,6 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
 
     let razorpayOrder, orders = [], payment;
 
-    // 🧩 Create Razorpay instance
     const razorpay = createRazorpayInstance();
     if (!razorpay) {
       await transaction.rollback();
@@ -69,16 +75,14 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
     }
 
     if (existingPayment) {
-      // ✅ Reuse old Razorpay order if exists
       logger.info(`Reusing existing pending payment for user ${userId}`);
 
       razorpayOrder = {
         id: existingPayment.razorpay_order_id,
-        amount: existingPayment.amount * 100,
+        amount: finalAmount * 100,
         currency: existingPayment.currency || "INR",
       };
 
-      // Update existing orders
       const existingOrders = await Order.findAll({
         where: { user_id: userId, payment_status: "pending" },
         transaction,
@@ -88,7 +92,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
         for (const order of existingOrders) {
           await order.update(
             {
-              total_amount: totalAmount, // updated amount if changed
+              total_amount: totalAmount,
               shipping_address: shippingAddress,
               updated_at: new Date(),
             },
@@ -98,10 +102,12 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
         orders = existingOrders;
       }
 
-      // Update existing payment record
       await existingPayment.update(
         {
-          amount: totalAmount,
+          amount: finalAmount,
+          shipping_fee: SHIPPING_FEE,
+          platform_fee: PLATFORM_FEE,
+          vendor_earning: totalAmount * 0.8,
           updated_at: new Date(),
         },
         { transaction }
@@ -109,14 +115,12 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
 
       payment = existingPayment;
     } else {
-      // 🆕 Create new Razorpay order if no pending exists
       razorpayOrder = await razorpay.orders.create({
-        amount: totalAmount * 100,
+        amount: finalAmount * 100,
         currency: "INR",
         receipt: `receipt_${Date.now()}_${userId}`,
       });
 
-      // Create new order records
       for (const item of cartItems) {
         const product = await Product.findByPk(item.product_id, { transaction });
         const order = await Order.create(
@@ -146,7 +150,6 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
         return { status: false, message: `Vendor ${vendorId} not found` };
       }
 
-      // Create new payment record
       payment = await Payment.create(
         {
           order_id: orders[0].id,
@@ -154,9 +157,10 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
           vendor_id: vendorId,
           payment_method: "razorpay",
           razorpay_order_id: razorpayOrder.id,
-          amount: totalAmount,
+          amount: finalAmount,
+          shipping_fee: SHIPPING_FEE,
+          platform_fee: PLATFORM_FEE,
           vendor_earning: totalAmount * 0.8,
-          platform_fee: totalAmount * 0.2,
           payment_status: "pending",
           payment_date: new Date(),
           payment_info: razorpayOrder,
@@ -170,7 +174,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
 
     logger.info(
       existingPayment
-        ? `Reused existing pending payment ${payment.razorpay_order_id} for user ${userId}`
+        ? `Reused pending payment ${payment.razorpay_order_id} for user ${userId}`
         : `Created new Razorpay order ${razorpayOrder.id} for user ${userId}`
     );
 
@@ -178,7 +182,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress) => 
       status: true,
       data: {
         razorpayOrderId: razorpayOrder.id,
-        amount: razorpayOrder.amount,
+        amount: razorpayOrder.amount / 100,   // ← **IN RUPEES**
         currency: razorpayOrder.currency,
         key: process.env.RAZORPAY_KEY_ID,
         orderIds: orders.map((o) => o.id),

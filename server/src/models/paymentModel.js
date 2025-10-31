@@ -42,7 +42,12 @@ export const Payment = sequelize.define(
     transaction_id: { type: DataTypes.STRING(100), allowNull: true },
     amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
     vendor_earning: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
-    platform_fee: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    platform_fee: { type: DataTypes.DECIMAL(10, 2), defaultValue: 50.0 },
+    shipping_fee: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 100.0,
+    },
     currency: { type: DataTypes.STRING(10), defaultValue: "INR" },
     payment_status: {
       type: DataTypes.ENUM("pending", "success", "failed", "refunded"),
@@ -67,4 +72,3 @@ Payment.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 Payment.belongsTo(User, { foreignKey: "user_id", as: "user" });
 Payment.belongsTo(Vendor, { foreignKey: "vendor_id", as: "vendor" });
 Order.hasOne(Payment, { foreignKey: "order_id", as: "payment" });
-  
