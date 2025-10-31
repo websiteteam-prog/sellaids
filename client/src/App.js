@@ -123,9 +123,9 @@ const App = () => {
       </Route>
       {/* Move UserLogout outside UserPublicRoute to allow logout from any state */}
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
-{/* === USER CHECKOUT FLOW === */}
-           <Route path="/add-to-cart" element={<AddToCartPage />} />
-  <Route path="/checkout" element={<CheckoutPage />} />
+      {/* === USER CHECKOUT FLOW === */}
+      <Route path="/add-to-cart" element={<AddToCartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
       {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
