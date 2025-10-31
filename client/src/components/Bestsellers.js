@@ -1,6 +1,12 @@
 // src/pages/Bestsellers.jsx
 import React, { useState, useEffect } from "react";
-import { Heart, ShoppingCart, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Heart,
+  ShoppingCart,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Slider from "react-slick";
@@ -24,11 +30,13 @@ function Bestsellers() {
   const { isAuthenticated, isUserLoading } = useUserStore();
   const { setPendingAdd } = useCartActions();
 
-  // Fetch bestsellers
+  // ==================== FETCH BESTSELLERS ====================
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`);
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`
+        );
         const topProducts = res.data?.data?.top_products || [];
         setProducts(topProducts);
       } catch (error) {
@@ -42,7 +50,7 @@ function Bestsellers() {
     fetchProducts();
   }, []);
 
-  // AUTO-ADD AFTER LOGIN (Cart & Wishlist)
+  // ==================== AUTO-ADD AFTER LOGIN ====================
   useEffect(() => {
     if (isUserLoading) return;
 
@@ -50,7 +58,7 @@ function Bestsellers() {
     const addToWishlistId = location.state?.addToWishlist;
 
     if (addToCartId && isAuthenticated && products.length > 0) {
-      const product = products.find(p => p.id === addToCartId);
+      const product = products.find((p) => p.id === addToCartId);
       if (product) {
         addToCartDirectly(product);
         navigate(location.pathname, { replace: true, state: {} });
@@ -58,7 +66,7 @@ function Bestsellers() {
     }
 
     if (addToWishlistId && isAuthenticated && products.length > 0) {
-      const product = products.find(p => p.id === addToWishlistId);
+      const product = products.find((p) => p.id === addToWishlistId);
       if (product) {
         addToWishlistDirectly(product);
         navigate("/user/wishlist");
@@ -66,7 +74,7 @@ function Bestsellers() {
     }
   }, [isAuthenticated, isUserLoading, products, location, navigate]);
 
-  // CART: Add to Cart
+  // ==================== ADD TO CART (DIRECT) ====================
   const addToCartDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
@@ -85,7 +93,6 @@ function Bestsellers() {
 
       await fetchCart();
       navigate("/user/checkout");
-
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to add to cart";
       toast.error(msg);
@@ -93,7 +100,7 @@ function Bestsellers() {
       if (error.response?.status === 401) {
         setPendingAdd({ product, from: location.pathname, type: "cart" });
         navigate("/UserAuth/UserLogin", {
-          state: { from: location.pathname, addToCart: product.id }
+          state: { from: location.pathname, addToCart: product.id },
         });
       }
     }
@@ -109,7 +116,7 @@ function Bestsellers() {
       setPendingAdd({ product, from: location.pathname, type: "cart" });
       toast.error("Please log in to add to cart");
       navigate("/UserAuth/UserLogin", {
-        state: { from: location.pathname, addToCart: product.id }
+        state: { from: location.pathname, addToCart: product.id },
       });
       return;
     }
@@ -117,7 +124,7 @@ function Bestsellers() {
     addToCartDirectly(product);
   };
 
-  // WISHLIST: Add to Wishlist
+  // ==================== ADD TO WISHLIST (DIRECT) ====================
   const addToWishlistDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
@@ -130,7 +137,6 @@ function Bestsellers() {
 
       toast.success(`${product.name} added to wishlist!`);
       navigate("/user/wishlist");
-
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to add to wishlist";
       toast.error(msg);
@@ -138,7 +144,7 @@ function Bestsellers() {
       if (error.response?.status === 401) {
         setPendingAdd({ product, from: location.pathname, type: "wishlist" });
         navigate("/UserAuth/UserLogin", {
-          state: { from: location.pathname, addToWishlist: product.id }
+          state: { from: location.pathname, addToWishlist: product.id },
         });
       }
     }
@@ -154,7 +160,7 @@ function Bestsellers() {
       setPendingAdd({ product, from: location.pathname, type: "wishlist" });
       toast.error("Please log in to add to wishlist");
       navigate("/UserAuth/UserLogin", {
-        state: { from: location.pathname, addToWishlist: product.id }
+        state: { from: location.pathname, addToWishlist: product.id },
       });
       return;
     }
@@ -162,7 +168,7 @@ function Bestsellers() {
     addToWishlistDirectly(product);
   };
 
-  // Auto-close popup
+  // ==================== AUTO-CLOSE POPUP ====================
   useEffect(() => {
     if (cartPopup) {
       const timer = setTimeout(() => setCartPopup(null), 4000);
@@ -170,7 +176,7 @@ function Bestsellers() {
     }
   }, [cartPopup]);
 
-  // Slider Arrows
+  // ==================== SLIDER ARROWS ====================
   const PrevArrow = ({ onClick }) => (
     <button
       onClick={onClick}
@@ -205,6 +211,7 @@ function Bestsellers() {
     ],
   };
 
+  // ==================== LOADING & EMPTY STATE ====================
   if (loading) {
     return (
       <div className="py-16 text-center">
@@ -214,12 +221,18 @@ function Bestsellers() {
   }
 
   if (products.length === 0) {
-    return <div className="text-center py-16 text-gray-500 text-lg">No bestseller products available.</div>;
+    return (
+      <div className="text-center py-16 text-gray-500 text-lg">
+        No bestseller products available.
+      </div>
+    );
   }
 
+  // ==================== PRODUCT CARD COMPONENT ====================
   const ProductCard = ({ product }) => (
     <div className="px-3">
       <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 rounded-lg">
+        {/* Image */}
         <div className="relative overflow-hidden bg-gray-50">
           <img
             src={
@@ -229,11 +242,15 @@ function Bestsellers() {
             }
             alt={product.name}
             className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
-            onError={(e) => (e.target.src = "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")}
+            onError={(e) =>
+              (e.target.src =
+                "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
+            }
           />
 
+          {/* Hover Actions */}
           <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
-            {/* WISHLIST */}
+            {/* Wishlist */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -244,7 +261,7 @@ function Bestsellers() {
               <Heart size={20} />
             </button>
 
-            {/* CART */}
+            {/* Cart */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -255,11 +272,11 @@ function Bestsellers() {
               <ShoppingCart size={20} />
             </button>
 
-            {/* VIEW */}
+            {/* View → Product Details */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/product/${product.id}`);
+                navigate(`/product-details/${product.id}`);
               }}
               className="text-gray-600 hover:text-orange-600 transition"
             >
@@ -268,12 +285,16 @@ function Bestsellers() {
           </div>
         </div>
 
+        {/* Details */}
         <div className="p-4 text-center bg-white">
-          <h3 className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition">
-            <a href={`/product/${product.id}`} className="block">
-              {product.name}
-            </a>
+          {/* Product Name → Clickable */}
+          <h3
+            className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition cursor-pointer"
+            onClick={() => navigate(`/product-details/${product.id}`)}
+          >
+            {product.name}
           </h3>
+
           <p className="text-lg font-bold text-black mt-2">
             ₹{parseFloat(product.price).toLocaleString("en-IN")}
           </p>
@@ -282,6 +303,7 @@ function Bestsellers() {
     </div>
   );
 
+  // ==================== MAIN RENDER ====================
   return (
     <>
       <div className="bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 mt-[-60px]">
@@ -290,6 +312,7 @@ function Bestsellers() {
             Bestseller
           </h2>
 
+          {/* Grid or Slider */}
           {products.length <= 4 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
@@ -308,7 +331,7 @@ function Bestsellers() {
         </div>
       </div>
 
-      {/* SUCCESS POPUP */}
+      {/* ==================== SUCCESS POPUP ==================== */}
       {cartPopup && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-green-500 shadow-2xl p-4 flex items-center justify-between z-50 animate-slide-up max-w-7xl mx-auto rounded-t-xl">
           <div className="flex items-center gap-4 flex-1">
@@ -323,7 +346,9 @@ function Bestsellers() {
               </div>
             </div>
             <div>
-              <p className="font-semibold text-sm line-clamp-1">{cartPopup.name}</p>
+              <p className="font-semibold text-sm line-clamp-1">
+                {cartPopup.name}
+              </p>
               <p className="text-sm text-green-600 font-medium">
                 ₹{Number(cartPopup.price).toLocaleString("en-IN")} added to cart
               </p>
@@ -350,6 +375,7 @@ function Bestsellers() {
         </div>
       )}
 
+      {/* Animation */}
       <style jsx>{`
         @keyframes slide-up {
           from {
