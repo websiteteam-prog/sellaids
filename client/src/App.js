@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-// import { setLoginRedirect } from "./api/axiosInstance"; // ← Not used → remove if not needed
+import { setLoginRedirect } from "./api/axiosInstance";
 
 // Layouts
 import Layout from "./Layout";
@@ -117,7 +117,7 @@ const App = () => {
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
 
       {/* Product Details - User */}
-      <Route path="/product-details" element={<Layout><UserProductDetails /></Layout>} />
+     <Route path="/product-details/:productId" element={<UserProductDetails />} />
 
       {/* Checkout Flow - Public */}
       {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />

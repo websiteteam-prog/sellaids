@@ -1,5 +1,6 @@
 // src/components/ProductDetails.js
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Star,
   StarHalf,
@@ -9,9 +10,14 @@ import {
   ChevronRight,
   Send,
 } from "lucide-react";
-import api from "../api/axiosInstance"; // Correct path after moving api/ inside src/
+import api from "../api/axiosInstance";
 
-const ProductDetails = ({ productId = 2 }) => {
+const ProductDetails = () => {
+  // GET PRODUCT ID FROM URL
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const id = parseInt(productId);
+
   // ==================== MOCK REVIEWS (API not available) ====================
   const [allReviews, setAllReviews] = useState([
     { author: "Sarah Johnson", date: "2 weeks ago", rating: 5, text: "Absolutely stunning quality! The leather is incredibly soft and the craftsmanship is exceptional. Worth every penny!" },
@@ -26,6 +32,7 @@ const ProductDetails = ({ productId = 2 }) => {
     { author: "Rahul Verma", date: "2 weeks ago", rating: 4, text: "Nice, but color slightly different." },
   ]);
 
+  // ==================== RELATED PRODUCTS (MOCK) ====================
   const relatedProducts = [
     { id: 1, name: "Leather Wallet", price: 89, oldPrice: 120, rating: 4.7 },
     { id: 2, name: "Crossbody Bag", price: 149, oldPrice: 200, rating: 4.8 },
@@ -59,24 +66,30 @@ const ProductDetails = ({ productId = 2 }) => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({ author: "", rating: 5, text: "" });
 
+  // Related Products Carousel
+  const [carouselStart, setCarouselStart] = useState(0);
+  const visibleCount = 4;
+
   // ==================== FETCH PRODUCT ====================
   useEffect(() => {
     const fetchProduct = async () => {
+      if (!id) {
+        setError("Invalid product ID");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const response = await api.get(`/api/product/products/${productId}`);
-        
+        const response = await api.get(`/api/product/products/${id}`);
+
         if (response.data.success) {
           const apiProduct = response.data.data.product;
           setProduct(apiProduct);
 
-          // Set default color & size after load
-          if (apiProduct.colors && apiProduct.colors.length > 0) {
-            setSelectedColor(apiProduct.colors[0]);
-          }
-          if (apiProduct.sizes && apiProduct.sizes.length > 0) {
-            setSelectedSize(apiProduct.sizes[0]);
-          }
+          // Set defaults
+          if (apiProduct.colors?.length > 0) setSelectedColor(apiProduct.colors[0]);
+          if (apiProduct.sizes?.length > 0) setSelectedSize(apiProduct.sizes[0]);
         } else {
           setError("Product not found");
         }
@@ -88,11 +101,11 @@ const ProductDetails = ({ productId = 2 }) => {
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [id]);
 
   // ==================== HANDLE ADD REVIEW ====================
   const handleAddReview = () => {
-    if (newReview.author && newReview.text) {
+    if (newReview.author.trim() && newReview.text.trim()) {
       const updatedReviews = [
         { ...newReview, date: "Just now" },
         ...allReviews,
@@ -105,9 +118,6 @@ const ProductDetails = ({ productId = 2 }) => {
   };
 
   // ==================== CAROUSEL LOGIC ====================
-  const [carouselStart, setCarouselStart] = useState(0);
-  const visibleCount = 4;
-
   const nextSlide = () => {
     if (carouselStart < relatedProducts.length - visibleCount) {
       setCarouselStart(carouselStart + 1);
@@ -130,26 +140,20 @@ const ProductDetails = ({ productId = 2 }) => {
         {Array.from({ length: full }).map((_, i) => (
           <Star
             key={i}
-            className={`${
-              size === "sm" ? "w-4 h-4" : "w-5 h-5"
-            } fill-orange-500 text-orange-500`}
+            className={`${size === "sm" ? "w-4 h-4" : "w-5 h-5"} fill-orange-500 text-orange-500`}
           />
         ))}
 
         {half && (
           <StarHalf
-            className={`${
-              size === "sm" ? "w-4 h-4" : "w-5 h-5"
-            } fill-orange-500 text-orange-500`}
+            className={`${size === "sm" ? "w-4 h-4" : "w-5 h-5"} fill-orange-500 text-orange-500`}
           />
         )}
 
         {Array.from({ length: 5 - full - (half ? 1 : 0) }).map((_, i) => (
           <Star
             key={`empty-${i}`}
-            className={`${
-              size === "sm" ? "w-4 h-4" : "w-5 h-5"
-            } text-gray-400`}
+            className={`${size === "sm" ? "w-4 h-4" : "w-5 h-5"} text-gray-400`}
           />
         ))}
       </div>
@@ -173,7 +177,7 @@ const ProductDetails = ({ productId = 2 }) => {
     );
   }
 
-  // ==================== RENDER ====================
+  // ==================== MAIN RENDER ====================
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
       {/* ==================== PRODUCT SECTION ==================== */}
@@ -473,7 +477,10 @@ const ProductDetails = ({ productId = 2 }) => {
                   className="flex-shrink-0 w-full md:w-1/4"
                   style={{ minWidth: `calc(${100 / visibleCount}% - 1.5rem)` }}
                 >
-                  <div className="group cursor-pointer bg-white rounded-lg shadow-sm p-4 hover:shadow-lg transition-all">
+                  <div
+                    onClick={() => navigate(`/product-details/${p.id}`)}
+                    className="group cursor-pointer bg-white rounded-lg shadow-sm p-4 hover:shadow-lg transition-all"
+                  >
                     <div className="bg-gray-100 rounded-lg overflow-hidden mb-3 aspect-square">
                       <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 group-hover:scale-105 transition" />
                     </div>

@@ -25,7 +25,7 @@ function LuxuryHighlight() {
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16 grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left big image */}
-            <div className="relative group h-[300px] md:h-[600px] overflow-hidden">
+            <div className="relative group h-[300px] md:h-[624px] overflow-hidden">
                 <img
                     src={categories[0].image}
                     alt={categories[0].title}
