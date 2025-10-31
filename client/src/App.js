@@ -25,7 +25,7 @@ import Blogs from "./pages/Blogs";
 import Luxury from "./pages/Luxury";
 
 // Product Details (User & Admin - Renamed to avoid conflict)
-import UserProductDetails from "./components/ProductDetails";
+import ProductDetails from "./components/ProductDetails";
 import AdminProductDetails from "./pages/Admin/ProductDetails";
 
 // Aids
@@ -117,8 +117,7 @@ const App = () => {
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
 
       {/* Product Details - User */}
-     <Route path="/product-details/:productId" element={<UserProductDetails />} />
-
+  <Route path="/product-details/:productId" element={<ProductDetails />} />
       {/* Checkout Flow - Public */}
       {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />
       <Route path="/checkout" element={<Layout><CheckoutPage /></Layout>} /> */}

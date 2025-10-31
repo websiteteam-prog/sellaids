@@ -143,7 +143,7 @@ export const getAllProductsService = async (query, vendorId, isAdmin) => {
   };
 };
 
-export const getProductByIdService = async (id, vendorId, isAdmin) => {
+export const getProductByIdService = async (id) => {
   const product = await Product.findOne({
     where: { id },
     include: [

@@ -276,7 +276,7 @@ function Bestsellers() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/product-details/${product.id}`); // FINAL PATH
+                navigate(`/product-details/${product.id}`);
               }}
               className="text-gray-600 hover:text-orange-600 transition"
             >
@@ -290,7 +290,7 @@ function Bestsellers() {
           {/* Product Name → Clickable */}
           <h3
             className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition cursor-pointer"
-            onClick={() => navigate(`/product-details/${product.id}`)} // FINAL PATH
+            onClick={() => navigate(`/product-details/${product.id}`)}
           >
             {product.name}
           </h3>
