@@ -131,8 +131,10 @@ const App = () => {
       </Route>
 
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
-
-      {/* ===================== USER DASHBOARD ===================== */}
+      {/* === USER CHECKOUT FLOW === */}
+      <Route path="/add-to-cart" element={<AddToCartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
           <Route index element={<DashboardHome />} />
