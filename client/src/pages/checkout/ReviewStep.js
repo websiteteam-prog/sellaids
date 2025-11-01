@@ -15,6 +15,9 @@ export default function ReviewStep({
     total = 0,
     discount = 0,
     orderTotal = 0,
+    finalTotal = 0,
+    shippingFee = 100,
+    platformFee = 50,
   } = orderData || {};
 
   const [shippingAddress, setShippingAddress] = useState(parentAddress);
@@ -22,7 +25,6 @@ export default function ReviewStep({
   const [addr, setAddr] = useState({ line: "", city: "", pin: "" });
   const [loading, setLoading] = useState(false);
 
-  /* ---------- ADDRESS ---------- */
   const parseAddress = (addr) => {
     const parts = addr.split(", ");
     if (parts.length === 3) {
@@ -57,9 +59,8 @@ export default function ReviewStep({
       setShippingAddress(full);
       setAddr({ line, city, pin });
       onAddressUpdate(full);
-
       setIsEditing(false);
-      setTimeout(() => toast.success("Address saved"), 0);
+      toast.success("Address saved");
     } catch (err) {
       toast.error("Failed to save address");
     }
@@ -71,12 +72,10 @@ export default function ReviewStep({
   };
 
   /* ---------- IMAGE SLIDER LOGIC ---------- */
-  const [activeImages, setActiveImages] = useState({}); // { product_id: index }
+  const [activeImages, setActiveImages] = useState({});
 
-  // Helper – collect every possible image for a product
   const getProductImages = (product) => {
     if (!product) return [];
-
     const moreImages = (() => {
       try {
         return JSON.parse(product.more_images || "[]") || [];
@@ -84,7 +83,6 @@ export default function ReviewStep({
         return [];
       }
     })();
-
     return [
       product.front_photo,
       product.back_photo,
@@ -96,36 +94,29 @@ export default function ReviewStep({
     ].filter(Boolean);
   };
 
-const changeImage = (productId, offsetOrIndex) => {
-  setActiveImages((prev) => {
-    const current = prev[productId] ?? 0;
-    const images = getProductImages(
-      cartItems.find((i) => i.product_id === productId)?.product || {}
-    );
+  const changeImage = (productId, offsetOrIndex) => {
+    setActiveImages((prev) => {
+      const current = prev[productId] ?? 0;
+      const images = getProductImages(
+        cartItems.find((i) => i.product_id === productId)?.product || {}
+      );
+      if (images.length === 0) return prev;
 
-    if (images.length === 0) return prev;
-
-    let newIdx;
-
-    if (typeof offsetOrIndex === "number") {
-      if (offsetOrIndex < 0) {
-        // Left arrow: previous
-        newIdx = (current + offsetOrIndex + images.length) % images.length;
-      } else if (offsetOrIndex === 1) {
-        // Right arrow: next
-        newIdx = (current + 1) % images.length;
+      let newIdx;
+      if (typeof offsetOrIndex === "number") {
+        if (offsetOrIndex < 0) {
+          newIdx = (current + offsetOrIndex + images.length) % images.length;
+        } else if (offsetOrIndex === 1) {
+          newIdx = (current + 1) % images.length;
+        } else {
+          newIdx = offsetOrIndex;
+        }
       } else {
-        // Thumbnail click: direct index
-        newIdx = offsetOrIndex;
+        newIdx = (current + 1) % images.length;
       }
-    } else {
-      // Fallback
-      newIdx = (current + 1) % images.length;
-    }
-
-    return { ...prev, [productId]: newIdx };
-  });
-};
+      return { ...prev, [productId]: newIdx };
+    });
+  };
 
   const handleImageError = (e) => {
     e.target.src = "https://via.placeholder.com/96";
@@ -143,12 +134,19 @@ const changeImage = (productId, offsetOrIndex) => {
       const res = await api.post("/api/payment/create-order", {
         cartItems,
         shippingAddress,
+        finalTotal,               // ← **THIS WAS MISSING**
       });
 
       if (!res.data.success) throw new Error(res.data.message);
 
       const razorpayData = res.data.data;
-      const fullOrderData = { ...orderData, ...razorpayData };
+      const fullOrderData = {
+        ...orderData,
+        ...razorpayData,
+        finalTotal,
+        shippingFee,
+        platformFee,
+      };
 
       onNext(fullOrderData);
     } catch (err) {
@@ -163,7 +161,7 @@ const changeImage = (productId, offsetOrIndex) => {
       <Toaster />
       <h2 className="text-2xl font-bold">Review Your Order</h2>
 
-      {/* ---------- ADDRESS ---------- */}
+      {/* ADDRESS */}
       <div className="bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3">
         <MapPin className="w-5 h-5 text-purple-600 mt-1" />
         <div className="flex-1">
@@ -220,7 +218,7 @@ const changeImage = (productId, offsetOrIndex) => {
         </div>
       </div>
 
-      {/* ---------- ITEMS (WITH FULL IMAGE SLIDER) ---------- */}
+      {/* ITEMS */}
       {cartItems.map((item) => {
         const product = item.product;
         const images = getProductImages(product);
@@ -231,10 +229,9 @@ const changeImage = (productId, offsetOrIndex) => {
             key={item.product_id}
             className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
           >
-            {/* ---- IMAGE SLIDER ---- */}
+            {/* IMAGE SLIDER */}
             <div className="flex-shrink-0 w-48">
               <div className="relative">
-                {/* Main image */}
                 <div className="flex justify-center mb-2 min-h-[192px]">
                   <img
                     src={images[activeIdx] || "https://via.placeholder.com/96"}
@@ -244,7 +241,6 @@ const changeImage = (productId, offsetOrIndex) => {
                   />
                 </div>
 
-                {/* Navigation arrows */}
                 {images.length > 1 && (
                   <div className="flex justify-between mt-2">
                     <button
@@ -288,7 +284,6 @@ const changeImage = (productId, offsetOrIndex) => {
                   </div>
                 )}
 
-                {/* Thumbnail strip */}
                 {images.length > 1 && (
                   <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
                     {images.map((img, idx) => (
@@ -308,7 +303,7 @@ const changeImage = (productId, offsetOrIndex) => {
               </div>
             </div>
 
-            {/* ---- PRODUCT DETAILS ---- */}
+            {/* PRODUCT DETAILS */}
             <div className="flex-1">
               <p className="font-medium">{product?.name}</p>
               <div className="flex items-center gap-2 mt-1">
@@ -347,25 +342,35 @@ const changeImage = (productId, offsetOrIndex) => {
         );
       })}
 
-      {/* ---------- PRICE SUMMARY ---------- */}
+      {/* PRICE SUMMARY WITH FEES */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="flex justify-between">
-          <span>Product Total</span>
-          <span>₹{total}</span>
-        </div>
-        {discount > 0 && (
-          <div className="flex justify-between text-green-600">
-            <span>Discount</span>
-            <span>- ₹{discount}</span>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span>Product Total</span>
+            <span>₹{total}</span>
           </div>
-        )}
-        <div className="flex justify-between font-bold mt-2 border-t pt-2">
-          <span>Order Total</span>
-          <span>₹{orderTotal}</span>
+          {discount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Discount</span>
+              <span>- ₹{discount}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span>Shipping Fee</span>
+            <span className="text-green-600">₹{shippingFee}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Platform Fee</span>
+            <span className="text-green-600">₹{platformFee}</span>
+          </div>
+          <div className="flex justify-between font-bold mt-2 border-t pt-2">
+            <span>Final Total</span>
+            <span className="text-purple-600">₹{finalTotal}</span>
+          </div>
         </div>
       </div>
 
-      {/* ---------- BUTTONS ---------- */}
+      {/* BUTTONS */}
       <div className="flex justify-between">
         <button
           onClick={onPrev}
