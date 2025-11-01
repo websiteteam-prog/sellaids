@@ -31,30 +31,29 @@ const Popup = ({ onClose }) => {
 
   // Register State
   const [regForm, setRegForm] = useState({
-    name: "",
-    mobile: "",
-    email: "",
-    password: "",
-    address_line: "",
-    city: "",
-    state: "",
-    pincode: "",
+    name: "", mobile: "", email: "", password: "",
+    address_line: "", city: "", state: "", pincode: ""
   });
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState("");
 
-  // Show popup only if NOT logged in
+  // === POPUP SHOW LOGIC — HAR BAAR DIKHEGA JAB LOGOUT HO ===
   useEffect(() => {
-    if (!isAuthenticated) {
-      const shown = sessionStorage.getItem("popupShown");
-      if (!shown) {
-        setVisible(true);
-        setTimeout(() => setFade(true), 10);
-        sessionStorage.setItem("popupShown", "true");
-      }
+    // Agar user logged in hai → popup nahi dikhao
+    if (isAuthenticated) {
+      setVisible(false);
+      return;
     }
-  }, [isAuthenticated]);
+
+    // Agar logged out hai → popup dikhao (har page load pe)
+    const timer = setTimeout(() => {
+      setVisible(true);
+      setTimeout(() => setFade(true), 100);
+    }, 800); // 0.8s delay for smooth entry
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]); // Re-run jab bhi auth status change ho
 
   const handleClose = () => {
     setFade(false);
@@ -92,40 +91,9 @@ const Popup = ({ onClose }) => {
 
       if (res.data.success) {
         login(res.data.data);
-        toast.dismiss();
         toast.success("Login Successful!");
-
-        if (pendingAdd) {
-          await axios.post(
-            `${process.env.REACT_APP_API_URL}/api/user/cart`,
-            { product_id: pendingAdd.product.id },
-            { withCredentials: true }
-          );
-          await fetchCart();
-          clearPending();
-          navigate("/user/checkout");
-        } else if (location.state?.addToCart) {
-          await axios.post(
-            `${process.env.REACT_APP_API_URL}/api/user/cart`,
-            { product_id: location.state.addToCart },
-            { withCredentials: true }
-          );
-          await fetchCart();
-          toast.success("Added to cart!");
-          navigate("/user/checkout");
-        } else if (location.state?.addToWishlist) {
-          await axios.post(
-            `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
-            { product_id: location.state.addToWishlist },
-            { withCredentials: true }
-          );
-          toast.success("Added to wishlist!");
-          navigate("/user/wishlist");
-        } else {
-          navigate(location.state?.from || "/user");
-        }
-
         handleClose();
+        navigate("/user");
       }
     } catch (err) {
       setLoginError(err.response?.data?.message || "Login failed");
@@ -146,23 +114,17 @@ const Popup = ({ onClose }) => {
     }
   };
 
-  const validateRegister = () => {
-    setRegError("");
+  const handleRegisterSubmit = async () => {
     if (!regForm.name || !regForm.mobile || !regForm.email || !regForm.password) {
-      setRegError("Required fields missing");
-      return false;
+      setRegError("Fill all required fields");
+      return;
     }
     if (regForm.mobile.length !== 10) {
       setRegError("Valid 10-digit mobile");
-      return false;
+      return;
     }
-    return true;
-  };
 
-  const handleRegisterSubmit = async () => {
-    if (!validateRegister()) return;
     setRegLoading(true);
-
     try {
       const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/user/auth/register`,
@@ -182,12 +144,9 @@ const Popup = ({ onClose }) => {
       if (res.data.success) {
         toast.success("Registered! Logging in...");
         login(res.data.data);
-
-        // AUTOFILL LOGIN FORM AFTER REGISTER
         setLoginEmail(regForm.email);
         setLoginPassword(regForm.password);
-        setIsLogin(true); // Switch to login tab
-
+        setIsLogin(true);
         await fetchCart();
         navigate("/user");
         handleClose();
@@ -199,21 +158,26 @@ const Popup = ({ onClose }) => {
     }
   };
 
+  // === RENDER ===
   if (!visible || isAuthenticated) return null;
 
   return (
     <div
-      className={`fixed inset-0 flex justify-center items-center bg-black/60 z-50 transition-opacity duration-300 p-4 ${
+      className={`fixed inset-0 flex justify-center items-center bg-black/60 z-[9999] transition-opacity duration-300 p-4 ${
         fade ? "opacity-100" : "opacity-0"
       }`}
+      onClick={handleClose}
     >
-      <div className="bg-white flex max-w-4xl w-full max-h-[70vh] rounded-xl overflow-hidden shadow-2xl">
+      <div
+        className="bg-white flex max-w-4xl w-full max-h-[70vh] rounded-xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Left Image */}
         <div className="hidden md:block w-1/2">
           <img src={popupImage} alt="Offer" className="h-full w-full object-cover" />
         </div>
 
-        {/* Right Form — SCROLLABLE */}
+        {/* Right Form */}
         <div className="relative w-full md:w-1/2 p-6 overflow-y-auto">
           <button
             onClick={handleClose}
@@ -281,39 +245,14 @@ const Popup = ({ onClose }) => {
               </button>
             </div>
           ) : (
-            /* REGISTER FORM — SCROLLABLE */
+            /* REGISTER FORM */
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Create Account</h2>
               {regError && <p className="text-red-500 text-sm">{regError}</p>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Name"
-                  value={regForm.name}
-                  onChange={handleRegChange}
-                  className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500"
-                  autoComplete="name"
-                />
-                <input
-                  type="text"
-                  name="mobile"
-                  placeholder="Mobile"
-                  value={regForm.mobile}
-                  onChange={handleRegChange}
-                  maxLength={10}
-                  className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500"
-                  autoComplete="tel"
-                />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={regForm.email}
-                  onChange={handleRegChange}
-                  className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500"
-                  autoComplete="email"
-                />
+                <input type="text" name="name" placeholder="Name" value={regForm.name} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="mobile" placeholder="Mobile" value={regForm.mobile} onChange={handleRegChange} maxLength={10} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="email" name="email" placeholder="Email" value={regForm.email} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
                 <div className="relative">
                   <input
                     type={showRegPassword ? "text" : "password"}
@@ -321,8 +260,7 @@ const Popup = ({ onClose }) => {
                     placeholder="Password"
                     value={regForm.password}
                     onChange={handleRegChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 focus:ring-2 focus:ring-orange-500"
-                    autoComplete="new-password"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12"
                   />
                   <button
                     type="button"
@@ -332,43 +270,10 @@ const Popup = ({ onClose }) => {
                     {showRegPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                <input
-                  type="text"
-                  name="address_line"
-                  placeholder="Address"
-                  value={regForm.address_line}
-                  onChange={handleRegChange}
-                  className="md:col-span-2 border border-gray-300 rounded-lg px-4 py-3"
-                  autoComplete="street-address"
-                />
-                <input
-                  type="text"
-                  name="city"
-                  placeholder="City"
-                  value={regForm.city}
-                  onChange={handleRegChange}
-                  className="border border-gray-300 rounded-lg px-4 py-3"
-                  autoComplete="address-level2"
-                />
-                <input
-                  type="text"
-                  name="state"
-                  placeholder="State"
-                  value={regForm.state}
-                  onChange={handleRegChange}
-                  className="border border-gray-300 rounded-lg px-4 py-3"
-                  autoComplete="address-level1"
-                />
-                <input
-                  type="text"
-                  name="pincode"
-                  placeholder="Pincode"
-                  value={regForm.pincode}
-                  onChange={handleRegChange}
-                  maxLength={6}
-                  className="border border-gray-300 rounded-lg px-4 py-3"
-                  autoComplete="postal-code"
-                />
+                <input type="text" name="address_line" placeholder="Address" value={regForm.address_line} onChange={handleRegChange} className="md:col-span-2 border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="city" placeholder="City" value={regForm.city} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="state" placeholder="State" value={regForm.state} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="pincode" placeholder="Pincode" value={regForm.pincode} onChange={handleRegChange} maxLength={6} className="border border-gray-300 rounded-lg px-4 py-3" />
               </div>
               <button
                 onClick={handleRegisterSubmit}

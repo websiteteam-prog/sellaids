@@ -117,7 +117,7 @@ const App = () => {
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
 
       {/* Product Details - User */}
-  <Route path="/product-details/:productId" element={<ProductDetails />} />
+  <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />
       {/* Checkout Flow - Public */}
       {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />
       <Route path="/checkout" element={<Layout><CheckoutPage /></Layout>} /> */}
