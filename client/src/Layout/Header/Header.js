@@ -295,7 +295,7 @@ const Header = () => {
       )}
 
       {/* Animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes fade-in {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }

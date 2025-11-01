@@ -36,6 +36,13 @@ const config = {
     razorpayKeyId: process.env.RAZORPAY_KEY_ID,
     razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET,
   },
+  xpressbees: {
+    baseUrl: process.env.XPRESSBEES_API_BASE_URL,
+    username: process.env.XPRESSBEES_USERNAME,
+    password: process.env.XPRESSBEES_PASSWORD,
+    clientId: process.env.XPRESSBEES_CLIENT_ID,
+    clientSecret: process.env.XPRESSBEES_CLIENT_SECRET,
+  },
 };
 
 export default config;

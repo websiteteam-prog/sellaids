@@ -83,6 +83,7 @@ import AdminVendors from "./pages/Admin/Vendors";
 import AdminProducts from "./pages/Admin/Products";
 import AdminOrders from "./pages/Admin/Orders";
 import AdminPayments from "./pages/Admin/Payments";
+import AdminReviews from "./pages/Admin/Reviews"
 import AdminReports from "./pages/Admin/Reports";
 import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
@@ -133,8 +134,8 @@ const App = () => {
 
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
       {/* === USER CHECKOUT FLOW === */}
-      <Route path="/add-to-cart" element={<AddToCartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
+      {/* <Route path="/add-to-cart" element={<AddToCartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} /> */}
       {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
@@ -195,6 +196,7 @@ const App = () => {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
           <Route path="payments" element={<AdminPayments />} />
+          <Route path="reviews" element={<AdminReviews />} />
           {/* <Route path="reports" element={<AdminReports />} /> */}
           <Route path="profile-settings" element={<Profilesetting />} />
           <Route path="security" element={<AdminSecurity />} />
