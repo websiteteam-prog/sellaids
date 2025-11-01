@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import { setLoginRedirect } from "./api/axiosInstance";
-
+import { useUserStore } from "./stores/useUserStore";
 // Layouts
 import Layout from "./Layout";
 import VendorDashboardLayout from "./Layout/VendorDashboardLayout";
@@ -95,6 +95,11 @@ import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
 import Category from "./pages/category/Category";
 
 const App = () => {
+const hydrate = useUserStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate(); // ← Cookie se token load karega
+  }, [hydrate]);
   return (
     <Routes>
       {/* ===================== PUBLIC ROUTES ===================== */}
