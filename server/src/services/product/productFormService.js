@@ -9,12 +9,20 @@ import { Vendor } from "../../models/vendorModel.js";
 
 export const createProductService = async (vendorId, data, images) => {
   try {
-     // Step 1: Clean strings and generate prefix (ignore special chars)
-    const cleanGroup = (data.product_group || "XX").replace(/[^a-zA-Z]/g, "").toUpperCase();
-    const cleanType = (data.product_type || "XX").replace(/[^a-zA-Z]/g, "").toUpperCase();
-    const prefix = `SA/${cleanGroup.slice(0, 2)}/${cleanType.slice(0, 2)}`;
+    // === STEP 1: Generate SKU ===
+    const cleanGroup = (data.product_group || "XX")
+      .replace(/[^a-zA-Z]/g, "")
+      .toUpperCase()
+      .slice(0, 2);
 
-    // Step 2: Find last SKU with that prefix
+    const cleanType = (data.product_type || "XX")
+      .replace(/[^a-zA-Z]/g, "")
+      .toUpperCase()
+      .slice(0, 2);
+
+    const prefix = `SA/${cleanGroup}/${cleanType}`;
+
+    // Find last product with same prefix
     const lastProduct = await Product.findOne({
       where: {
         sku: sequelize.where(
@@ -24,24 +32,60 @@ export const createProductService = async (vendorId, data, images) => {
         ),
       },
       order: [["id", "DESC"]],
+      attributes: ["sku"],
     });
 
-    // Step 3: Determine next number
+    // Generate next number
     let nextNumber = 1;
-    if (lastProduct && lastProduct.sku) {
+    if (lastProduct?.sku) {
       const match = lastProduct.sku.match(/(\d+)$/);
-      if (match) {
-        nextNumber = parseInt(match[1]) + 1;
-      }
+      if (match) nextNumber = parseInt(match[1], 10) + 1;
     }
 
-    // Step 4: Build final SKU
     const sku = `${prefix}/${String(nextNumber).padStart(2, "0")}`;
 
-    // Step 5: Prepare data
+    // === STEP 2: Prepare Final Product Data ===
     const productData = {
-      ...data,
+      // Core fields
       vendor_id: vendorId,
+      category_id: parseInt(data.category_id, 10),
+      product_group: data.product_group?.trim() || null,
+      product_type: data.product_type?.trim() || null,
+      product_condition: data.product_condition || "new",
+      fit: data.fit || "Regular",
+      product_color: data.product_color?.trim() || null,
+      brand: data.brand?.trim() || null,
+      model_name: data.model_name?.trim() || null,
+
+      // Yes/No fields
+      invoice: data.invoice || "No",
+      needs_repair: data.needs_repair || "No",
+      original_box: data.original_box || "No",
+      dust_bag: data.dust_bag || "No",
+
+      // Optional text
+      additional_items: data.additional_items?.trim() || null,
+      reason_to_sell: data.reason_to_sell?.trim() || null,
+      purchase_place: data.purchase_place?.trim() || null,
+      product_link: data.product_link?.trim() || null,
+      additional_info: data.additional_info?.trim() || null,
+
+      // Prices & Year
+      purchase_price: data.purchase_price
+        ? parseInt(data.purchase_price, 10)
+        : null,
+      selling_price: data.selling_price
+        ? parseInt(data.selling_price, 10)
+        : null,
+      purchase_year: data.purchase_year
+        ? parseInt(data.purchase_year, 10)
+        : null,
+
+      // === SIZE LOGIC ===
+      size: null,
+      size_other: null,
+
+      // === IMAGES ===
       front_photo: images.front_photo || null,
       back_photo: images.back_photo || null,
       label_photo: images.label_photo || null,
@@ -51,14 +95,31 @@ export const createProductService = async (vendorId, data, images) => {
       invoice_photo: images.invoice_photo || null,
       repair_photo: images.repair_photo || null,
       more_images: images.more_images || [],
+
+      // Generated
       sku,
+      status: "pending",
+      is_active: true,
     };
 
-    // Step 6: Create product
+    // === HANDLE SIZE & size_other ===
+    if (data.size && data.size !== "Other") {
+      productData.size = data.size;
+    } else if (data.size === "Other") {
+      productData.size = "Other";
+      if (data.size_other?.trim()) {
+        productData.size_other = data.size_other.trim();
+      }
+    }
+    // If size is empty or invalid → remains null
+
+    // === STEP 3: Create Product in DB ===
     const product = await Product.create(productData);
+
     return product;
-  } catch (err) {
-    throw new Error(err.message);
+  } catch (error) {
+    console.error("createProductService Error:", error);
+    throw new Error(error.message || "Failed to create product");
   }
 };
 
@@ -125,12 +186,12 @@ export const getAllProductsService = async (query, vendorId, isAdmin) => {
       {
         model: Category,
         as: "category",
-        attributes: ["id", "name"], 
+        attributes: ["id", "name"],
       },
       {
         model: Vendor,
         as: "vendor",
-        attributes: ["id", "name"], 
+        attributes: ["id", "name"],
       },
     ],
   });
@@ -150,7 +211,9 @@ export const getProductByIdService = async (id) => {
       {
         model: Vendor,
         as: "vendor",
-        attributes: { exclude: ["password", "reset_token", "reset_token_expires"] }, // security
+        attributes: {
+          exclude: ["password", "reset_token", "reset_token_expires"],
+        }, // security
       },
       {
         model: Category,
@@ -164,7 +227,7 @@ export const getProductByIdService = async (id) => {
   const relatedWhere = {
     id: { [Op.ne]: product.id },
     category_id: product.category_id,
-    status: 'approved',
+    status: "approved",
     is_active: true,
   };
 
@@ -176,7 +239,9 @@ export const getProductByIdService = async (id) => {
       {
         model: Vendor,
         as: "vendor",
-        attributes: { exclude: ["password", "reset_token", "reset_token_expires"] },
+        attributes: {
+          exclude: ["password", "reset_token", "reset_token_expires"],
+        },
       },
       {
         model: Category,
@@ -190,9 +255,13 @@ export const getProductByIdService = async (id) => {
 
 export const getDashboardStatsService = async (vendorId) => {
   try {
-    const totalProducts = await Product.count({ where: { vendor_id: vendorId, is_active: true } });
+    const totalProducts = await Product.count({
+      where: { vendor_id: vendorId, is_active: true },
+    });
 
-    const pendingOrders = await Order.count({ where: { order_status: "pending" , vendor_id: vendorId } });
+    const pendingOrders = await Order.count({
+      where: { order_status: "pending", vendor_id: vendorId },
+    });
 
     const totalEarnings = await Payment.sum("vendor_earning", {
       where: { vendor_id: vendorId, payment_status: "success" },
@@ -254,7 +323,10 @@ export const getEarningsStatsService = async (vendorId) => {
 
     const monthlyEarningSummary = await Payment.findAll({
       attributes: [
-        [sequelize.fn("DATE_FORMAT", sequelize.col("payment_date"), "%Y-%m"), "month"],
+        [
+          sequelize.fn("DATE_FORMAT", sequelize.col("payment_date"), "%Y-%m"),
+          "month",
+        ],
         [sequelize.fn("SUM", sequelize.col("vendor_earning")), "total"],
       ],
       where: { vendor_id: vendorId, payment_status: "success" },

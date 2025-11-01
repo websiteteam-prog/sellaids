@@ -2,6 +2,7 @@ import {
   addReviewService,
   getProductReviewsService,
   deleteReviewService,
+  getAllReviewsService,
 } from "../../services/user/userReviewService.js";
 import logger from "../../config/logger.js";
 
@@ -56,6 +57,28 @@ export const getProductReviewsController = async (req, res) => {
     });
   } catch (error) {
     logger.error(`getProductReviewsController Error: ${error.message}`);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
+export const getAllReviewsController = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20; 
+    const result = await getAllReviewsService(page, limit);
+
+    if (!result.status) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+
+    logger.info(`All reviews fetched – page ${page}`);
+    return res.status(200).json({
+      success: true,
+      message: "All reviews fetched successfully",
+      data: result.data,
+    });
+  } catch (error) {
+    logger.error(`getAllReviewsController Error: ${error.message}`);
     return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
