@@ -24,10 +24,24 @@ export const productSchema = yup.object().shape({
     .oneOf(["Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"])
     .required(),
   size: yup
-    .string()
-    .oneOf(["XS", "S", "M", "L", "XL", "XXL", "Other"])
-    .required(),
-  size_other: yup.string().nullable(),
+  .string()
+  .oneOf([
+    "XS", "S", "M", "L", "XL", "XXL", "XXXL", "4xl", "5xl", "6xl",
+    "Kids-Upto 3 Months", "Kids-Upto 6 Months", "Kids- 6-9 Months", "Kids- 9-12 Months",
+    "Kids- 1-2 Years", "Kids- 3-4 Years", "Kids- 5-6 Years", "Kids- 7-8 Years",
+    "Kids- 9-10 Years", "Kids- 10-12 Years", "Kids- 13-14 Years", "K 15-16 Years",
+    "Kids- 17-18 Years", "Other"
+  ])
+  .required("Size is required"),
+
+size_other: yup
+  .string()
+  .nullable()
+  .when("size", {
+    is: "Other",
+    then: (schema) => schema.required("Custom size is required when size is Other"),
+    otherwise: (schema) => schema.nullable().strip(), // don't send if not needed
+  }),
   product_color: yup.string().required("Product color is required"),
   brand: yup.string().required("Brand is required"),
   model_name: yup

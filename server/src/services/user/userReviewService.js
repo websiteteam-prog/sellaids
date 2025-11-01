@@ -1,4 +1,3 @@
-// services/review/reviewService.js
 import logger from "../../config/logger.js";
 import { Review } from "../../models/reviewModel.js";
 import { Order } from "../../models/orderModel.js";
@@ -78,6 +77,48 @@ export const getProductReviewsService = async (productId, page = 1, limit = 10) 
     };
   } catch (error) {
     logger.error(`getProductReviewsService Error: ${error.message}`);
+    throw error;
+  }
+};
+
+export const getAllReviewsService = async (page = 1, limit = 20) => {
+  try {
+    logger.info(`Fetching ALL reviews – page ${page}, limit ${limit}`);
+
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Review.findAndCountAll({
+      include: [
+        {
+          model: User,
+          attributes: ["name"],
+          as: "user",
+        },
+      ],
+      order: [["created_at", "DESC"]],
+      limit,
+      offset,
+    });
+
+    const avgResult = await Review.findOne({
+      attributes: [[sequelize.fn("AVG", sequelize.col("rating")), "avg"]],
+      raw: true,
+    });
+
+    const average_rating = avgResult?.avg ? parseFloat(avgResult.avg).toFixed(1) : "0";
+
+    return {
+      status: true,
+      data: {
+        reviews: rows,
+        average_rating,
+        total_reviews: count,
+        page,
+        pages: Math.ceil(count / limit),
+      },
+    };
+  } catch (error) {
+    logger.error(`getAllReviewsService Error: ${error.message}`);
     throw error;
   }
 };
