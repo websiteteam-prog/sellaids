@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-// import { setLoginRedirect } from "./api/axiosInstance"; // ← Not used → remove if not needed
+import { setLoginRedirect } from "./api/axiosInstance";
 
 // Layouts
 import Layout from "./Layout";
@@ -25,7 +25,7 @@ import Blogs from "./pages/Blogs";
 import Luxury from "./pages/Luxury";
 
 // Product Details (User & Admin - Renamed to avoid conflict)
-import UserProductDetails from "./components/ProductDetails";
+import ProductDetails from "./components/ProductDetails";
 import AdminProductDetails from "./pages/Admin/ProductDetails";
 
 // Aids
@@ -118,8 +118,7 @@ const App = () => {
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
 
       {/* Product Details - User */}
-      <Route path="/product-details" element={<Layout><UserProductDetails /></Layout>} />
-
+  <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />
       {/* Checkout Flow - Public */}
       {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />
       <Route path="/checkout" element={<Layout><CheckoutPage /></Layout>} /> */}

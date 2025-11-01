@@ -69,7 +69,7 @@ export const removeFromWishlist = async (req, res) => {
         }
 
         const result = await removeFromWishlistService(userId, productId);
-        if (!result.status) {
+        if (!result.success) {
             return res.status(400).json({ success: false, message: result.message || "Failed to remove product" });
         }
 

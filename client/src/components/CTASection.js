@@ -20,7 +20,7 @@ function CTASection() {
                     Sell Your Preowned Collection With Us Today - Simple, Secure And Rewarding.
                 </h2>
                 <Link
-                    to="/sellwithus" 
+                    to="/vendor/login" 
                     className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full text-sm font-semibold tracking-wide transition-all"
                 >
                     Sell Now

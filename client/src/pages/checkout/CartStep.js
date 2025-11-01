@@ -5,7 +5,7 @@ import useWishlistStore from "../../stores/useWishlistStore";
 import api from "../../api/axiosInstance";
 import { toast, Toaster } from "react-hot-toast";
 import { MapPin, Heart, X, Truck, Package } from "lucide-react";
-import QuantitySelector from "../../pages/checkout/QuantitySelector"
+import QuantitySelector from "../../pages/checkout/QuantitySelector";
 
 const STORAGE_KEY = "orderData";
 
@@ -22,7 +22,6 @@ export default function CartStep({ onNext }) {
   /* ---------- IMAGE SLIDER LOGIC ---------- */
   const [activeImages, setActiveImages] = useState({});
 
-  // Helper – collect every possible image for a product
   const getProductImages = (product) => {
     if (!product) return [];
 
@@ -158,12 +157,19 @@ export default function CartStep({ onNext }) {
     );
     const orderTotal = totalProductPrice - discount;
 
+    const SHIPPING_FEE = 100;
+    const PLATFORM_FEE = 50;
+    const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
+
     onNext({
       cartItems: cart,
       shippingAddress,
       total: totalProductPrice,
       discount,
       orderTotal,
+      finalTotal,
+      shippingFee: SHIPPING_FEE,
+      platformFee: PLATFORM_FEE,
     });
   };
 
@@ -178,6 +184,9 @@ export default function CartStep({ onNext }) {
     0
   );
   const orderTotal = totalProductPrice - discount;
+  const SHIPPING_FEE = 100;
+  const PLATFORM_FEE = 50;
+  const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
 
   return (
     <div className="space-y-6">
@@ -395,21 +404,31 @@ export default function CartStep({ onNext }) {
         );
       })}
 
-      {/* PRICE SUMMARY */}
+      {/* PRICE SUMMARY WITH FEES */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="flex justify-between text-sm">
-          <span>Total Product Price</span>
-          <span>₹{totalProductPrice}</span>
-        </div>
-        {discount > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
-            <span>Total Discounts</span>
-            <span>- ₹{discount}</span>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Product Total</span>
+            <span>₹{totalProductPrice}</span>
           </div>
-        )}
-        <div className="flex justify-between font-semibold mt-2 border-t pt-2">
-          <span>Order Total</span>
-          <span>₹{orderTotal}</span>
+          {discount > 0 && (
+            <div className="flex justify-between text-sm text-green-600">
+              <span>Discounts Applied</span>
+              <span>- ₹{discount}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span>Shipping Fee</span>
+            <span className="text-green-600">₹{SHIPPING_FEE}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Platform Fee</span>
+            <span className="text-green-600">₹{PLATFORM_FEE}</span>
+          </div>
+          <div className="flex justify-between font-bold mt-3 pt-3 border-t border-gray-300">
+            <span>Final Total</span>
+            <span className="text-purple-600">₹{finalTotal}</span>
+          </div>
         </div>
       </div>
 
