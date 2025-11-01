@@ -1,9 +1,9 @@
-// src/components/SearchOverlayModal.jsx
+// src/components/ProductSearchOverlayModal.js
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Search, X, User } from "lucide-react";
+import { Search, X, Package } from "lucide-react";
 
-const SearchOverlayModal = ({ isOpen, onClose }) => {
+const ProductSearchOverlayModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // API Search
+  // API Search with Debounce
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -33,8 +33,13 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
       try {
         const res = await axios.get(
           `${process.env.REACT_APP_API_URL}/api/user/search`,
-          { params: { search: query }, withCredentials: true }
+          {
+            params: { search: query },
+            withCredentials: true,
+          }
         );
+
+        console.log("Search API Response:", res.data); // DEBUG
 
         if (res.data.success && Array.isArray(res.data.data)) {
           setResults(res.data.data);
@@ -42,7 +47,7 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
           setResults([]);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Search Error:", err.response?.data || err.message);
         setResults([]);
       } finally {
         setLoading(false);
@@ -66,7 +71,10 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-start justify-center pt-20 px-4">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-start justify-center pt-20 px-4"
+      onClick={onClose}
+    >
       <div
         ref={modalRef}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 animate-in fade-in zoom-in duration-200"
@@ -74,7 +82,7 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Search Users</h2>
+          <h2 className="text-xl font-bold text-gray-800">Search Products</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -92,7 +100,7 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Name, email, mobile..."
+              placeholder="Search by product name, category, or SKU..."
               className="flex-1 outline-none text-lg font-medium text-gray-800"
             />
             {loading && (
@@ -104,28 +112,50 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
           {query && (
             <div className="mt-3 max-h-96 overflow-y-auto border border-gray-200 rounded-xl bg-gray-50">
               {results.length > 0 ? (
-                results.map((user, i) => (
+                results.map((product) => (
                   <div
-                    key={i}
+                    key={product.id}
                     className="flex items-center gap-3 p-4 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors"
+                    onClick={() => {
+                      window.location.href = `/product-details/${product.id}`;
+                      onClose();
+                    }}
                   >
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
-                      {user.name?.[0]?.toUpperCase() || "U"}
-                    </div>
+                    {/* Image */}
+                    {product.front_photo ? (
+                      <img
+                        src={product.front_photo}
+                        alt={product.model_name || product.product_type}
+                        className="w-12 h-12 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/48?text=No+Img";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold">
+                        <Package size={20} />
+                      </div>
+                    )}
+
+                    {/* Product Info */}
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">
-                        {user.name || "No Name"}
+                        {product.model_name || product.product_type || product.sku || "Unnamed Product"}
                       </p>
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                      {user.phone && (
-                        <p className="text-xs text-gray-500">+91 {user.phone}</p>
+                      <p className="text-sm text-gray-600">
+                        SKU: {product.sku || "N/A"}
+                      </p>
+                      {product.selling_price && (
+                        <p className="text-sm text-gray-800 font-medium">
+                          ₹{parseFloat(product.selling_price).toLocaleString()}
+                        </p>
                       )}
                     </div>
                   </div>
                 ))
               ) : (
                 <p className="p-8 text-center text-gray-500">
-                  {loading ? "Searching..." : "No users found"}
+                  {loading ? "Searching..." : "No products found"}
                 </p>
               )}
             </div>
@@ -140,4 +170,4 @@ const SearchOverlayModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default SearchOverlayModal;
+export default ProductSearchOverlayModal;
