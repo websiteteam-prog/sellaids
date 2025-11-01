@@ -3,6 +3,8 @@ import { Review } from "../../models/reviewModel.js";
 import { Order } from "../../models/orderModel.js";
 import { sequelize } from "../../config/db.js";
 import { User } from "../../models/userModel.js";
+import { Product } from "../../models/productModel.js"
+import { Op } from "sequelize";
 
 export const addReviewService = async (userId, product_id, rating, review_text) => {
   try {
@@ -81,18 +83,34 @@ export const getProductReviewsService = async (productId, page = 1, limit = 10) 
   }
 };
 
-export const getAllReviewsService = async (page = 1, limit = 20) => {
+export const getAllReviewsService = async (search = "", page = 1, limit = 20) => {
   try {
-    logger.info(`Fetching ALL reviews – page ${page}, limit ${limit}`);
+    logger.info(`Fetching ALL reviews – page ${page}, limit ${limit}, search: ${search}`);
 
     const offset = (page - 1) * limit;
 
+    const whereCondition = {};
+
+    if (search) {
+      whereCondition[Op.or] = [
+        { "$user.name$": { [Op.like]: `%${search}%` } },
+        { "$product.product_type$": { [Op.like]: `%${search}%` } },
+        { "$product.model_name$": { [Op.like]: `%${search}%` } },
+      ];
+    }
+
     const { count, rows } = await Review.findAndCountAll({
+      where: whereCondition,
       include: [
         {
           model: User,
           attributes: ["name"],
           as: "user",
+        },
+        {
+          model: Product,
+          attributes: ["product_type", "model_name"],
+          as: "product",
         },
       ],
       order: [["created_at", "DESC"]],

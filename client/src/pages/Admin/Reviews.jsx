@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react"; 
+import RatingStars from "../../components/admindashboard/RatingStars";
 
 const ReviewsManagement = () => {
   const [reviews, setReviews] = useState([]);
@@ -12,18 +13,14 @@ const ReviewsManagement = () => {
   const [totalReviews, setTotalReviews] = useState(0);
   const itemsPerPage = 10;
 
-  // === Fetch Reviews from Backend ===
   const fetchReviews = async () => {
     try {
       setLoading(true);
-
-      // 🔹 Uncomment this once your backend is live
-      /*
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/admin/management/review`,
+        `${process.env.REACT_APP_API_URL}/api/user/review`,
         {
           params: {
-            search,
+            search: search.trim(),
             page: currentPage,
             limit: itemsPerPage,
           },
@@ -32,48 +29,16 @@ const ReviewsManagement = () => {
       );
 
       const { success, data, message } = res.data;
-      if (success) {
-        setReviews(data.reviews || []);
-        setTotalReviews(data.total || 0);
-        toast.success(message);
-      } else {
-        setReviews([]);
-        setTotalReviews(0);
-        toast.error(message || "Failed to fetch reviews");
-      }
-      */
+      if (!success) throw new Error(message || "Failed to fetch reviews");
 
-      // 🧩 Dummy data for testing (remove when backend ready)
-      const dummy = {
-        reviews: [
-          {
-            id: 1,
-            userName: "Ajay Sharma",
-            productName: "Wireless Headphones",
-            rating: 4.5,
-            comment: "Excellent sound quality!",
-            date: "2025-10-30",
-            status: "Approved",
-          },
-          {
-            id: 2,
-            userName: "Neha Singh",
-            productName: "Smartwatch",
-            rating: 3.8,
-            comment: "Decent for the price.",
-            date: "2025-10-29",
-            status: "Pending",
-          },
-        ],
-        total: 2,
-      };
-      setReviews(dummy.reviews);
-      setTotalReviews(dummy.total);
+      setReviews(data?.reviews || []);
+      setTotalReviews(data?.total_reviews || 0);
+      if (search.trim()) toast.success(message);
     } catch (err) {
       console.error(err);
       setReviews([]);
       setTotalReviews(0);
-      toast.error("Error fetching reviews");
+      toast.error(err.message || "Error fetching reviews");
     } finally {
       setLoading(false);
     }
@@ -83,9 +48,33 @@ const ReviewsManagement = () => {
     fetchReviews();
   }, [currentPage]);
 
+  // === Search Handler ===
   const handleSearch = () => {
     setCurrentPage(1);
     fetchReviews();
+  };
+
+  // === Delete Review ===
+  const handleDelete = async (reviewId) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+
+    try {
+      const res = await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/user/review/${reviewId}`,
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        toast.success("Review deleted successfully!");
+        // Optimistic update or refetch
+        fetchReviews();
+      } else {
+        toast.error(res.data.message || "Failed to delete review");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Error deleting review");
+    }
   };
 
   // === Export Excel ===
@@ -98,12 +87,11 @@ const ReviewsManagement = () => {
     const ws = XLSX.utils.json_to_sheet(
       reviews.map((r, index) => ({
         SR_No: (currentPage - 1) * itemsPerPage + index + 1,
-        User: r.userName,
-        Product: r.productName,
-        Rating: r.rating,
-        Comment: r.comment,
-        Date: r.date,
-        Status: r.status,
+        User: r?.user?.name || "N/A",
+        Product: r?.product?.product_type || "N/A",
+        Model: r?.product?.model_name || "N/A",
+        Rating: r?.rating || "N/A",
+        Comment: r?.review_text || "N/A",
       }))
     );
     const wb = XLSX.utils.book_new();
@@ -131,7 +119,7 @@ const ReviewsManagement = () => {
       <div className="mb-4 flex gap-2 flex-wrap bg-white shadow-sm p-4 rounded-lg">
         <input
           type="text"
-          placeholder="Search by user, product, or status"
+          placeholder="Search by name, product Name, model Name"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 border rounded-lg flex-1 focus:ring focus:ring-blue-200"
@@ -150,12 +138,12 @@ const ReviewsManagement = () => {
           <thead className="bg-gray-100 text-gray-700">
             <tr>
               <th className="px-4 py-3 border">SR.</th>
-              <th className="px-4 py-3 border">User</th>
-              <th className="px-4 py-3 border">Product</th>
+              <th className="px-4 py-3 border">User Name</th>
+              <th className="px-4 py-3 border">Product Name</th>
+              <th className="px-4 py-3 border">Model Name</th>
               <th className="px-4 py-3 border">Rating</th>
               <th className="px-4 py-3 border">Comment</th>
-              <th className="px-4 py-3 border">Date</th>
-              <th className="px-4 py-3 border">Status</th>
+              <th className="px-4 py-3 border">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -173,25 +161,30 @@ const ReviewsManagement = () => {
               </tr>
             ) : (
               reviews.map((r, index) => (
-                <tr key={r.id} className="hover:bg-gray-50">
+                <tr key={r.id || index} className="hover:bg-gray-50">
                   <td className="px-4 py-3 border">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
-                  <td className="px-4 py-3 border font-medium">{r.userName}</td>
-                  <td className="px-4 py-3 border">{r.productName}</td>
-                  <td className="px-4 py-3 border">{r.rating} ⭐</td>
-                  <td className="px-4 py-3 border">{r.comment}</td>
-                  <td className="px-4 py-3 border">{r.date}</td>
-                  <td
-                    className={`px-4 py-3 border font-medium ${
-                      r.status === "Approved"
-                        ? "text-green-600"
-                        : r.status === "Pending"
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {r.status}
+                  <td className="px-4 py-3 border font-medium">
+                    {r?.user?.name || "N/A"}
+                  </td>
+                  <td className="px-4 py-3 border">
+                    {r?.product?.product_type || "N/A"}
+                  </td>
+                  <td className="px-4 py-3 border">
+                    {r?.product?.model_name || "N/A"}
+                  </td>
+                  <td className="px-4 py-3 border">
+                    <RatingStars rating={r?.rating || 0} />
+                  </td>
+                  <td className="px-4 py-3 border">{r?.review_text || "N/A"}</td>
+                  <td className="px-4 py-3 border text-center">
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
                   </td>
                 </tr>
               ))

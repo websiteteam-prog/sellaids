@@ -284,10 +284,6 @@ const Header = () => {
         </div>
       )}
 
-<<<<<<< HEAD
-      {/* Animation */}
-      <style>{`
-=======
       {/* SEARCH MODAL — POPUP ON ICON CLICK */}
       <SearchOverlay
         isOpen={isSearchOpen}
@@ -295,8 +291,7 @@ const Header = () => {
       />
 
       {/* ANIMATIONS */}
-      <style jsx>{`
->>>>>>> 34ca38abac7e2b9621300283aac9845167bd4a96
+      <style>{`
         @keyframes fade-in {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
