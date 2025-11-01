@@ -21,10 +21,9 @@ const ProductDetails = () => {
   const location = useLocation();
   const id = parseInt(productId);
 
-  const { isAuthenticated, isUserLoading } = useUserStore();
+  const { isAuthenticated, isUserLoading, user } = useUserStore();
   const { setPendingAdd } = useCartActions();
 
-  // States
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -33,24 +32,23 @@ const ProductDetails = () => {
 
   const [quantity, setQuantity] = useState(1);
   const [mainImgIdx, setMainImgIdx] = useState(0);
-
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [newReview, setNewReview] = useState({ author: "", rating: 5, text: "" });
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [newReview, setNewReview] = useState({ rating: 5, text: "" });
 
   const [currentPage, setCurrentPage] = useState(1);
   const reviewsPerPage = 3;
-
   const [carouselStart, setCarouselStart] = useState(0);
   const visibleCount = 4;
 
-  // ==================== SCROLL TO TOP ON LOAD ====================
+  // Scroll to top
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [id, location.key]);
 
-  // ==================== FETCH PRODUCT ====================
+  // Fetch Product + Reviews
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndReviews = async () => {
       if (!id) {
         setError("Invalid product ID");
         setLoading(false);
@@ -61,60 +59,98 @@ const ProductDetails = () => {
         setLoading(true);
         setError(null);
 
-        const response = await api.get(`/api/product/products/${id}`);
-        console.log("API Response:", response.data);
-
-        if (response.data.success && response.data.product) {
-          const raw = response.data.product;
-
-          const mappedProduct = {
-            id: raw.id,
-            name: raw.model_name || raw.product_type || "Unnamed Product",
-            sku: raw.sku || "N/A",
-            price: parseFloat(raw.selling_price) || 0,
-            original_price: parseFloat(raw.purchase_price) || null,
-            description: raw.additional_info || "No description available.",
-            images: [],
-            colors: raw.product_color
-              ? [{ hex: getColorHex(raw.product_color), name: raw.product_color }]
-              : [],
-            sizes: raw.size && raw.size !== "Other" ? [raw.size] : [],
-            condition: raw.product_condition || "Not specified",
-            rating: 4.5,
-            review_count: 0,
-          };
-
-          if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
-          if (raw.more_images) {
-            try {
-              const extra = JSON.parse(raw.more_images);
-              if (Array.isArray(extra)) {
-                mappedProduct.images.push(
-                  ...extra.map((img) =>
-                    img.startsWith("http")
-                      ? img
-                      : `${process.env.REACT_APP_API_URL}${img}`
-                  )
-                );
-              }
-            } catch (e) {}
-          }
-
-          if (response.data.relatedProducts) {
-            setRelatedProducts(
-              response.data.relatedProducts.map((p) => ({
-                id: p.id,
-                name: p.model_name || p.product_type,
-                price: parseFloat(p.selling_price),
-                image: p.front_photo || "https://via.placeholder.com/300",
-                rating: 4.5,
-              }))
-            );
-          }
-
-          setProduct(mappedProduct);
-        } else {
+        // === Fetch Product ===
+        const productRes = await api.get(`/api/product/products/${id}`);
+        if (!productRes.data.success || !productRes.data.product) {
           setError("Product not found");
+          setLoading(false);
+          return;
+        }
+
+        const raw = productRes.data.product;
+        const mappedProduct = {
+          id: raw.id,
+          name: raw.model_name || raw.product_type || "Unnamed Product",
+          sku: raw.sku || "N/A",
+          price: parseFloat(raw.selling_price) || 0,
+          original_price: parseFloat(raw.purchase_price) || null,
+          description: raw.additional_info || "No description available.",
+          images: [],
+          colors: raw.product_color
+            ? [{ hex: getColorHex(raw.product_color), name: raw.product_color }]
+            : [],
+          sizes: raw.size && raw.size !== "Other" ? [raw.size] : [],
+          condition: raw.product_condition || "Not specified",
+          rating: 0,
+          review_count: 0,
+        };
+
+        if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
+        if (raw.more_images) {
+          try {
+            const extra = JSON.parse(raw.more_images);
+            if (Array.isArray(extra)) {
+              mappedProduct.images.push(
+                ...extra.map((img) =>
+                  img.startsWith("http")
+                    ? img
+                    : `${process.env.REACT_APP_API_URL}${img}`
+                )
+              );
+            }
+          } catch (e) {}
+        }
+
+        if (productRes.data.relatedProducts) {
+          setRelatedProducts(
+            productRes.data.relatedProducts.map((p) => ({
+              id: p.id,
+              name: p.model_name || p.product_type,
+              price: parseFloat(p.selling_price),
+              image: p.front_photo || "https://via.placeholder.com/300",
+              rating: 4.5,
+            }))
+          );
+        }
+
+        setProduct(mappedProduct);
+
+        // === Fetch Reviews ===
+        try {
+          const reviewRes = await api.get(`/api/user/review/product/${id}`);
+          console.log("GET Reviews Raw Response:", reviewRes.data);
+
+          if (
+            reviewRes.data.success &&
+            reviewRes.data.data &&
+            Array.isArray(reviewRes.data.data.reviews)
+          ) {
+            const formatted = reviewRes.data.data.reviews.map((r) => ({
+              // YEHI LINE CHANGE KI HAI → user.name ya user_name dono se naam le
+              author: r.user?.name?.trim() || r.user_name?.trim() || "Anonymous",
+              date: new Date(r.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              }),
+              rating: parseInt(r.rating),
+              text: r.review_text || "",
+            }));
+
+            setReviews(formatted);
+
+            const avg = formatted.reduce((s, r) => s + r.rating, 0) / (formatted.length || 1);
+            setProduct((p) => ({
+              ...p,
+              rating: formatted.length ? avg : 0,
+              review_count: formatted.length,
+            }));
+          } else {
+            setReviews([]);
+          }
+        } catch (e) {
+          console.error("GET Reviews Failed:", e.response?.data || e);
+          setReviews([]);
         }
       } catch (err) {
         console.error("Fetch error:", err);
@@ -124,11 +160,11 @@ const ProductDetails = () => {
       }
     };
 
-    fetchProduct();
-  }, [id]);
+    fetchProductAndReviews();
+  }, [id, location.key]);
 
-  // ==================== COLOR HEX ====================
-  const getColorHex = (colorName) => {
+  // === Helpers ===
+  const getColorHex = (c) => {
     const map = {
       red: "#ef4444",
       blue: "#3b82f6",
@@ -139,35 +175,26 @@ const ProductDetails = () => {
       purple: "#a855f7",
       pink: "#ec4899",
     };
-    return map[colorName?.toLowerCase()] || "#6b7280";
+    return map[c?.toLowerCase()] || "#6b7280";
   };
 
-  // ==================== UNIFIED BADGE (GREEN FOR NON-COLOR, HEX FOR COLOR) ====================
   const getUnifiedBadge = (text, bgColor = null) => {
-    const value = text?.trim();
-
-    // Agar actual hex color diya hai (color field ke liye)
-    if (bgColor) {
+    const v = text?.trim();
+    if (bgColor)
       return (
         <span
           className="inline-block px-3 py-1.5 rounded-full text-xs font-medium text-white"
           style={{ backgroundColor: bgColor }}
         >
-          {value || "N/A"}
+          {v || "N/A"}
         </span>
       );
-    }
-
-    // Agar value hai (condition, size) → green badge
-    if (value && value !== "N/A" && value !== "Not specified") {
+    if (v && v !== "N/A" && v !== "Not specified")
       return (
         <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-          {value}
+          {v}
         </span>
       );
-    }
-
-    // Default: N/A
     return (
       <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
         N/A
@@ -175,7 +202,25 @@ const ProductDetails = () => {
     );
   };
 
-  // ==================== ADD TO CART ====================
+  const renderStars = (rating) => {
+    const full = Math.floor(rating || 0);
+    const half = (rating || 0) % 1 >= 0.5;
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 5 }, (_, i) =>
+          i < full ? (
+            <Star key={i} className="w-4 h-4 fill-orange-500 text-orange-500" />
+          ) : i === full && half ? (
+            <StarHalf key={i} className="w-4 h-4 fill-orange-500 text-orange-500" />
+          ) : (
+            <Star key={i} className="w-4 h-4 text-gray-300" />
+          )
+        )}
+      </div>
+    );
+  };
+
+  // === Cart / Wishlist / Share ===
   const handleAddToCart = async () => {
     if (isUserLoading) return toast.error("Please wait...");
     if (!isAuthenticated) {
@@ -186,7 +231,6 @@ const ProductDetails = () => {
       });
       return;
     }
-
     try {
       await api.post("/api/user/cart", { product_id: product.id, quantity });
       toast.success(`${product.name} added to cart!`);
@@ -196,7 +240,6 @@ const ProductDetails = () => {
     }
   };
 
-  // ==================== ADD TO WISHLIST ====================
   const handleAddToWishlist = async () => {
     if (isUserLoading) return;
     if (!isAuthenticated) {
@@ -204,124 +247,101 @@ const ProductDetails = () => {
       navigate("/UserAuth/UserLogin", { state: { from: location.pathname } });
       return;
     }
-
     try {
       await api.post("/api/user/wishlist", { product_id: product.id });
-      toast.success("Product added to wishlist!", {
+      toast.success("Added to wishlist!", {
         icon: <Heart className="w-5 h-5 fill-red-500 text-red-500" />,
-        style: {
-          background: "#fff",
-          color: "#000",
-          border: "1px solid #fecaca",
-          borderRadius: "8px",
-        },
       });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to add to wishlist");
     }
   };
 
-  // ==================== SHARE ====================
   const handleShare = async () => {
     const url = window.location.href;
     const title = product.name;
-
     if (navigator.share) {
-      try {
-        await navigator.share({ title, url });
-      } catch (err) {
-        fallbackShare(url, title);
-      }
-    } else {
-      fallbackShare(url, title);
-    }
+      try { await navigator.share({ title, url }); } catch { fallbackShare(url, title); }
+    } else fallbackShare(url, title);
   };
-
   const fallbackShare = (url, title) => {
     const text = `Check out: ${title} - ${url}`;
-    const whatsapp = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-    const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-
-    const shareWindow = window.open("", "_blank", "width=600,height=400");
-    shareWindow.document.write(`
+    const w = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const f = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    const t = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    const win = window.open("", "_blank", "width=600,height=400");
+    win.document.write(`
       <div style="padding:20px;font-family:Arial;text-align:center;">
         <h3>Share Product</h3>
-        <a href="${whatsapp}" target="_blank" style="display:inline-block;margin:10px;padding:10px 20px;background:#25D366;color:white;border-radius:5px;text-decoration:none;">WhatsApp</a>
-        <a href="${facebook}" target="_blank" style="display:inline-block;margin:10px;padding:10px 20px;background:#1877F2;color:white;border-radius:5px;text-decoration:none;">Facebook</a>
-        <a href="${twitter}" target="_blank" style="display:inline-block;margin:10px;padding:10px 20px;background:#1DA1F2;color:white;border-radius:5px;text-decoration:none;">Twitter</a>
+        <a href="${w}" target="_blank" style="display:inline-block;margin:10px;padding:10px 20px;background:#25D366;color:white;border-radius:5px;text-decoration:none;">WhatsApp</a>
+        <a href="${f}" target="_blank" style="display:inline-block;margin:10px;padding:10px 20px;background:#1877F2;color:white;border-radius:5px;text-decoration:none;">Facebook</a>
+        <a href="${t}" target="_blank" style="display:inline-block;margin:10px;padding:10px 20px;background:#1DA1F2;color:white;border-radius:5px;text-decoration:none;">Twitter</a>
       </div>
     `);
   };
 
-  // ==================== ADD REVIEW ====================
+  // === Submit Review ===
   const handleAddReview = async () => {
-    if (!newReview.author.trim() || !newReview.text.trim()) return;
+    if (!newReview.text.trim()) {
+      toast.error("Review text is required");
+      return;
+    }
 
     try {
-      const res = await api.post(`/api/product/reviews/${id}`, {
+      const payload = {
+        product_id: id,
         rating: newReview.rating,
-        comment: newReview.text,
-      });
+        review_text: newReview.text.trim(),
+      };
+
+      const res = await api.post("/api/user/review", payload);
+      console.log("POST Review Response:", res.data);
 
       if (res.data.success) {
         const newRev = {
-          author: newReview.author,
+          author: user?.name?.trim() || "You",
           date: "Just now",
           rating: newReview.rating,
-          text: newReview.text,
+          text: newReview.text.trim(),
         };
-        setReviews([newRev, ...reviews]);
-        setNewReview({ author: "", rating: 5, text: "" });
+        setReviews((prev) => [newRev, ...prev]);
+        setNewReview({ rating: 5, text: "" });
         setShowReviewForm(false);
         setCurrentPage(1);
+
+        const total = reviews.length + 1;
+        const sum = reviews.reduce((s, r) => s + r.rating, 0) + newReview.rating;
+        setProduct((p) => ({
+          ...p,
+          rating: sum / total,
+          review_count: total,
+        }));
+
         toast.success("Review submitted!");
       }
     } catch (err) {
-      toast.error("Failed to submit review");
+      console.error("POST Review Failed:", err.response?.data || err);
+      toast.error(err.response?.data?.message || "Failed to submit review");
     }
   };
 
-  // ==================== STARS ====================
-  const renderStars = (rating) => {
-    const full = Math.floor(rating || 0);
-    const hasHalf = (rating || 0) % 1 >= 0.5;
-    return (
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: 5 }, (_, i) => (
-          i < full ? (
-            <Star key={i} className="w-4 h-4 fill-orange-500 text-orange-500" />
-          ) : i === full && hasHalf ? (
-            <StarHalf key={i} className="w-4 h-4 fill-orange-500 text-orange-500" />
-          ) : (
-            <Star key={i} className="w-4 h-4 text-gray-300" />
-          )
-        ))}
-      </div>
-    );
-  };
-
-  // ==================== CAROUSEL CONTROLS ====================
+  // === Carousel ===
   const nextSlide = () => {
-    if (carouselStart < relatedProducts.length - visibleCount) {
-      setCarouselStart(carouselStart + 1);
-    }
+    if (carouselStart < relatedProducts.length - visibleCount)
+      setCarouselStart((c) => c + 1);
   };
-
   const prevSlide = () => {
-    if (carouselStart > 0) {
-      setCarouselStart(carouselStart - 1);
-    }
+    if (carouselStart > 0) setCarouselStart((c) => c - 1);
   };
 
-  // ==================== PAGINATION ====================
+  // === Pagination ===
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
   const paginatedReviews = reviews.slice(
     (currentPage - 1) * reviewsPerPage,
     currentPage * reviewsPerPage
   );
 
-  // ==================== LOADING / ERROR ====================
+  // === Render ===
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
@@ -330,7 +350,6 @@ const ProductDetails = () => {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
@@ -344,34 +363,24 @@ const ProductDetails = () => {
       </div>
     );
   }
-
   if (!product) return null;
 
-  // ==================== MAIN RENDER ====================
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
-      {/* ==================== PRODUCT GRID ==================== */}
+      {/* Product Grid */}
       <div className="grid md:grid-cols-2 gap-10 bg-white p-6 rounded-xl shadow-sm">
         {/* Images */}
         <div className="space-y-4">
           <div className="relative bg-gray-100 rounded-lg overflow-hidden">
             <img
-              src={
-                product.images[mainImgIdx] ||
-                "https://via.placeholder.com/600x600/f3f3f3/999?text=No+Image"
-              }
+              src={product.images[mainImgIdx] || "https://via.placeholder.com/600x600/f3f3f3/999?text=No+Image"}
               alt={product.name}
               className="w-full h-auto object-cover aspect-square"
-              onError={(e) =>
-                (e.target.src =
-                  "https://via.placeholder.com/600x600/f3f3f3/999?text=Error")
-              }
+              onError={(e) => (e.target.src = "https://via.placeholder.com/600x600/f3f3f3/999?text=Error")}
             />
             <button
               onClick={() =>
-                setMainImgIdx(
-                  (i) => (i - 1 + product.images.length) % product.images.length
-                )
+                setMainImgIdx((i) => (i - 1 + product.images.length) % product.images.length)
               }
               className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 p-1.5 rounded-full"
             >
@@ -392,9 +401,7 @@ const ProductDetails = () => {
                 key={i}
                 onClick={() => setMainImgIdx(i)}
                 className={`flex-shrink-0 w-20 h-20 rounded-md border-2 overflow-hidden ${
-                  mainImgIdx === i
-                    ? "border-orange-500 ring-2 ring-orange-300"
-                    : "border-gray-300"
+                  mainImgIdx === i ? "border-orange-500 ring-2 ring-orange-300" : "border-gray-300"
                 }`}
               >
                 <img src={src} alt="" className="w-full h-full object-cover" />
@@ -410,9 +417,7 @@ const ProductDetails = () => {
 
           <div className="flex items-center gap-2">
             {renderStars(product.rating)}
-            <span className="text-sm text-gray-600">
-              ({reviews.length} reviews)
-            </span>
+            <span className="text-sm text-gray-600">({product.review_count} reviews)</span>
           </div>
 
           <div className="flex items-baseline gap-2">
@@ -426,9 +431,7 @@ const ProductDetails = () => {
                 </span>
                 <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
                   {Math.round(
-                    ((product.original_price - product.price) /
-                      product.original_price) *
-                      100
+                    ((product.original_price - product.price) / product.original_price) * 100
                   )}
                   % OFF
                 </span>
@@ -436,12 +439,10 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Description */}
           <p className="text-gray-700">{product.description}</p>
 
-          {/* ============== PRODUCT INFO BAR (DESKTOP: 3 COLS, MOBILE: LEFT) ============== */}
+          {/* Info Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
-            {/* Condition */}
             <div className="flex items-center gap-3 flex-1 justify-center sm:justify-start">
               <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,16 +451,12 @@ const ProductDetails = () => {
               </div>
               <div className="text-center sm:text-left">
                 <p className="text-xs text-gray-500 uppercase font-medium">Condition</p>
-                <div className="mt-1.5">
-                  {getUnifiedBadge(product.condition)}
-                </div>
+                <div className="mt-1.5">{getUnifiedBadge(product.condition)}</div>
               </div>
             </div>
 
-            {/* Divider (Desktop Only) */}
             <div className="hidden sm:block w-px bg-gray-300 self-stretch" />
 
-            {/* Color */}
             <div className="flex items-center gap-3 flex-1 justify-center">
               <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -469,15 +466,13 @@ const ProductDetails = () => {
               <div className="text-center">
                 <p className="text-xs text-gray-500 uppercase font-medium">Color</p>
                 <div className="mt-1.5">
-                  {getUnifiedBadge(product.colors[0]?.name || "N/A")}
+                  {getUnifiedBadge(product.colors[0]?.name || "N/A", product.colors[0]?.hex)}
                 </div>
               </div>
             </div>
 
-            {/* Divider (Desktop Only) */}
             <div className="hidden sm:block w-px bg-gray-300 self-stretch" />
 
-            {/* Size */}
             <div className="flex items-center gap-3 flex-1 justify-center sm:justify-end">
               <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -486,9 +481,7 @@ const ProductDetails = () => {
               </div>
               <div className="text-center sm:text-center">
                 <p className="text-xs text-gray-500 uppercase font-medium">Size</p>
-                <div className="mt-1.5">
-                  {getUnifiedBadge(product.sizes[0] || "N/A")}
-                </div>
+                <div className="mt-1.5">{getUnifiedBadge(product.sizes[0] || "N/A")}</div>
               </div>
             </div>
           </div>
@@ -536,44 +529,72 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* ==================== REVIEWS SECTION ==================== */}
+      {/* Reviews Section */}
       <section className="mt-16 bg-white p-6 rounded-xl shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Customer Reviews</h2>
-          <button
-            onClick={() => setShowReviewForm(!showReviewForm)}
-            className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700"
-          >
-            Write a Review
-          </button>
+
+          {isAuthenticated ? (
+            <button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700"
+            >
+              Write a Review
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowLoginPrompt(true)}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700"
+            >
+              Login to Review
+            </button>
+          )}
         </div>
 
-        {showReviewForm && (
+        {/* Login Prompt */}
+        {showLoginPrompt && !isAuthenticated && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
+              <h3 className="text-xl font-bold mb-3">Login Required</h3>
+              <p className="text-sm text-gray-600 mb-5">
+                You need to be logged in to write a review.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    navigate("/UserAuth/UserLogin", {
+                      state: { from: location.pathname },
+                    });
+                  }}
+                  className="flex-1 bg-orange-600 text-white py-2 rounded-md hover:bg-orange-700 font-medium"
+                >
+                  Go to Login
+                </button>
+                <button
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="flex-1 border py-2 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Review Form */}
+        {showReviewForm && isAuthenticated && (
           <div className="mb-8 p-4 border rounded-lg bg-gray-50">
-            <input
-              type="text"
-              placeholder="Your Name"
-              value={newReview.author}
-              onChange={(e) =>
-                setNewReview({ ...newReview, author: e.target.value })
-              }
-              className="w-full mb-3 p-2 border rounded-md"
-            />
             <div className="mb-3">
               <p className="text-sm mb-1">Rating</p>
               <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
+                {[1, 2, 3, 4, 5].map((s) => (
                   <button
-                    key={star}
-                    onClick={() =>
-                      setNewReview({ ...newReview, rating: star })
-                    }
+                    key={s}
+                    onClick={() => setNewReview({ ...newReview, rating: s })}
                   >
                     <Star
                       className={`w-6 h-6 ${
-                        star <= newReview.rating
-                          ? "fill-orange-500 text-orange-500"
-                          : "text-gray-300"
+                        s <= newReview.rating ? "fill-orange-500 text-orange-500" : "text-gray-300"
                       }`}
                     />
                   </button>
@@ -581,24 +602,25 @@ const ProductDetails = () => {
               </div>
             </div>
             <textarea
-              placeholder="Your review..."
+              placeholder="Share your experience..."
               value={newReview.text}
-              onChange={(e) =>
-                setNewReview({ ...newReview, text: e.target.value })
-              }
+              onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
               rows={3}
-              className="w-full mb-3 p-2 border rounded-md resize-none"
+              className="w-full mb-3 p-2 border rounded-md resize-none focus:ring-2 focus:ring-orange-500"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleAddReview}
-                className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm flex items-center gap-1"
+                className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm flex items-center gap-1 hover:bg-orange-700"
               >
                 <Send className="w-4 h-4" /> Submit
               </button>
               <button
-                onClick={() => setShowReviewForm(false)}
-                className="px-4 py-2 border rounded-md text-sm"
+                onClick={() => {
+                  setShowReviewForm(false);
+                  setNewReview({ rating: 5, text: "" });
+                }}
+                className="px-4 py-2 border rounded-md text-sm hover:bg-gray-50"
               >
                 Cancel
               </button>
@@ -606,11 +628,10 @@ const ProductDetails = () => {
           </div>
         )}
 
+        {/* Review List */}
         <div className="space-y-6">
           {paginatedReviews.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              No reviews yet. Be the first!
-            </p>
+            <p className="text-gray-500 text-center py-8">No reviews yet. Be the first!</p>
           ) : (
             paginatedReviews.map((r, i) => (
               <div key={i} className="border-b pb-6 last:border-0">
@@ -627,6 +648,7 @@ const ProductDetails = () => {
           )}
         </div>
 
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center gap-2 mt-8">
             {Array.from({ length: totalPages }, (_, i) => (
@@ -646,7 +668,7 @@ const ProductDetails = () => {
         )}
       </section>
 
-      {/* ==================== RELATED PRODUCTS — CAROUSEL ==================== */}
+      {/* Related Products */}
       {relatedProducts.length > 0 && (
         <section className="mt-16">
           <h2 className="text-2xl font-bold mb-6">Related Products</h2>
@@ -668,7 +690,7 @@ const ProductDetails = () => {
                     <div
                       onClick={() => {
                         navigate(`/product-details/${p.id}`);
-                        window.scrollTo(0, 0); // Click se bhi top pe
+                        window.scrollTo(0, 0);
                       }}
                       className="bg-white p-4 rounded-lg shadow-sm hover:shadow-lg cursor-pointer transition-shadow h-full flex flex-col"
                     >
@@ -677,17 +699,11 @@ const ProductDetails = () => {
                           src={p.image}
                           alt={p.name}
                           className="w-full h-full object-cover"
-                          onError={(e) =>
-                            (e.target.src = "https://via.placeholder.com/300")
-                          }
+                          onError={(e) => (e.target.src = "https://via.placeholder.com/300")}
                         />
                       </div>
-                      <h3 className="font-medium text-gray-900 truncate">
-                        {p.name}
-                      </h3>
-                      <div className="flex items-center gap-1 mt-1">
-                        {renderStars(p.rating)}
-                      </div>
+                      <h3 className="font-medium text-gray-900 truncate">{p.name}</h3>
+                      <div className="flex items-center gap-1 mt-1">{renderStars(p.rating)}</div>
                       <p className="text-lg font-bold text-orange-600 mt-2">
                         ₹{p.price.toLocaleString()}
                       </p>
