@@ -41,15 +41,14 @@ export const removeFromWishlistService = async (userId, productId) => {
         });
 
         if (!deleted) {
-            logger.warn(`Product ${productId} not found in wishlist of user ${userId}`);
-            return { status: false, message: "Product not found in wishlist" };
+            return { success: false, message: "Product not found in wishlist" };
         }
 
-        logger.info(`Product ${productId} removed successfully from wishlist`);
-        return { status: true };
+        logger.info(`Wishlist removed: user ${userId}, product ${productId}`);
+        return { success: true };
     } catch (error) {
-        logger.error(`Error in removeFromWishlistService: ${error.message}`);
-        throw new Error("Failed to remove product from wishlist");
+        logger.error("Error in removeFromWishlistService:", error);
+        throw error;
     }
 };
 
@@ -61,7 +60,12 @@ export const getAllWishlistService = async (userId) => {
       include: [
         {
           model: Product,
-          attributes: ['id', 'product_type', 'purchase_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
+          as: "product",  // ADD THIS
+          attributes: [
+            'id', 'product_type', 'purchase_price', 
+            'front_photo', 'back_photo', 'label_photo', 
+            'inside_photo', 'button_photo', 'wearing_photo', 'more_images'
+          ],
         },
         {
           model: User,
@@ -78,21 +82,21 @@ export const getAllWishlistService = async (userId) => {
         user_id: item.user_id,
         product_id: item.product_id,
         created_at: item.created_at,
-        product: item.Product ? {
-          id: item.Product.id,
-          name: item.Product.product_type,
-          price: item.Product.purchase_price,
-          front_photo: item.Product.front_photo,
-          back_photo: item.Product.back_photo,
-          label_photo: item.Product.label_photo,
-          inside_photo: item.Product.inside_photo,
-          button_photo: item.Product.button_photo,
-          wearing_photo: item.Product.wearing_photo,
-          more_images: item.Product.more_images,
+        product: item.product ? {  // Now it's `item.product` (lowercase)
+          id: item.product.id,
+          name: item.product.product_type,
+          price: item.product.purchase_price,
+          front_photo: item.product.front_photo,
+          back_photo: item.product.back_photo,
+          label_photo: item.product.label_photo,
+          inside_photo: item.product.inside_photo,
+          button_photo: item.product.button_photo,
+          wearing_photo: item.product.wearing_photo,
+          more_images: item.product.more_images,
         } : null,
-        user: item.User ? {
-          id: item.User.id,
-          name: item.User.name,
+        user: item.user ? {
+          id: item.user.id,
+          name: item.user.name,
         } : null,
       })),
     };

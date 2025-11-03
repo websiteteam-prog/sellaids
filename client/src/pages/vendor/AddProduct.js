@@ -1,13 +1,13 @@
+// src/components/AddProductForm.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { toast, Toaster } from "react-hot-toast";
-import { useVendorStore } from "../../stores/useVendorStore";
+import { toast } from "react-hot-toast"; // Removed Toaster from here
 
-// Reusable Form Field Component
+// Reusable Form Field
 const FormField = ({ field, value, onChange, error, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [filteredOptions, setFilteredOptions] = useState(field.options);
+  const [filteredOptions, setFilteredOptions] = useState(field.options || []);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -15,11 +15,11 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
       const filtered = field.options.filter((opt) =>
         opt.name
           ? opt.name.toLowerCase().includes(searchValue.toLowerCase())
-          : opt.toLowerCase().includes(searchValue.toLowerCase())
+          : opt.toString().toLowerCase().includes(searchValue.toLowerCase())
       );
       setFilteredOptions(filtered);
     } else {
-      setFilteredOptions(field.options);
+      setFilteredOptions(field.options || []);
     }
   }, [searchValue, field.options]);
 
@@ -43,21 +43,22 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
 
   const handleToggle = () => setIsOpen(!isOpen);
 
+  // SELECT FIELDS
   if (
     field.type === "select" &&
     ["product_group", "fit", "size", "product_condition", "productCategory", "product_type", "invoice", "needs_repair", "original_box", "dust_bag"].includes(field.name)
   ) {
     return (
       <div className="flex flex-col" ref={wrapperRef}>
-        <label className="text-gray-700 font-medium mb-1">{field.label}</label>
+        <label className="text-gray-700 font-medium mb-1" data-field={field.name}>{field.label}</label>
         <div className="relative">
           <div
-            className="border rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400"
-            onClick={handleToggle}
+            className={`border rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            onClick={disabled ? null : handleToggle}
           >
             {value || `Select ${field.label}`}
           </div>
-          {isOpen && (
+          {isOpen && !disabled && (
             <div className="absolute z-10 w-full bg-white border rounded-b mt-1 max-h-40 overflow-y-auto">
               <input
                 type="text"
@@ -65,6 +66,7 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder={`Search ${field.label}...`}
                 className="border-b px-2 py-1 w-full focus:outline-none"
+                onClick={(e) => e.stopPropagation()}
               />
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((opt, idx) => (
@@ -85,10 +87,13 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
         {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
       </div>
     );
-  } else if (field.type === "file") {
+  }
+
+  // FILE
+  if (field.type === "file") {
     return (
       <div className="flex flex-col">
-        <label className="text-gray-700 font-medium mb-1">{field.label}</label>
+        <label className="text-gray-700 font-medium mb-1" data-field={field.name}>{field.label}</label>
         <input
           type="file"
           name={field.name}
@@ -101,18 +106,24 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
         {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
       </div>
     );
-  } else if (field.type === "checkbox") {
+  }
+
+  // CHECKBOX
+  if (field.type === "checkbox") {
     return (
       <div className="flex items-center space-x-2">
-        <input type="checkbox" name={field.name} checked={value} onChange={onChange} />
-        <label className="text-gray-700 text-sm">{field.label}</label>
+        <input type="checkbox" name={field.name} checked={value} onChange={onChange} disabled={disabled} />
+        <label className="text-gray-700 text-sm" data-field={field.name}>{field.label}</label>
         {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
       </div>
     );
-  } else if (field.type === "textarea") {
+  }
+
+  // TEXTAREA
+  if (field.type === "textarea") {
     return (
       <div className="flex flex-col">
-        <label className="text-gray-700 font-medium mb-1">{field.label}</label>
+        <label className="text-gray-700 font-medium mb-1" data-field={field.name}>{field.label}</label>
         <textarea
           name={field.name}
           value={value}
@@ -123,23 +134,26 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
         {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
       </div>
     );
-  } else {
-    return (
-      <div className="flex flex-col">
-        <label className="text-gray-700 font-medium mb-1">{field.label}</label>
-        <input
-          type={field.type || "text"}
-          name={field.name}
-          value={value}
-          onChange={onChange}
-          className="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
-        {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
-      </div>
-    );
   }
+
+  // DEFAULT INPUT
+  return (
+    <div className="flex flex-col">
+      <label className="text-gray-700 font-medium mb-1" data-field={field.name}>{field.label}</label>
+      <input
+        type={field.type || "text"}
+        name={field.name}
+        value={value}
+        onChange={onChange}
+        className="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+        disabled={disabled}
+      />
+      {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
+    </div>
+  );
 };
 
+// MAIN COMPONENT
 const AddProductForm = () => {
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,9 +166,10 @@ const AddProductForm = () => {
     product_condition: "",
     fit: "",
     size: "",
+    other_size: "",
     product_color: "",
     brand: "",
-    model_name: "",
+    model_name: "", // <-- REQUIRED
     invoice: "No",
     invoice_photo: null,
     needs_repair: "No",
@@ -187,7 +202,7 @@ const AddProductForm = () => {
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingTypes, setIsLoadingTypes] = useState(false);
 
-  // Fetch categories
+  // FETCH CATEGORIES
   useEffect(() => {
     const fetchCategories = async () => {
       setIsLoadingCategories(true);
@@ -204,7 +219,7 @@ const AddProductForm = () => {
     fetchCategories();
   }, []);
 
-  // Fetch types on category change
+  // FETCH TYPES
   useEffect(() => {
     const fetchTypes = async () => {
       if (!formData.category_id) return setTypes([]);
@@ -241,98 +256,121 @@ const AddProductForm = () => {
         category_id: selectedCategory ? selectedCategory.id : "",
         product_type: "",
       }));
+    } else if (name === "size" && value === "Other") {
+      setFormData((prev) => ({ ...prev, size: value }));
+    } else if (name === "size" && value !== "Other") {
+      setFormData((prev) => ({ ...prev, size: value, other_size: "" }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    // Clear error on change
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
   const validateStep = () => {
     const newErrors = {};
     const requiredFields = {
-      1: ["product_group", "productCategory", "product_type", "product_condition", "fit", "brand"],
+      1: ["product_group", "productCategory", "product_type", "product_condition", "fit", "brand", "model_name"],
       2: ["invoice", "needs_repair", "original_box", "dust_bag"],
       3: ["front_photo", "back_photo", "label_photo", "inside_photo", "button_photo", "wearing_photo"],
       4: ["purchase_price", "selling_price", "purchase_year", "agree"],
     };
+
     if (requiredFields[step]) {
       requiredFields[step].forEach((f) => {
-        if (!formData[f] || (f === "agree" && !formData.agree)) newErrors[f] = "Required";
+        if (!formData[f] || (f === "agree" && !formData.agree)) {
+          const label = document.querySelector(`[data-field="${f}"]`)?.textContent || f;
+          newErrors[f] = `${label.replace("*", "").trim()} is required`;
+        }
       });
     }
+
     if (step === 2 && formData.invoice === "Yes" && !formData.invoice_photo) {
-      newErrors.invoice_photo = "Upload invoice photo";
+      newErrors.invoice_photo = "Invoice photo is required";
     }
     if (step === 2 && formData.needs_repair === "Yes" && !formData.repair_photo) {
-      newErrors.repair_photo = "Upload repair photo";
+      newErrors.repair_photo = "Repair photo is required";
     }
-    // Validate product_condition
-    if (formData.product_condition && !["new", "like_new", "used", "damaged"].includes(formData.product_condition.toLowerCase())) {
-      newErrors.product_condition = "product_condition must be one of the following values: new, like_new, used, damaged";
+
+    if (formData.size === "Other" && !formData.other_size?.trim()) {
+      newErrors.other_size = "Custom size is required";
     }
-    // Validate fit
-    if (formData.fit && !["Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"].includes(formData.fit)) {
-      newErrors.fit = "fit must be one of the following values: Slim, Regular, Loose, Oversized, Tailored, Other";
-    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const nextStep = () => {
-    if (step === 0 || validateStep()) {
+    if (validateStep()) {
       setStep(step + 1);
       setErrors({});
+    } else {
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError || "Please fill all required fields.");
     }
   };
+
   const prevStep = () => {
     setStep(step - 1);
     setErrors({});
   };
 
-  // === FINAL POST API ===
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateStep()) return;
+
+    toast.dismiss();
+
+    if (!validateStep()) {
+      const firstError = Object.keys(errors).length > 0
+        ? Object.values(errors)[0]
+        : "Please fill all required fields.";
+      toast.error(firstError);
+      return;
+    }
 
     setIsSubmitting(true);
     setApiError(null);
 
     try {
-      console.log("Submitting form data:", formData);
-
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (key === "more_images" && Array.isArray(value)) {
-          value.forEach((file) => {
-            if (file) data.append("more_images", file);
-          });
+          value.forEach((file) => file && data.append("more_images", file));
         } else if (value instanceof File && value) {
           data.append(key, value);
         } else if (key !== "productCategory" && key !== "agree" && value !== null && value !== "") {
-          data.append(key, value);
+          // Normal fields
+          if (key !== "other_size") {
+            data.append(key, value);
+          }
+
+          // When size is "Other", send size_other
+          if (key === "other_size" && formData.size === "Other") {
+            data.append("size_other", value.trim());
+          }
         }
       });
-
-      console.log("FormData prepared, making API call...");
 
       const res = await axios.post("http://localhost:5000/api/product/add", data, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
 
-      console.log("API Response:", res.data);
-
       if (res.data.success) {
-        toast.success(" Product added successfully!");
+        toast.success("Product added successfully!");
         setFormData(initialFormData);
         setStep(0);
+        setErrors({});
       } else {
-        toast.error(`❌ Failed: ${res.data.message || "Unknown error"}`);
+        toast.error(res.data.message || "Failed to add product");
       }
     } catch (err) {
-      console.error("Error during submission:", err);
-      const errorMessage = err.response?.data?.message || err.message || "Submission failed";
-      setApiError(`Failed to submit product: ${errorMessage}`);
-      toast.error(`❌ Submission failed: ${errorMessage}`);
+      const message = err.response?.data?.message || err.message || "Submission failed";
+      toast.error(message);
+      setApiError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -360,8 +398,8 @@ const AddProductForm = () => {
                       step > index
                         ? "bg-orange-600 text-white"
                         : step === index
-                        ? "bg-orange-400 text-white"
-                        : "bg-gray-200 text-gray-600"
+                          ? "bg-orange-400 text-white"
+                          : "bg-gray-200 text-gray-600"
                     } transition duration-200`}
                   >
                     {index + 1}
@@ -390,6 +428,7 @@ const AddProductForm = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          {/* STEP 0: GUIDELINES */}
           {step === 0 && (
             <div className="col-span-full">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Guidelines</h3>
@@ -418,6 +457,7 @@ const AddProductForm = () => {
             </div>
           )}
 
+          {/* STEP 1: PRODUCT */}
           {step === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Product</h3>
@@ -427,28 +467,56 @@ const AddProductForm = () => {
                 { name: "product_type", label: "Product Type *", type: "select", options: isLoadingTypes ? ["Loading..."] : types },
                 { name: "product_condition", label: "Product Condition *", type: "select", options: ["", "new", "like_new", "used", "damaged"] },
                 { name: "fit", label: "Fit", type: "select", options: ["", "Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"] },
-                { name: "size", label: "Size", type: "select", options: [
-                  "", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "4xl", "5xl", "6xl",
-                  "Kids-Upto 3 Months", "Kids-Upto 6 Months", "Kids- 6-9 Months", "Kids- 9-12 Months",
-                  "Kids- 1-2 Years", "Kids- 3-4 Years", "Kids- 5-6 Years", "Kids- 7-8 Years",
-                  "Kids- 9-10 Years", "Kids- 10-12 Years", "Kids- 13-14 Years", "K 15-16 Years", "Kids- 17-18 Years"
-                ] },
+                {
+                  name: "size",
+                  label: "Size *",
+                  type: "select",
+                  options: [
+                    "", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "4xl", "5xl", "6xl",
+                    "Kids-Upto 3 Months", "Kids-Upto 6 Months", "Kids- 6-9 Months", "Kids- 9-12 Months",
+                    "Kids- 1-2 Years", "Kids- 3-4 Years", "Kids- 5-6 Years", "Kids- 7-8 Years",
+                    "Kids- 9-10 Years", "Kids- 10-12 Years", "Kids- 13-14 Years", "K 15-16 Years", "Kids- 17-18 Years",
+                    "Other"
+                  ]
+                },
                 { name: "product_color", label: "Product Color", type: "text" },
                 { name: "brand", label: "Brand *", type: "text" },
-                { name: "model_name", label: "Model Name*", type: "text" },
+                { name: "model_name", label: "Model Name *", type: "text" },
               ].map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={formData[field.name]}
-                  onChange={handleChange}
-                  error={errors[field.name]}
-                  disabled={field.disabled || (field.name === "product_type" && !formData.productCategory)}
-                />
+                <React.Fragment key={field.name}>
+                  {field.name === "size" ? (
+                    <>
+                      <FormField field={field} value={formData.size} onChange={handleChange} error={errors.size} />
+                      {formData.size === "Other" && (
+                        <div className="sm:col-span-2">
+                          <label className="text-gray-700 font-medium mb-1" data-field="other_size">Other Size *</label>
+                          <input
+                            type="text"
+                            name="other_size"
+                            placeholder="Enter custom size (e.g. 28W x 32L)"
+                            value={formData.other_size || ""}
+                            onChange={handleChange}
+                            className="w-full border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          />
+                          {errors.other_size && <span className="text-red-500 text-xs mt-1">{errors.other_size}</span>}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <FormField
+                      field={field}
+                      value={formData[field.name]}
+                      onChange={handleChange}
+                      error={errors[field.name]}
+                      disabled={field.name === "product_type" && !formData.productCategory}
+                    />
+                  )}
+                </React.Fragment>
               ))}
             </div>
           )}
 
+          {/* STEP 2: CONDITION */}
           {step === 2 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Condition</h3>
@@ -476,36 +544,49 @@ const AddProductForm = () => {
             </div>
           )}
 
+          {/* STEP 3: IMAGE */}
           {step === 3 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Image</h3>
-              {[
-                { name: "front_photo", label: "Front Photo *", type: "file", accept: "image/*" },
-                { name: "back_photo", label: "Back Photo *", type: "file", accept: "image/*" },
-                { name: "label_photo", label: "Label/Logo Photo *", type: "file", accept: "image/*" },
-                { name: "inside_photo", label: "Inside/Close Up Material Image *", type: "file", accept: "image/*" },
-                { name: "button_photo", label: "Button/Studs/Zips/Work Image *", type: "file", accept: "image/*" },
-                { name: "wearing_photo", label: "Image Of Wearing/Carrying *", type: "file", accept: "image/*" },
-                { name: "more_images", label: "Upload More Images", type: "file", multiple: true, accept: "image/*" },
-              ].map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={formData[field.name]}
-                  onChange={handleChange}
-                  error={errors[field.name]}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Image</h3>
+                {[
+                  { name: "front_photo", label: "Front Photo *", type: "file", accept: "image/*" },
+                  { name: "back_photo", label: "Back Photo *", type: "file", accept: "image/*" },
+                  { name: "label_photo", label: "Label/Logo Photo *", type: "file", accept: "image/*" },
+                  { name: "inside_photo", label: "Inside/Close Up Material Image *", type: "file", accept: "image/*" },
+                  { name: "button_photo", label: "Button/Studs/Zips/Work Image *", type: "file", accept: "image/*" },
+                  { name: "wearing_photo", label: "Image Of Wearing/Carrying *", type: "file", accept: "image/*" },
+                  { name: "more_images", label: "Upload More Images", type: "file", multiple: true, accept: "image/*" },
+                ].map((field) => (
+                  <FormField
+                    key={field.name}
+                    field={field}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    error={errors[field.name]}
+                  />
+                ))}
+              </div>
+              {/* Prevent Enter key from submitting on Image step */}
+              <div
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                  }
+                }}
+                style={{ position: "absolute", left: "-9999px" }}
+              />
+            </>
           )}
 
+          {/* STEP 4: PRICE */}
           {step === 4 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Price</h3>
               {[
                 { name: "purchase_price", label: "Purchase Price (INR) *", type: "number" },
                 { name: "selling_price", label: "Selling Price (INR) *", type: "number" },
-                { name: "reason_to_sell", label: "Reason To Sell", type: "text" },
+                { name: "reason_to_sell", label: "Reason To Sell *", type: "text" },
                 { name: "purchase_year", label: "Purchase Year *", type: "number" },
                 { name: "purchase_place", label: "Purchase Place *", type: "text" },
                 { name: "product_link", label: "Product Reference Link *", type: "url" },
@@ -535,25 +616,15 @@ const AddProductForm = () => {
             </div>
           )}
 
-          {/* Navigation Buttons */}
+          {/* BUTTONS */}
           <div className="flex justify-between mt-6">
             {step > 0 && (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg transition-colors"
-                disabled={isSubmitting}
-              >
+              <button type="button" onClick={prevStep} className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg transition-colors" disabled={isSubmitting}>
                 Back
               </button>
             )}
             {step < steps.length - 1 ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                className="px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded-lg transition-colors"
-                disabled={isSubmitting}
-              >
+              <button type="button" onClick={nextStep} className="px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded-lg transition-colors" disabled={isSubmitting}>
                 Next
               </button>
             ) : (
@@ -568,8 +639,8 @@ const AddProductForm = () => {
           </div>
         </form>
 
-        {/* Add Toaster component to render toast notifications */}
-        <Toaster position="top-right" />
+        {/* <Toaster /> REMOVED FROM HERE */}
+        {/* Add <Toaster /> only ONCE in App.jsx or main.jsx */}
       </div>
     </div>
   );

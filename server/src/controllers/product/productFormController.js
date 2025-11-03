@@ -128,26 +128,30 @@ export const getAllProductsController = async (req, res) => {
 
 export const getProductByIdController = async (req, res) => {
   try {
-    const vendorId = req.session.vendor?.vendorId;
-    const isAdmin = !!req.session.admin?.adminId;
-    if (!vendorId && !isAdmin) {
-      return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
-    }
+    // const vendorId = req.session.vendor?.vendorId;
+    // const isAdmin = !!req.session.admin?.adminId;
+
+    // if (!vendorId && !isAdmin) {
+    //   return res
+    //     .status(401)
+    //     .json({ success: false, message: "Unauthorized: Valid session required" });
+    // }
 
     const { id } = req.params;
-    const product = await getProductByIdService(id);
+
+    const { product, related } = await getProductByIdService(id);
 
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
 
     res.status(200).json({
       success: true,
       message: "Product details fetched successfully",
       product,
+      relatedProducts: related,           
     });
   } catch (err) {
     console.error("Error fetching product:", err);

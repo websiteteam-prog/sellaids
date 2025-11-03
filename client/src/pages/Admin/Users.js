@@ -1,130 +1,150 @@
 import React, { useEffect, useState } from "react";
-import { FaSearch, FaFileExcel } from "react-icons/fa";
 import axios from "axios";
+import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { Download } from "lucide-react";
 
 const UsersManagement = () => {
-  const [usersData, setUsersData] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Pagination states
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10;
+  const [totalUsers, setTotalUsers] = useState(0);
+  const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async (search = '') => {
+  // Fetch users from backend
+  const fetchUsers = async () => {
     try {
       setLoading(true);
-      const url = `${process.env.REACT_APP_API_URL}/admin/users${search ? `?search=${search}` : ''}`;
-      const res = await axios.get(url, { withCredentials: true });
-      setUsersData(res.data || []);
-      setFilteredUsers(res.data || []);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admin/management/user`,
+        {
+          params: {
+            search:search,
+            page:currentPage,
+            limit: itemsPerPage,
+          },
+          withCredentials: true,
+        }
+      );
+
+      const { success, data, message } = res.data;
+
+      if (success) {
+        setUsers(data.users || []);
+        setTotalUsers(data.total || 0);
+        // Only show toast if search is used
+        toast.success(message);
+      } else {
+        setUsers([]);
+        setTotalUsers(0);
+        toast.error(message || "Failed to fetch users");
+      }
     } catch (err) {
-      console.error("Error fetching users:", err.response?.data || err.message);
-      setUsersData([]);
-      setFilteredUsers([]);
+      console.error(err);
+      setUsers([]);
+      setTotalUsers(0);
+      toast.error("Error fetching users");
     } finally {
       setLoading(false);
     }
   };
 
-  // Search handler
+  // Fetch on page change
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage]);
+
+  // Handle search
   const handleSearch = () => {
-    fetchUsers(searchTerm);
-    setCurrentPage(1);
+    setCurrentPage(1);     
+    fetchUsers();    
   };
 
   // Export Excel
   const exportExcel = () => {
-    const rows = filteredUsers.map((user) => ({
-      ID: user.id,
-      Username: user.name,
-      Email: user.email,
-      Phone: user.contact,
-    }));
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [Object.keys(rows[0] || {}).join(","), ...rows.map((r) => Object.values(r).join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "users_data.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!users.length) {
+      toast.error("No users to export");
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(
+      users.map((u, index) => ({
+        SR_No: (currentPage - 1) * itemsPerPage + index + 1,
+        Name: u.name,
+        Email: u.email,
+        Phone: u.phone,
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users");
+    XLSX.writeFile(wb, "users.xlsx");
+    toast.success("Excel exported successfully!");
   };
 
-  // Pagination calculations
-  const indexOfLast = currentPage * usersPerPage;
-  const indexOfFirst = indexOfLast - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const totalPages = Math.ceil(totalUsers / itemsPerPage);
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen text-gray-800 text-sm relative">
+    <div className="p-6 bg-gray-50 min-h-screen text-gray-800">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Users Management</h2>
-      </div>
-
-      {/* Search + Export */}
-      <div className="flex flex-col md:flex-row gap-3 mb-4 items-center">
-        <div className="flex w-full md:w-1/3">
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border border-gray-300 bg-white text-gray-700 rounded-l-lg px-3 py-2 w-full text-sm"
-          />
-          <button
-            onClick={handleSearch}
-            className="bg-[#FF6A00] text-white px-3 py-2 rounded-r-lg hover:bg-orange-500"
-          >
-            <FaSearch />
-          </button>
-        </div>
-
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Users Management</h2>
         <button
           onClick={exportExcel}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-green-600 rounded-lg hover:bg-green-100 text-sm ml-auto"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700"
         >
-          <FaFileExcel /> Export Excel
+          <Download size={16}/> Export Report
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="mb-4 flex gap-2 flex-wrap bg-white shadow-sm p-4 rounded-lg">
+        <input
+          type="text"
+          placeholder="Search by name, email or phone"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-4 py-2 border rounded-lg flex-1 focus:ring focus:ring-blue-200"
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-[#FF6A00] text-white rounded-lg hover:bg-orange-500"
+        >
+          Search
         </button>
       </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="p-3">ID</th>
-              <th className="p-3">Username</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Phone</th>
+              <th className="px-4 py-3 border">SR.</th>
+              <th className="px-4 py-3 border">Name</th>
+              <th className="px-4 py-3 border">Email</th>
+              <th className="px-4 py-3 border">Phone</th>
             </tr>
           </thead>
           <tbody>
-            {loading || currentUsers.length === 0 ? (
+            {loading ? (
               <tr>
-                <td colSpan={4} className="text-center py-6 text-gray-500">
-                  No Users Found
+                <td colSpan={4} className="text-center py-6">
+                  Loading users...
+                </td>
+              </tr>
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="text-center py-6">
+                  No users found
                 </td>
               </tr>
             ) : (
-              currentUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition"
-                >
-                  <td className="p-3">{user.id}</td>
-                  <td className="p-3">{user.name}</td>
-                  <td className="p-3">{user.email}</td>
-                  <td className="p-3">{user.contact}</td>
+              users.map((user, index) => (
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 border">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                  <td className="px-4 py-3 border font-medium">{user.name}</td>
+                  <td className="px-4 py-3 border">{user.email}</td>
+                  <td className="px-4 py-3 border">{user.phone}</td>
                 </tr>
               ))
             )}
@@ -133,42 +153,35 @@ const UsersManagement = () => {
       </div>
 
       {/* Pagination */}
-      {filteredUsers.length > usersPerPage && (
-        <div className="flex justify-between items-center mt-4">
-          <p className="text-gray-600 text-xs">
-            Total Users: <span className="text-gray-900 font-medium">{filteredUsers.length}</span>
-          </p>
-          <nav className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              className="px-3 py-1 rounded-lg text-sm border border-gray-300 hover:bg-gray-100"
-              disabled={currentPage === 1}
-            >
-              Prev
-            </button>
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            Prev
+          </button>
 
-            {Array.from({ length: totalPages }, (_, index) => (
-              <button
-                key={index + 1}
-                onClick={() => setCurrentPage(index + 1)}
-                className={`px-3 py-1 rounded-lg text-sm ${
-                  currentPage === index + 1
-                    ? "bg-[#FF6A00] text-white"
-                    : "border border-gray-300 text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {index + 1}
-              </button>
-            ))}
-
+          {Array.from({ length: totalPages }, (_, i) => (
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              className="px-3 py-1 rounded-lg text-sm border border-gray-300 hover:bg-gray-100"
-              disabled={currentPage === totalPages}
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+              }`}
             >
-              Next
+              {i + 1}
             </button>
-          </nav>
+          ))}
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

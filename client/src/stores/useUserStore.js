@@ -1,64 +1,80 @@
+// src/stores/useUserStore.js
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
 
-// Define the Zustand store
+const TOKEN_KEY = "user_session_token"; // ← Same as login
+
+const cookieStorage = {
+  getItem: (name) => {
+    try {
+      const value = Cookies.get(name);
+      return value ? value : null;
+    } catch (error) {
+      console.error("Error reading cookie:", error);
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      Cookies.set(name, value, { expires: 7, secure: true, sameSite: "strict" });
+    } catch (error) {
+      console.error("Error setting cookie:", error);
+    }
+  },
+  removeItem: (name) => {
+    try {
+      Cookies.remove(name);
+    } catch (error) {
+      console.error("Error removing cookie:", error);
+    }
+  },
+};
+
 export const useUserStore = create(
   persist(
     (set, get) => ({
-      // Initial State
-      user: null,         // User authentication data
-      isAuthenticated: false,  // Boolean to check if the user is logged in
-      loading: false,        // Boolean to show a loading state if necessary
-      lastActivity: null,    // Timestamp of the last activity
-      token: null,           // Store the authentication token (JWT or session token)
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      lastActivity: null,
 
-      // Method to set user data and token (for login)
-      setUserData: (user, token) =>
+      login: (userData, token) => {
+        Cookies.set(TOKEN_KEY, token, { expires: 7, secure: true, sameSite: "strict" });
         set({
-          user,
+          user: userData,
           token,
-          isAuthenticated: true,  // Mark as logged in
-          lastActivity: Date.now(),  // Set the last activity timestamp
-        }),
+          isAuthenticated: true,
+          lastActivity: Date.now(),
+        });
+      },
 
-      // Login method to set user info and authentication state
-      login: (userData, token) =>
-        set(() => {
-          Cookies.set("session_cookie_name", token, { expires: 7 });  // Save token in cookies for 7 days
-          return {
-            user: userData,
-            token,
-            isAuthenticated: true,
-            lastActivity: Date.now(),
-          };
-        }),
-
-      // Logout method to clear cookies and reset state
-      logout: () =>
-        set(() => {
-          Cookies.remove("session_cookie_name");  // Remove session cookie
-          return {
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            lastActivity: null,
-          };
-        }),
-
-      // Update activity timestamp when user interacts
-      updateActivity: () => {
-        if (get().isAuthenticated) {
-          set({ lastActivity: Date.now() });  // Update last activity time
+      hydrate: () => {
+        const token = Cookies.get(TOKEN_KEY);
+        if (token && !get().token) {
+          set({ token, isAuthenticated: true });
         }
       },
 
-      // Optional loading state to manage loading spinner or async operations
-      setLoading: (isLoading) => set({ loading: isLoading }),
+      logout: () => {
+        Cookies.remove(TOKEN_KEY);
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          lastActivity: null,
+        });
+      },
+
+      updateActivity: () => {
+        if (get().isAuthenticated) {
+          set({ lastActivity: Date.now() });
+        }
+      },
     }),
     {
-      name: "user-store",  // LocalStorage key to persist the store
-      getStorage: () => localStorage,  // Use localStorage for persistence
+      name: "user-store",
+      getStorage: () => cookieStorage,
     }
   )
 );

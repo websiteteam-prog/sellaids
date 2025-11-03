@@ -1,39 +1,81 @@
 // src/components/admin/LogoutAdmin.jsx
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useAdminStore } from "../../stores/useAdminStore";
 
+export const logoutAdminAPI = async () => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/admin/auth/logout`,
+      {},
+      { withCredentials: true }
+    );
+
+    const { success, message } = res.data;
+    // console.log(res.data)
+
+    console.log("Logout response:", res.data);
+
+    return { success, message };
+  } catch (error) {
+    console.error("Logout API failed:", error);
+    return { success: false, message: "Logout request failed" };
+  }
+};
+
+
 const LogoutAdmin = () => {
-  const { logout } = useAdminStore(); 
-  const navigate = useNavigate();
+  const { logout, lastActivity, updateActivity, isAuthenticated } = useAdminStore();
 
   const handleLogout = async () => {
     try {
       // Backend logout API call
-      await axios.post("http://localhost:5000/api/admin/logout");
+      // const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/admin/auth/logout`, {}, { withCredentials: true });
 
-      // Zustand store clear
-      logout();
+      // const { success, message } = res.data
 
-      // Optional: localStorage clear
-      localStorage.removeItem("adminInfo");
-      localStorage.removeItem("token");
+      const { success, message } = await logoutAdminAPI()
 
-      toast.success("Logged out successfully!");
-      navigate("/admin/login"); // Redirect to login page
+      if (success) {
+        console.log(success)
+        logout()
+        localStorage.removeItem("admin-store")
+        toast.success(message);
+        window.location.replace("/admin-login");
+      }
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Logout failed, redirecting to login");
-
-      // Even if API fails, clear store and localStorage
-      logout();
-      localStorage.removeItem("adminInfo");
-      localStorage.removeItem("token");
-      navigate("/admin/login");
     }
   };
+
+  // ✅ Auto logout after 30 min inactivity
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const inactiveTime = now - lastActivity;
+      if (inactiveTime > 30 * 60 * 1000) { // 30 minutes
+        toast.error("Session expired. Please login again.");
+        handleLogout();
+      }
+    }, 60 * 1000); // check every 1 minute
+
+    // 🖱️ Listen for user activity
+    const activityHandler = () => updateActivity();
+    window.addEventListener("mousemove", activityHandler);
+    window.addEventListener("keydown", activityHandler);
+    window.addEventListener("click", activityHandler);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("mousemove", activityHandler);
+      window.removeEventListener("keydown", activityHandler);
+      window.removeEventListener("click", activityHandler);
+    };
+  }, [lastActivity, isAuthenticated]);
 
   return (
     <button

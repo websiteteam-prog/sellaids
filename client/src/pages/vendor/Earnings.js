@@ -12,10 +12,10 @@ import {
 
 const Earnings = () => {
   const [stats, setStats] = useState({
-    totalEarnings: 0,
+    completedEarning: 0,
     thisMonth: 0,
-    pendingPayouts: 0,
-    completedPayouts: 0,
+    pendingEarning: 0,
+    failedOrRefunded: 0,
   });
   const [monthlyEarnings, setMonthlyEarnings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,20 +24,20 @@ const Earnings = () => {
     const fetchEarnings = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}api/product/earnings`, {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/product/earnings`, {
           withCredentials: true,
         });
 
         if (res.data.success) {
           const data = res.data.data;
           setStats({
-            totalEarnings: data.total_earning,
+            completedEarning: data.completed_earning,
             thisMonth: data.this_month_earning,
-            pendingPayouts: data.pending_earning,
-            completedPayouts: data.total_earning - data.pending_earning - data.failed_earning,
+            pendingEarning: data.pending_earning,
+            failedOrRefunded: data.failed_or_refunded_earning,
           });
 
-          const graphData = data.monthly_earning_graph.map((item) => ({
+          const graphData = data.monthly_earning_summary.map((item) => ({
             month: item.month,
             earnings: parseFloat(item.total),
           }));
@@ -62,10 +62,10 @@ const Earnings = () => {
       {/* Top Earnings Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { title: "Total Earnings", value: stats.totalEarnings },
-          { title: "This Month", value: stats.thisMonth },
-          { title: "Pending Payouts", value: stats.pendingPayouts },
-          { title: "Completed Payouts", value: stats.completedPayouts },
+          { title: "Total Completed Earnings", value: stats.completedEarning },
+          { title: "This Month's Earnings", value: stats.thisMonth },
+          { title: "Pending Payouts", value: stats.pendingEarning },
+          { title: "Failed / Refunded", value: stats.failedOrRefunded },
         ].map((card, index) => (
           <div
             key={index}

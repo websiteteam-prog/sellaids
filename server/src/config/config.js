@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-dotenv.config(); // dotenv ko sirf yaha import karke configure karenge
+dotenv.config();
 
 const config = {
   env: process.env.NODE_ENV || "development",
@@ -22,6 +22,7 @@ const config = {
   email: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
+    adminEmail: process.env.ADMIN_EMAIL || "admin@myshop.com",
   },
   frontend: {
     url: process.env.FRONTEND_URL,
@@ -34,6 +35,13 @@ const config = {
   payment: {
     razorpayKeyId: process.env.RAZORPAY_KEY_ID,
     razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET,
+  },
+  xpressbees: {
+    baseUrl: process.env.XPRESSBEES_API_BASE_URL,
+    username: process.env.XPRESSBEES_USERNAME,
+    password: process.env.XPRESSBEES_PASSWORD,
+    clientId: process.env.XPRESSBEES_CLIENT_ID,
+    clientSecret: process.env.XPRESSBEES_CLIENT_SECRET,
   },
 };
 

@@ -49,8 +49,8 @@ export const Order = sequelize.define(
       allowNull: false,
     },
     payment_status: {
-      type: DataTypes.ENUM("unpaid", "paid", "failed"),
-      defaultValue: "unpaid",
+      type: DataTypes.ENUM("pending", "success", "failed", "refunded"),
+      defaultValue: "pending",
     },
     order_status: {
       type: DataTypes.ENUM(
@@ -89,3 +89,4 @@ export const Order = sequelize.define(
 // Associations
 Order.belongsTo(User, { foreignKey: "user_id"});
 Order.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+Order.belongsTo(Vendor, { foreignKey: "vendor_id"});

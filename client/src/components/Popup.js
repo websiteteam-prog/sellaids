@@ -1,37 +1,59 @@
+// src/components/Popup.jsx
 import React, { useState, useEffect } from "react";
-import popupImage from "../assets/images/popup-banner.webp";
-import { Eye, EyeOff } from "lucide-react";
+import axios from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff, X } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
+import useCartStore from "../stores/useCartStore";
+import { useCartActions } from "../stores/useCartActions";
+import toast from "react-hot-toast";
+import popupImage from "../assets/images/popup-banner.webp";
 
 const Popup = ({ onClose }) => {
-  // Zustand store
-  const { isAuthenticated, login } = useUserStore();
-
-  // ✅ Hooks at top-level
   const [visible, setVisible] = useState(false);
   const [fade, setFade] = useState(false);
-
   const [isLogin, setIsLogin] = useState(true);
 
-  // Login fields
+  // Zustand
+  const { isAuthenticated, login } = useUserStore();
+  const { fetchCart } = useCartStore();
+  const { pendingAdd, clearPending } = useCartActions();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Login State
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
-  // Register fields
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPhone, setRegPhone] = useState("");
-  const [regPassword, setRegPassword] = useState("");
+  // Register State
+  const [regForm, setRegForm] = useState({
+    name: "", mobile: "", email: "", password: "",
+    address_line: "", city: "", state: "", pincode: ""
+  });
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState("");
 
-  // Show popup automatically if user not logged in
+  // === POPUP SHOW LOGIC — HAR BAAR DIKHEGA JAB LOGOUT HO ===
   useEffect(() => {
-    if (!isAuthenticated) {
-      setVisible(true);
-      setTimeout(() => setFade(true), 10); // fade in
+    // Agar user logged in hai → popup nahi dikhao
+    if (isAuthenticated) {
+      setVisible(false);
+      return;
     }
-  }, [isAuthenticated]);
+
+    // Agar logged out hai → popup dikhao (har page load pe)
+    const timer = setTimeout(() => {
+      setVisible(true);
+      setTimeout(() => setFade(true), 100);
+    }, 800); // 0.8s delay for smooth entry
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]); // Re-run jab bhi auth status change ho
 
   const handleClose = () => {
     setFade(false);
@@ -41,179 +63,225 @@ const Popup = ({ onClose }) => {
     }, 300);
   };
 
-  const handleLoginSubmit = () => {
-    if (!loginEmail || !loginPassword) {
-      alert("Please fill all fields");
+  // === LOGIN ===
+  const validateLogin = () => {
+    setLoginError("");
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!loginEmail || !emailRegex.test(loginEmail)) {
+      setLoginError("Valid email required");
+      return false;
+    }
+    if (loginPassword.length < 6) {
+      setLoginError("Password must be 6+ chars");
+      return false;
+    }
+    return true;
+  };
+
+  const handleLoginSubmit = async () => {
+    if (!validateLogin()) return;
+    setLoginLoading(true);
+
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/user/auth/login`,
+        { email: loginEmail, password: loginPassword },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        login(res.data.data);
+        toast.success("Login Successful!");
+        handleClose();
+        navigate("/user");
+      }
+    } catch (err) {
+      setLoginError(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // === REGISTER ===
+  const handleRegChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "mobile") {
+      setRegForm({ ...regForm, [name]: value.replace(/\D/g, "").slice(0, 10) });
+    } else if (name === "pincode") {
+      setRegForm({ ...regForm, [name]: value.replace(/\D/g, "").slice(0, 6) });
+    } else {
+      setRegForm({ ...regForm, [name]: value });
+    }
+  };
+
+  const handleRegisterSubmit = async () => {
+    if (!regForm.name || !regForm.mobile || !regForm.email || !regForm.password) {
+      setRegError("Fill all required fields");
+      return;
+    }
+    if (regForm.mobile.length !== 10) {
+      setRegError("Valid 10-digit mobile");
       return;
     }
 
-    const userData = { email: loginEmail };
-    login(userData); // Zustand login
-    handleClose();
-  };
+    setRegLoading(true);
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/user/auth/register`,
+        {
+          name: regForm.name,
+          phone: regForm.mobile,
+          email: regForm.email,
+          password: regForm.password,
+          address_line: regForm.address_line,
+          city: regForm.city,
+          state: regForm.state,
+          pincode: regForm.pincode,
+        },
+        { withCredentials: true }
+      );
 
-  const handleRegisterSubmit = () => {
-    if (!regName || !regEmail || !regPhone || !regPassword) {
-      alert("Please fill all fields");
-      return;
+      if (res.data.success) {
+        toast.success("Registered! Logging in...");
+        login(res.data.data);
+        setLoginEmail(regForm.email);
+        setLoginPassword(regForm.password);
+        setIsLogin(true);
+        await fetchCart();
+        navigate("/user");
+        handleClose();
+      }
+    } catch (err) {
+      setRegError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setRegLoading(false);
     }
-
-    const newUser = { name: regName, email: regEmail, phone: regPhone };
-    login(newUser); // Zustand login after register
-    handleClose();
   };
 
-  // Don't render if popup not visible
+  // === RENDER ===
   if (!visible || isAuthenticated) return null;
 
   return (
     <div
-      className={`fixed inset-0 flex justify-center items-center bg-black/50 z-50 transition-opacity duration-300 ${
+      className={`fixed inset-0 flex justify-center items-center bg-black/60 z-[9999] transition-opacity duration-300 p-4 ${
         fade ? "opacity-100" : "opacity-0"
       }`}
+      onClick={handleClose}
     >
-      <div className="bg-white flex max-w-4xl w-full max-h-[500px] transition-all rounded-xl overflow-hidden">
+      <div
+        className="bg-white flex max-w-4xl w-full max-h-[70vh] rounded-xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Left Image */}
-        <div className="w-1/2 hidden md:block">
-          <img src={popupImage} alt="Popup" className="h-full w-full object-cover" />
+        <div className="hidden md:block w-1/2">
+          <img src={popupImage} alt="Offer" className="h-full w-full object-cover" />
         </div>
 
         {/* Right Form */}
         <div className="relative w-full md:w-1/2 p-6 overflow-y-auto">
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 text-gray-600 hover:text-black text-2xl font-bold"
+            className="absolute top-4 right-4 bg-white rounded-full p-1.5 shadow-md hover:shadow-lg z-10"
           >
-            &times;
+            <X size={20} className="text-gray-600" />
           </button>
 
-          {/* Toggle Tabs */}
-          <div className="flex justify-between mb-4 border-b border-gray-300">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-300 mb-6">
             <button
               onClick={() => setIsLogin(true)}
-              className={`w-1/2 py-2 text-center font-semibold transition-colors ${
-                isLogin ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-600"
+              className={`flex-1 py-3 text-center font-bold text-lg transition-colors ${
+                isLogin ? "border-b-4 border-orange-500 text-orange-500" : "text-gray-600"
               }`}
             >
               Login
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`w-1/2 py-2 text-center font-semibold transition-colors ${
-                !isLogin ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-600"
+              className={`flex-1 py-3 text-center font-bold text-lg transition-colors ${
+                !isLogin ? "border-b-4 border-orange-500 text-orange-500" : "text-gray-600"
               }`}
             >
               Register
             </button>
           </div>
 
+          {/* LOGIN FORM */}
           {isLogin ? (
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Welcome Back!</h2>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <label className="block mb-4 font-semibold">
-                  Email / Phone
-                  <input
-                    type="text"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Enter email or phone"
-                  />
-                </label>
-
-                <label className="block mb-4 font-semibold relative">
-                  Password
-                  <input
-                    type={showLoginPassword ? "text" : "password"}
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Enter password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-2 top-8 p-1 rounded text-white"
-                  >
-                    {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </label>
-
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Welcome Back!</h2>
+              {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+              <input
+                type="email"
+                placeholder="Email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500"
+                autoComplete="email"
+              />
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 focus:ring-2 focus:ring-orange-500"
+                  autoComplete="current-password"
+                />
                 <button
                   type="button"
-                  onClick={handleLoginSubmit}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded transition"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                 >
-                  Login
+                  {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
-              </form>
+              </div>
+              <button
+                onClick={handleLoginSubmit}
+                disabled={loginLoading}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg disabled:opacity-60"
+              >
+                {loginLoading ? "Logging in..." : "LOGIN"}
+              </button>
             </div>
           ) : (
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Create Account</h2>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <label className="block mb-4 font-semibold">
-                  Name
-                  <input
-                    type="text"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Enter your name"
-                  />
-                </label>
-
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    required
-                    className="flex-1 border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Email"
-                  />
-                  <input
-                    type="text"
-                    value={regPhone}
-                    onChange={(e) => setRegPhone(e.target.value)}
-                    required
-                    maxLength={10}
-                    className="flex-1 border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Phone"
-                  />
-                </div>
-
-                <label className="block mb-4 font-semibold relative">
-                  Password
+            /* REGISTER FORM */
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Create Account</h2>
+              {regError && <p className="text-red-500 text-sm">{regError}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" name="name" placeholder="Name" value={regForm.name} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="mobile" placeholder="Mobile" value={regForm.mobile} onChange={handleRegChange} maxLength={10} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="email" name="email" placeholder="Email" value={regForm.email} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <div className="relative">
                   <input
                     type={showRegPassword ? "text" : "password"}
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Enter password"
+                    name="password"
+                    placeholder="Password"
+                    value={regForm.password}
+                    onChange={handleRegChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegPassword(!showRegPassword)}
-                    className="absolute right-2 top-8 p-1 rounded bg-blue-500 text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                   >
                     {showRegPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleRegisterSubmit}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded transition"
-                >
-                  Register
-                </button>
-              </form>
+                </div>
+                <input type="text" name="address_line" placeholder="Address" value={regForm.address_line} onChange={handleRegChange} className="md:col-span-2 border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="city" placeholder="City" value={regForm.city} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="state" placeholder="State" value={regForm.state} onChange={handleRegChange} className="border border-gray-300 rounded-lg px-4 py-3" />
+                <input type="text" name="pincode" placeholder="Pincode" value={regForm.pincode} onChange={handleRegChange} maxLength={6} className="border border-gray-300 rounded-lg px-4 py-3" />
+              </div>
+              <button
+                onClick={handleRegisterSubmit}
+                disabled={regLoading}
+                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-3 rounded-lg disabled:opacity-60"
+              >
+                {regLoading ? "Registering..." : "REGISTER"}
+              </button>
             </div>
           )}
         </div>

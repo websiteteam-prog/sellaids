@@ -13,6 +13,11 @@ export const Category = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
+    slug: {
+      type: DataTypes.STRING(150),
+      allowNull: false,
+      // unique: true,
+    },
     parent_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -35,6 +40,13 @@ export const Category = sequelize.define(
   {
     tableName: "categories",
     timestamps: false,
+    // hooks: {
+    //   beforeValidate: (category) => {
+    //     if (!category.slug && category.name) {
+    //       category.slug = slugify(category.name, { lower: true });
+    //     }
+    //   },
+    // },
   }
 );
 
