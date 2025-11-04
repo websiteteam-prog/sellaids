@@ -1,27 +1,30 @@
 // src/api/axiosInstance.js
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { useUserStore } from "../stores/useUserStore";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   withCredentials: true,
 });
 
-let redirectToLogin = null;
+// Add Bearer token to every request
+api.interceptors.request.use((config) => {
+  const token = useUserStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-export const setLoginRedirect = (fn) => {
-  redirectToLogin = fn;
-};
-
+// Handle 401 globally (optional)
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response && err.response.status === 401) {
-      toast.error("Your session has expired. Please log in again.");
-      if (redirectToLogin) redirectToLogin();
-      else window.location.href = "/UserAuth/UserLogin";
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      useUserStore.getState().logout();
+      window.location.href = "/UserAuth/UserLogin";
     }
-    return Promise.reject(err);
+    return Promise.reject(error);
   }
 );
 

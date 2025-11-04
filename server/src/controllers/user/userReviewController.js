@@ -63,15 +63,16 @@ export const getProductReviewsController = async (req, res) => {
 
 export const getAllReviewsController = async (req, res) => {
   try {
+    const search = req.query.search?.trim() || "";
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20; 
-    const result = await getAllReviewsService(page, limit);
+    const result = await getAllReviewsService(search, page, limit);
 
     if (!result.status) {
       return res.status(400).json({ success: false, message: result.message });
     }
 
-    logger.info(`All reviews fetched – page ${page}`);
+    logger.info(`All reviews fetched – ${search ? `, search: ${search}` : ""}, page ${page}`);
     return res.status(200).json({
       success: true,
       message: "All reviews fetched successfully",

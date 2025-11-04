@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import { setLoginRedirect } from "./api/axiosInstance";
-
+import { useUserStore } from "./stores/useUserStore";
 // Layouts
 import Layout from "./Layout";
 import VendorDashboardLayout from "./Layout/VendorDashboardLayout";
@@ -83,6 +83,7 @@ import AdminVendors from "./pages/Admin/Vendors";
 import AdminProducts from "./pages/Admin/Products";
 import AdminOrders from "./pages/Admin/Orders";
 import AdminPayments from "./pages/Admin/Payments";
+import AdminReviews from "./pages/Admin/Reviews"
 import AdminReports from "./pages/Admin/Reports";
 import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
@@ -94,6 +95,11 @@ import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
 import Category from "./pages/category/Category";
 
 const App = () => {
+const hydrate = useUserStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate(); // ← Cookie se token load karega
+  }, [hydrate]);
   return (
     <Routes>
       {/* ===================== PUBLIC ROUTES ===================== */}
@@ -132,8 +138,8 @@ const App = () => {
 
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
       {/* === USER CHECKOUT FLOW === */}
-      <Route path="/add-to-cart" element={<AddToCartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
+      {/* <Route path="/add-to-cart" element={<AddToCartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} /> */}
       {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
@@ -194,6 +200,7 @@ const App = () => {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
           <Route path="payments" element={<AdminPayments />} />
+          <Route path="reviews" element={<AdminReviews />} />
           {/* <Route path="reports" element={<AdminReports />} /> */}
           <Route path="profile-settings" element={<Profilesetting />} />
           <Route path="security" element={<AdminSecurity />} />

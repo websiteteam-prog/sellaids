@@ -8,6 +8,8 @@ import { User } from "../../models/userModel.js";
 import logger from "../../config/logger.js";
 import { sequelize } from "../../config/db.js";
 import { Vendor } from "../../models/vendorModel.js";
+import { sendSMS } from "../../providers/sms/smsAlert.js"
+import { createShipmentService } from "../xpressbees/xpressbeesService.js"
 
 export const createRazorpayInstance = () => {
   try {
@@ -197,6 +199,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
 
 export const verifyPaymentService = async (userId, paymentDetails) => {
   const transaction = await sequelize.transaction();
+  const updatedOrders = [];
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderIds } = paymentDetails;
 
@@ -230,6 +233,7 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
         },
         { transaction }
       );
+      updatedOrders.push(order); // updatedOrders push
     }
 
     const payment = await Payment.findOne({ where: { razorpay_order_id }, transaction });
@@ -253,6 +257,36 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
 
     await transaction.commit();
     logger.info(`Payment verified for Razorpay order ${razorpay_order_id}`);
+
+    // fetch user details like name, mobile
+    // const user = await User.findOne({
+    //   where: { id: userId },
+    //   attributes: ["name", "mobile"],
+    // });
+
+    // 🔹 Step 8: Send SMS and Create Shipment
+    // if (user) {
+    //   for (const order of updatedOrders) {
+    //     try {
+    //       // SMS #1 — Order Placed
+    //       await sendSMS(
+    //         user.mobile,
+    //         `Hi ${user.name}, your order ${order.id} has been placed successfully. Thank you for shopping with Stylekins Pvt. Ltd.!`
+    //       );
+    //       logger.info(`SMS sent successfully to ${user.mobile} for order ${order.id}`);
+
+    //       // Create Shipment in Xpressbees
+    //       try {
+    //         await createShipmentService(order);
+    //         logger.info(`Xpressbees shipment created for order ${order.id}`);
+    //       } catch (xbError) {
+    //         logger.error(`Failed to create Xpressbees shipment for order ${order.id}:`, xbError);
+    //       }
+    //     } catch (smsError) {
+    //       logger.error(`Failed to send SMS to ${user.mobile} for order ${order.id}:`, smsError);
+    //     }
+    //   }
+    // }
 
     return { status: true, data: { orderIds, razorpay_order_id, razorpay_payment_id } };
   } catch (error) {
