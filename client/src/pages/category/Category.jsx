@@ -26,7 +26,12 @@ const CategoryPage = () => {
   const { isAuthenticated, isUserLoading } = useUserStore();
   const { setPendingAdd } = useCartActions();
 
-  // 🧠 Category + Product Fetch
+  // Navigate function with productId
+  const handleNavigate = (id) => {
+    navigate(`/product-details/${id}`);
+  };
+
+  // Category + Product Fetch
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -48,7 +53,7 @@ const CategoryPage = () => {
           toast.error(message || "No data found for this category.");
         }
       } catch (error) {
-        console.error("❌ API error:", error);
+        console.error(" API error:", error);
         toast.error(
           error.response?.data?.message ||
             error.message ||
@@ -106,7 +111,7 @@ const CategoryPage = () => {
     addToCartDirectly(product);
   };
 
-  // ❤️ ADD TO WISHLIST (same logic as Bestsellers)
+  // ADD TO WISHLIST (same logic as Bestsellers)
   const addToWishlistDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
@@ -119,8 +124,7 @@ const CategoryPage = () => {
       toast.success(`${product.product_name} added to wishlist! ❤️`);
       navigate("/user/wishlist");
     } catch (error) {
-      const msg =
-        error.response?.data?.message || "Failed to add to wishlist";
+      const msg = error.response?.data?.message || "Failed to add to wishlist";
       toast.error(msg);
 
       if (error.response?.status === 401) {
@@ -150,7 +154,7 @@ const CategoryPage = () => {
     addToWishlistDirectly(product);
   };
 
-  // 🧠 Filtering + Sorting
+  //  Filtering + Sorting
   const filteredProducts = data?.products?.filter((p) => {
     const conditionMatch =
       selectedCondition.length === 0 ||
@@ -172,7 +176,7 @@ const CategoryPage = () => {
     return 0;
   });
 
-  // 🧠 Infinite Scroll
+  // Infinite Scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -195,7 +199,10 @@ const CategoryPage = () => {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-8 py-12">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="animate-pulse bg-white rounded-lg shadow-md overflow-hidden">
+          <div
+            key={i}
+            className="animate-pulse bg-white rounded-lg shadow-md overflow-hidden"
+          >
             <div className="h-72 bg-gray-200"></div>
             <div className="p-4 space-y-3">
               <div className="h-5 bg-gray-200 rounded w-3/4"></div>
@@ -221,7 +228,9 @@ const CategoryPage = () => {
         {/* Condition Filter */}
         {availableConditions.length > 0 && (
           <div className="mb-8">
-            <p className="font-semibold text-gray-700 mb-3 text-lg">Condition</p>
+            <p className="font-semibold text-gray-700 mb-3 text-lg">
+              Condition
+            </p>
             <div className="space-y-3 text-base">
               {availableConditions.map((cond) => (
                 <label
@@ -365,7 +374,10 @@ const CategoryPage = () => {
               </div>
 
               <div className="py-5 ps-1 text-start">
-                <h3 className="text-base font-semibold text-gray-800 hover:text-blue-700 transition">
+                <h3
+                  className="text-base font-semibold text-gray-800 hover:text-blue-700 transition cursor-pointer"
+                  onClick={() => handleNavigate(product._id)} 
+                >
                   {product?.product_name}
                 </h3>
                 <div className="mt-2">

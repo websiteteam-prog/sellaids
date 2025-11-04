@@ -44,9 +44,9 @@ export const userLogoutController = (req, res) => {
         req.session.destroy((err) => {
             if (err) {
                 logger.error(`Logout error: ${err.message}`);
-                return errorResponse(res, err);
+                return errorResponse(res, 400, err);
             }
-            res.clearCookie("connect.sid");
+            res.clearCookie("session_cookie_name", { path: "/" })
             logger.info(`User logged out: ${email}`);
             return successResponse(res, 200, "Logout successfully");
         });

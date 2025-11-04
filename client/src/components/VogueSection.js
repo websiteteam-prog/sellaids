@@ -5,12 +5,19 @@ import vogueImage1 from '../assets/images/image1.webp';
 import vogueImage2 from '../assets/images/image2.webp';
 import vogueImage3 from '../assets/images/image3.webp';
 import vogueImage4 from '../assets/images/image4.webp';
+import { useNavigate } from 'react-router';
 
 function VogueSection() {
     const images = [vogueImage1, vogueImage2, vogueImage3, vogueImage4];
     const [currentIndex, setCurrentIndex] = useState(0);
     const [prevIndex, setPrevIndex] = useState(0);
     const [direction, setDirection] = useState('right');
+
+    const navigate = useNavigate();
+
+    const handleNavigate = () => {
+        navigate("/about"); 
+    };
 
     const goPrev = () => {
         setDirection('left');
@@ -74,7 +81,7 @@ function VogueSection() {
                 <p className="text-gray-600 mt-4 text-base sm:text-lg">
                     Curating a better world of luxury and affordability
                 </p>
-                <button className="mt-6 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 uppercase text-sm sm:text-base font-semibold tracking-wide">
+                <button onClick={handleNavigate} className="mt-6 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 uppercase text-sm sm:text-base font-semibold tracking-wide">
                     Discover Now
                 </button>
             </div>

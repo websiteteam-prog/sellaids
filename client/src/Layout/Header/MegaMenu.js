@@ -34,7 +34,7 @@ export const Section = ({ title, items, baseSlug }) => (
 export const KidsMegaMenu = ({ kidsCategories }) => {
     if (!kidsCategories?.slug) return null;
     const baseSlug = kidsCategories?.slug
-    console.log(kidsCategories)
+    // console.log(kidsCategories)
 
     return (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300">
@@ -63,7 +63,7 @@ export const KidsMegaMenu = ({ kidsCategories }) => {
 export const MensMegaMenu = ({ menCategories }) => {
     if (!menCategories?.slug) return null;
     const baseSlug = menCategories?.slug
-    console.log(menCategories)
+    // console.log(menCategories)
 
     return (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300">

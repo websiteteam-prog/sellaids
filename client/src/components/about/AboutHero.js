@@ -34,11 +34,11 @@ const AboutHero = () => {
                         Our mission is to inspire a shift in mindset—one that recognizes the elegance and sustainability of buying preloved.
                     </p>
 
-                    <div className="flex justify-center md:justify-start">
+                    {/* <div className="flex justify-center md:justify-start">
                         <button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded">
                             DISCOVER NOW
                         </button>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </section>

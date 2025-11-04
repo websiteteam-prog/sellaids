@@ -106,13 +106,13 @@ const ProductDetails = () => {
               src={product.front_photo || fallbackImage}
               alt="Front"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => (e.target.src = fallbackImage)}
+              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
             <img
               src={product.back_photo || fallbackImage}
               alt="Back"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => (e.target.src = fallbackImage)}
+              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
           </div>
 
@@ -121,13 +121,13 @@ const ProductDetails = () => {
               src={product.label_photo || fallbackImage}
               alt="Label"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => (e.target.src = fallbackImage)}
+              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
             <img
               src={product.inside_photo || fallbackImage}
               alt="Inside"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => (e.target.src = fallbackImage)}
+              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
           </div>
 
@@ -136,13 +136,13 @@ const ProductDetails = () => {
               src={product.button_photo || fallbackImage}
               alt="Button"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => (e.target.src = fallbackImage)}
+              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
             <img
               src={product.wearing_photo || fallbackImage}
               alt="Wearing"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => (e.target.src = fallbackImage)}
+              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
           </div>
 
@@ -156,7 +156,7 @@ const ProductDetails = () => {
                     src={img || fallbackImage}
                     alt={`More ${i}`}
                     className="w-full h-40 object-cover rounded-lg border"
-                    onError={(e) => (e.target.src = fallbackImage)}
+                    onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
                   />
                 ))}
               </div>

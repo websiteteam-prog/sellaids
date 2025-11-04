@@ -37,6 +37,8 @@ export const adminLoginController = async (req, res) => {
         logger.info(`Admin logged in: ${admin.email}`);
         return successResponse(res, 200, `${admin.name} login successfully`, { id: admin.id, name: admin.name, email: admin.email });
     } catch (err) {
+        console.log("line 45:",err)
+        console.error("line 46:",err)
         logger.error(`Login error: ${err.message}`);
         return errorResponse(res, 500, err);
     }
@@ -57,6 +59,27 @@ export const adminLogoutController = (req, res) => {
     } catch (err) {
         logger.error(`Logout exception: ${err.message}`);
         return errorResponse(res, 500, err);
+    }
+};
+
+export const checkAdminSession = (req, res) => {
+    try {
+        if (req.session?.admin?.adminId) {
+            return res.status(200).json({
+                loggedIn: true,
+                admin: req.session.admin,
+            });
+        } else {
+            return res.status(200).json({
+                loggedIn: false,
+            });
+        }
+    } catch (error) {
+        console.error("Error checking admin session:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+        });
     }
 };
 

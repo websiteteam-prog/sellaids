@@ -1,7 +1,7 @@
 // src/components/vendor/VendorForgot.jsx
 import React, { useState } from "react";
 import axios from "axios";
-import { toast, Toaster } from "react-hot-toast";
+import { toast} from "react-hot-toast";
 
 const VendorForgot = () => {
   const [email, setEmail] = useState("");
@@ -38,7 +38,7 @@ const VendorForgot = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Toaster position="top-right" />
+      {/* <Toaster position="top-right" /> */}
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-orange-600">
           User Forgot Password

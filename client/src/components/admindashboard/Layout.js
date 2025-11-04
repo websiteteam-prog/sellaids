@@ -4,8 +4,10 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { useSessionChecker } from "./useSessionChecker";
 
 const Layout = () => {
+  useSessionChecker()
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />

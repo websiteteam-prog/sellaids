@@ -93,9 +93,10 @@ import AdminResetPassword from "./pages/Admin/AdminResetPassword";
 import AdminVendorDetails from "./pages/Admin/AdminVendorDetails";
 import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
 import Category from "./pages/category/Category";
+import AffordableLuxury from "./components/AffordableLuxury";
 
 const App = () => {
-const hydrate = useUserStore((s) => s.hydrate);
+  const hydrate = useUserStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate(); // ← Cookie se token load karega
@@ -110,6 +111,7 @@ const hydrate = useUserStore((s) => s.hydrate);
       <Route path="/contact" element={<Layout><Contact /></Layout>} />
       <Route path="/trusted-platform" element={<Layout><TrustedPlatformPage /></Layout>} />
       <Route path="/privacy-policy" element={<Layout><PrivacyPolicy /></Layout>} />
+      <Route path="/affordable-luxury" element={<Layout><AffordableLuxury /></Layout>} />
       <Route path="/shipping-policy" element={<Layout><ShippingPolicy /></Layout>} />
       <Route path="/terms-conditions" element={<Layout><TermsConditions /></Layout>} />
       <Route path="/refund-return-policy" element={<Layout><RefundReturnPolicy /></Layout>} />
@@ -123,7 +125,7 @@ const hydrate = useUserStore((s) => s.hydrate);
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
 
       {/* Product Details - User */}
-  <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />
+      <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />
       {/* Checkout Flow - Public */}
       {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />
       <Route path="/checkout" element={<Layout><CheckoutPage /></Layout>} /> */}

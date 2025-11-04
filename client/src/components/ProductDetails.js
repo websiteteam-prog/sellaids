@@ -118,7 +118,7 @@ const ProductDetails = () => {
         // === Fetch Reviews ===
         try {
           const reviewRes = await api.get(`/api/user/review/product/${id}`);
-          console.log("GET Reviews Raw Response:", reviewRes.data);
+          // console.log("GET Reviews Raw Response:", reviewRes.data);
 
           if (
             reviewRes.data.success &&

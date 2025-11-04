@@ -56,7 +56,7 @@ export const vendorRegisterSchema = yup.object({
 
     phone: yup
         .string()
-        .matches(/^\+?[1-9]\d{1,14}$/, "Phone must be valid")
+        // .matches(/^[6-9]\d{9}$/, "Invalid phone number")
         .required("Phone number is required"),
 
     email: yup

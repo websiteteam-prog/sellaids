@@ -67,7 +67,6 @@ const Footer = () => {
                 <div>
                     <h4 className="font-semibold mb-4 text-lg">QUICK LINKS</h4>
                     <ul className="space-y-2">
-                        <li><Link to="/wishlist" className="hover:text-orange-500">Wishlist</Link></li>
                         <li><Link to="/contact" className="hover:text-orange-500">Contact Us</Link></li>
                         <li><Link to="/blogs" className="hover:text-orange-500">Blogs</Link></li>
                     </ul>
@@ -84,10 +83,10 @@ const Footer = () => {
                         <span>contact@sellaids.com</span>
                     </div>
                     <div className="flex justify-center md:justify-start gap-4">
-                        <a href="https://facebook.com" target="_blank" rel="noreferrer" className="bg-gray-800 p-2 rounded-full hover:bg-orange-500">
+                        <a href="https://facebook.com/sellaidsofficial/?rdid=a4y0ZYIZDXzfaVoT" target="_blank" rel="noreferrer" className="bg-gray-800 p-2 rounded-full hover:bg-orange-500">
                             <Facebook size={16} />
                         </a>
-                        <a href="https://instagram.com" target="_blank" rel="noreferrer" className="bg-gray-800 p-2 rounded-full hover:bg-orange-500">
+                        <a href="https://instagram.com/sellaidsluxe/?igsh=MWxqcWxjM2hxdm9tMA%3D%3D&utm_source=qr" target="_blank" rel="noreferrer" className="bg-gray-800 p-2 rounded-full hover:bg-orange-500">
                             <Instagram size={16} />
                         </a>
                     </div>

@@ -1,7 +1,13 @@
 import React from 'react';
 import bannerImage from '../../assets/images/sell-banner.webp';
+import { useNavigate } from 'react-router';
 
 const CallToActionSection = () => {
+    const navigate = useNavigate();
+
+    const handleSellClick = () => {
+        navigate("/sell"); 
+    };
     return (
         <section
             className="relative bg-cover bg-center h-[60vh] md:h-[70vh] lg:h-[80vh] text-white"
@@ -26,7 +32,7 @@ const CallToActionSection = () => {
                     </p>
 
                     <div>
-                        <button className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-5 sm:px-6 py-2.5 sm:py-3 rounded-sm shadow-md transition">
+                        <button onClick={handleSellClick} className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-5 sm:px-6 py-2.5 sm:py-3 rounded-sm shadow-md transition">
                             SELL NOW
                         </button>
                     </div>

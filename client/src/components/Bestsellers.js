@@ -376,7 +376,7 @@ function Bestsellers() {
       )}
 
       {/* Animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes slide-up {
           from {
             transform: translateY(100%);

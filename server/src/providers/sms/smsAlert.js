@@ -1,39 +1,29 @@
-import axios from "axios"
-import config from "../../config/config.js"
+import axios from "axios";
+import config from "../../config/config.js";
 
-const SMS_API_URL = config.sms.apiUrl
-
-export const sendSMS = async (mobile, message) => {
-    const API_KEY = config.sms.apiKey
-    const SENDER_ID = config.sms.apiUrl
-
-    // check API_KEY and SENDER_ID is required
-    if (!API_KEY || !SENDER_ID) {
-        return {
-            success: false,
-            message: "Missing credentials"
-        }
+export const sendSMS = async (mobile, message, route = "transactional") => {
+  try {
+    const API_KEY = config.sms.apiKey;
+    const SENDER_ID = config.sms.senderId;
+    if (!mobile || !message) {
+      throw new Error("Missing one or more required parameters (mobile, message)");
     }
-    try {
-        const res = await axios.post(SMS_API_URL, null, {
-            params: {
-                apikey: API_KEY,
-                sender: SENDER_ID,
-                mobileno: mobile,
-                text: message
-            },
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
 
-        const data = res.data
-        if (data.status === 'success') {
-            console.log(`✅ SMS sent to ${mobile}`);
-            return { success: true, data };
-        }
-    } catch (error) {
-        console.error(`SMS error for ${mobile}:`, error.response?.data || error.message);
-        return { success: false, error: error.message };
+    const encodedMessage = encodeURIComponent(message);
+
+    const url = `https://www.smsalert.co.in/api/push.json?apikey=${API_KEY}&route=${route}&sender=${SENDER_ID}&mobileno=${mobile}&text=${encodedMessage}`;
+
+    const { data } = await axios.get(url);
+
+    if (data.status === "success") {
+      console.log("✅ SMS sent successfully:", data.description.desc);
+      return { success: true, data };
+    } else {
+      console.warn("SMS sending failed:", data);
+      return { success: false, data };
     }
-}
+  } catch (error) {
+    console.error("SMS sending error:", error.message);
+    return { success: false, error: error.message };
+  }
+};

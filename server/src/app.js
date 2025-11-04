@@ -12,6 +12,7 @@ import adminIndexRoutes from "./routes/admin/adminIndexRoutes.js";
 import productFormRoutes from "./routes/product/productFormRoutes.js";
 import paymentRoutes from "./routes/payment/paymentRoutes.js";
 import xpressbeesRoutes from "./routes/xpressbees/xpressbeesRoutes.js"
+import contactRoutes from "./routes/contactForm/contactRoutes.js"
 
 
 const app = express();
@@ -45,6 +46,7 @@ app.use("/api/admin", adminIndexRoutes);
 app.use("/api/product", productFormRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/xpressbees", xpressbeesRoutes);
+app.use("/api/contact", contactRoutes)
 
 // 🧠 Health Check Route-
 app.get("/", (req, res) => {
