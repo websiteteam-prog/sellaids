@@ -466,7 +466,7 @@ const ProductDetails = () => {
               <div className="text-center">
                 <p className="text-xs text-gray-500 uppercase font-medium">Color</p>
                 <div className="mt-1.5">
-                  {getUnifiedBadge(product.colors[0]?.name || "N/A", product.colors[0]?.hex)}
+                  {getUnifiedBadge(product.colors[0]?.name || "N/A")}
                 </div>
               </div>
             </div>
