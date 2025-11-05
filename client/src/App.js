@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-import { setLoginRedirect } from "./api/axiosInstance";
 import { useUserStore } from "./stores/useUserStore";
 // Layouts
 import Layout from "./Layout";
@@ -32,7 +31,6 @@ import AdminProductDetails from "./pages/Admin/ProductDetails";
 import Kidsaids from "./components/aids/Kidsaids";
 
 // Checkout Pages
-import AddToCartPage from "./pages/AddToCartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutLayout from "./pages/checkout/CheckoutLayout";
 
@@ -84,7 +82,6 @@ import AdminProducts from "./pages/Admin/Products";
 import AdminOrders from "./pages/Admin/Orders";
 import AdminPayments from "./pages/Admin/Payments";
 import AdminReviews from "./pages/Admin/Reviews"
-import AdminReports from "./pages/Admin/Reports";
 import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
 import AdminLogin from "./pages/Admin/AdminLogin";

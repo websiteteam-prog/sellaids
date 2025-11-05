@@ -37,7 +37,9 @@ export default function Profile() {
     if (isUserLoading) return;
 
     if (!isAuthenticated || !user?.id) {
-      toast.error("Please log in to view your profile [Error]");
+      toast.error("Please log in to view your profile [Error]", {
+        duration: 2500,
+      });
       navigate("/UserAuth/UserLogin", { replace: true });
       return;
     }
@@ -62,11 +64,15 @@ export default function Profile() {
       })
       .catch((err) => {
         if (err.response?.status === 401) {
-          toast.error("Session expired. Please log in again [Error]");
+          toast.error("Session expired. Please log in again [Error]", {
+            duration: 2500,
+          });
           logout();
           navigate("/UserAuth/UserLogin", { replace: true });
         } else {
-          toast.error("Failed to load profile [Error]");
+          toast.error("Failed to load profile [Error]", {
+            duration: 2500,
+          });
         }
       });
   }, [isAuthenticated, user, isUserLoading, navigate, logout]);
@@ -130,7 +136,9 @@ export default function Profile() {
         formData.confirmPassword
       ) {
         if (formData.newPassword !== formData.confirmPassword) {
-          toast.error("New passwords do not match! [Error]");
+          toast.error("New passwords do not match! [Error]", {
+            duration: 2500,
+          });
           setLoading(false);
           return;
         }
@@ -147,7 +155,9 @@ export default function Profile() {
       });
 
       login(res.data); // Update store
-      toast.success("Profile updated! [Success]");
+      toast.success("Profile updated! [Success]", {
+        duration: 2500,
+      });
 
       // === PASSWORD CHANGED → LOGOUT + REDIRECT ===
       if (passwordChanged) {
@@ -155,7 +165,6 @@ export default function Profile() {
           duration: 3000,
         });
 
-        // 1. Call backend logout
         try {
           await axios.post(
             `${process.env.REACT_APP_API_URL}/api/user/logout`,
@@ -166,10 +175,8 @@ export default function Profile() {
           console.warn("Backend logout failed (continuing anyway):", err);
         }
 
-        // 2. Clear frontend auth state
         logout();
 
-        // 3. Clear password fields
         setFormData((prev) => ({
           ...prev,
           currentPassword: "",
@@ -177,12 +184,10 @@ export default function Profile() {
           confirmPassword: "",
         }));
 
-        // 4. Redirect to login (replace history)
         navigate("/UserAuth/UserLogin", { replace: true });
-        return; // Stop further execution
+        return;
       }
 
-      // === NO PASSWORD CHANGE → STAY ON PROFILE ===
       setIsEditing(false);
       setFormData((prev) => ({
         ...prev,
@@ -192,20 +197,26 @@ export default function Profile() {
       }));
     } catch (error) {
       if (error.response?.status === 401) {
-        toast.error("Session expired. Logging out... [Error]");
+        toast.error("Session expired. Logging out... [Error]", {
+          duration: 2500,
+        });
         logout();
         navigate("/UserAuth/UserLogin", { replace: true });
       } else if (error.response?.data?.error === "Current password is incorrect") {
-        toast.error("Current password is wrong! [Error]");
+        toast.error("Current password is wrong! [Error]", {
+          duration: 2500,
+        });
       } else if (error.response?.status === 400 && error.response?.data?.errors) {
         const errs = Array.isArray(error.response.data.errors)
           ? error.response.data.errors
           : error.response.data.errors.map((e) => e.msg);
-        errs.forEach((msg) => toast.error(msg + " [Error]"));
-      } else {
-        toast.error(
-          error.response?.data?.message || "Update failed [Error]"
+        errs.forEach((msg) =>
+          toast.error(msg + " [Error]", { duration: 2500 })
         );
+      } else {
+        toast.error(error.response?.data?.message || "Update failed [Error]", {
+          duration: 2500,
+        });
       }
     } finally {
       setLoading(false);
@@ -225,7 +236,10 @@ export default function Profile() {
   if (isUserLoading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
-        <Toaster />
+        <Toaster
+          position="top-right"
+          toastOptions={{ duration: 2500 }}
+        />
         <p className="text-center mt-10">Loading user...</p>
       </div>
     );
@@ -235,7 +249,10 @@ export default function Profile() {
 
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
-      <Toaster />
+      <Toaster
+        position="top-right"
+        toastOptions={{ duration: 2500 }}
+      />
       <h1 className="text-3xl font-bold mb-6 text-gray-800">My Profile</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -362,7 +379,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={() => togglePassword("current")}
-                className="absolute right-3 top-9 text-gray-600"
+                className="absolute right-3 top-10 text-gray-600"
               >
                 {showPassword.current ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -383,7 +400,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={() => togglePassword("new")}
-                className="absolute right-3 top-9 text-gray-600"
+                className="absolute right-3 top-10 text-gray-600"
               >
                 {showPassword.new ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -404,7 +421,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={() => togglePassword("confirm")}
-                className="absolute right-3 top-9 text-gray-600"
+                className="absolute right-3 top-10 text-gray-600"
               >
                 {showPassword.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
