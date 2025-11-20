@@ -23,7 +23,7 @@ const Orders = () => {
       setLoading(true);
       const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/management/order`, {
         params: {
-          order_id:search,
+          order_id: search,
           status: statusFilter,
           start_date: startDate,
           end_date: endDate,
@@ -192,15 +192,14 @@ const Orders = () => {
                   <td className="px-4 py-3 border font-bold">₹{o.total_amount}</td>
                   <td className="px-4 py-3 border">
                     <span
-                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        o.order_status === "delivered"
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${o.order_status === "delivered"
                           ? "bg-green-100 text-green-700"
                           : o.order_status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : o.order_status === "cancelled"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-purple-100 text-purple-700"
-                      }`}
+                            ? "bg-yellow-100 text-yellow-700"
+                            : o.order_status === "cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-purple-100 text-purple-700"
+                        }`}
                     >
                       {o.order_status}
                     </span>
@@ -223,7 +222,7 @@ const Orders = () => {
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {/* {totalPages > 1 && (
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -241,6 +240,87 @@ const Orders = () => {
               {i + 1}
             </button>
           ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )} */}
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4">
+
+          {/* Prev Button */}
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {/* Page Numbers Logic */}
+          {(() => {
+            const pages = [];
+            const showPages = 5; // only 5 pages visible
+
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(totalPages, start + showPages - 1);
+
+            if (end - start < showPages - 1) {
+              start = Math.max(1, end - showPages + 1);
+            }
+
+            // Show first page if not included
+            if (start > 1) {
+              pages.push(
+                <button
+                  key={1}
+                  onClick={() => setCurrentPage(1)}
+                  className={`px-3 py-1 border rounded ${currentPage === 1 ? "bg-blue-600 text-white" : ""
+                    }`}
+                >
+                  1
+                </button>
+              );
+              pages.push(<span key="dots1">...</span>);
+            }
+
+            // Middle pages
+            for (let i = start; i <= end; i++) {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`px-3 py-1 border rounded ${currentPage === i ? "bg-blue-600 text-white" : ""
+                    }`}
+                >
+                  {i}
+                </button>
+              );
+            }
+
+            // Show last page if not included
+            if (end < totalPages) {
+              pages.push(<span key="dots2">...</span>);
+              pages.push(
+                <button
+                  key={totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className={`px-3 py-1 border rounded ${currentPage === totalPages ? "bg-blue-600 text-white" : ""
+                    }`}
+                >
+                  {totalPages}
+                </button>
+              );
+            }
+
+            return pages;
+          })()}
+
+          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}

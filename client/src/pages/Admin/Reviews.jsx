@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import { Download, Trash2 } from "lucide-react"; 
+import { Download, Trash2 } from "lucide-react";
 import RatingStars from "../../components/admindashboard/RatingStars";
 
 const ReviewsManagement = () => {
@@ -177,7 +177,9 @@ const ReviewsManagement = () => {
                   <td className="px-4 py-3 border">
                     <RatingStars rating={r?.rating || 0} />
                   </td>
-                  <td className="px-4 py-3 border">{r?.review_text || "N/A"}</td>
+                  <td className="px-4 py-3 border">
+                    {r?.review_text || "N/A"}
+                  </td>
                   <td className="px-4 py-3 border text-center">
                     <button
                       onClick={() => handleDelete(r.id)}
@@ -194,7 +196,7 @@ const ReviewsManagement = () => {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {/* {totalPages > 1 && (
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -216,6 +218,89 @@ const ReviewsManagement = () => {
             </button>
           ))}
 
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )} */}
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4">
+          {/* Prev Button */}
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {/* Page Numbers Logic */}
+          {(() => {
+            const pages = [];
+            const showPages = 5; // only 5 pages visible
+
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(totalPages, start + showPages - 1);
+
+            if (end - start < showPages - 1) {
+              start = Math.max(1, end - showPages + 1);
+            }
+
+            // Show first page if not included
+            if (start > 1) {
+              pages.push(
+                <button
+                  key={1}
+                  onClick={() => setCurrentPage(1)}
+                  className={`px-3 py-1 border rounded ${
+                    currentPage === 1 ? "bg-blue-600 text-white" : ""
+                  }`}
+                >
+                  1
+                </button>
+              );
+              pages.push(<span key="dots1">...</span>);
+            }
+
+            // Middle pages
+            for (let i = start; i <= end; i++) {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`px-3 py-1 border rounded ${
+                    currentPage === i ? "bg-blue-600 text-white" : ""
+                  }`}
+                >
+                  {i}
+                </button>
+              );
+            }
+
+            // Show last page if not included
+            if (end < totalPages) {
+              pages.push(<span key="dots2">...</span>);
+              pages.push(
+                <button
+                  key={totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className={`px-3 py-1 border rounded ${
+                    currentPage === totalPages ? "bg-blue-600 text-white" : ""
+                  }`}
+                >
+                  {totalPages}
+                </button>
+              );
+            }
+
+            return pages;
+          })()}
+
+          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}

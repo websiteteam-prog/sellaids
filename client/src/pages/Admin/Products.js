@@ -190,13 +190,12 @@ const ProductManagement = () => {
                   <td className="px-4 py-3 border">{p.selling_price}</td>
                   <td className="px-4 py-3 border">
                     <span
-                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        p.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : p.status === "pending"
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${p.status === "approved"
+                        ? "bg-green-100 text-green-700"
+                        : p.status === "pending"
                           ? "bg-yellow-100 text-yellow-700"
                           : "bg-red-100 text-red-700"
-                      }`}
+                        }`}
                     >
                       {p.status}
                     </span>
@@ -225,6 +224,8 @@ const ProductManagement = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-end gap-2 mt-4">
+
+          {/* Prev Button */}
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
@@ -232,17 +233,67 @@ const ProductManagement = () => {
           >
             Prev
           </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
+
+          {/* Page Numbers Logic */}
+          {(() => {
+            const pages = [];
+            const showPages = 5; // only 5 pages visible
+
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(totalPages, start + showPages - 1);
+
+            if (end - start < showPages - 1) {
+              start = Math.max(1, end - showPages + 1);
+            }
+
+            // Show first page if not included
+            if (start > 1) {
+              pages.push(
+                <button
+                  key={1}
+                  onClick={() => setCurrentPage(1)}
+                  className={`px-3 py-1 border rounded ${currentPage === 1 ? "bg-blue-600 text-white" : ""
+                    }`}
+                >
+                  1
+                </button>
+              );
+              pages.push(<span key="dots1">...</span>);
+            }
+
+            // Middle pages
+            for (let i = start; i <= end; i++) {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`px-3 py-1 border rounded ${currentPage === i ? "bg-blue-600 text-white" : ""
+                    }`}
+                >
+                  {i}
+                </button>
+              );
+            }
+
+            // Show last page if not included
+            if (end < totalPages) {
+              pages.push(<span key="dots2">...</span>);
+              pages.push(
+                <button
+                  key={totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className={`px-3 py-1 border rounded ${currentPage === totalPages ? "bg-blue-600 text-white" : ""
+                    }`}
+                >
+                  {totalPages}
+                </button>
+              );
+            }
+
+            return pages;
+          })()}
+
+          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}

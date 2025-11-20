@@ -459,14 +459,14 @@ const AddProductForm = () => {
 
           {/* STEP 1: PRODUCT */}
           {step === 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">s
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Product</h3>
               {[
                 { name: "product_group", label: "Group *", type: "select", options: ["", "Men", "Women", "Girl", "Boy"] },
                 { name: "productCategory", label: "Product Category *", type: "select", options: isLoadingCategories ? [{ name: "Loading..." }] : categories },
                 { name: "product_type", label: "Product Type *", type: "select", options: isLoadingTypes ? ["Loading..."] : types },
-                { name: "product_condition", label: "Product Condition *", type: "select", options: ["", "new", "like_new", "used", "damaged"] },
-                { name: "fit", label: "Fit", type: "select", options: ["", "Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"] },
+                { name: "product_condition", label: "Product Condition *", type: "select", options: ["", "new", "almost_new", "good", "hardly_ever_used", "satisfactory"] },
+                { name: "fit", label: "Fit", type: "select", options: ["", "Slim", "Regular", "Loose", "Oversized", "Tailored", "Modern", "Fitted", "Other"] },
                 {
                   name: "size",
                   label: "Size *",

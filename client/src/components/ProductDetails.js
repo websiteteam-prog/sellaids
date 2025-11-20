@@ -68,13 +68,25 @@ const ProductDetails = () => {
         }
 
         const raw = productRes.data.product;
+        console.log(raw)
+
+        let extraInfo = {};
+        try {
+          if (raw.additional_info) {
+            extraInfo = JSON.parse(raw.additional_info);
+          }
+        } catch (e) {
+          console.error("additional_info JSON parse error", e);
+        }
+
         const mappedProduct = {
           id: raw.id,
-          name: raw.model_name || raw.product_type || "Unnamed Product",
+          name: extraInfo.description,
           sku: raw.sku || "N/A",
           price: parseFloat(raw.selling_price) || 0,
           original_price: parseFloat(raw.purchase_price) || null,
-          description: raw.additional_info || "No description available.",
+          model: extraInfo.model_size,
+          fabric: extraInfo.fabric,
           images: [],
           colors: raw.product_color
             ? [{ hex: getColorHex(raw.product_color), name: raw.product_color }]
@@ -85,6 +97,8 @@ const ProductDetails = () => {
           review_count: 0,
         };
 
+        if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
+        if (raw.back_photo) mappedProduct.images.push(raw.back_photo);
         if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
         if (raw.more_images) {
           try {
@@ -98,7 +112,7 @@ const ProductDetails = () => {
                 )
               );
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         if (productRes.data.relatedProducts) {
@@ -118,7 +132,7 @@ const ProductDetails = () => {
         // === Fetch Reviews ===
         try {
           const reviewRes = await api.get(`/api/user/review/product/${id}`);
-          // console.log("GET Reviews Raw Response:", reviewRes.data);
+          console.log("GET Reviews Raw Response:", reviewRes.data);
 
           if (
             reviewRes.data.success &&
@@ -400,9 +414,8 @@ const ProductDetails = () => {
               <button
                 key={i}
                 onClick={() => setMainImgIdx(i)}
-                className={`flex-shrink-0 w-20 h-20 rounded-md border-2 overflow-hidden ${
-                  mainImgIdx === i ? "border-orange-500 ring-2 ring-orange-300" : "border-gray-300"
-                }`}
+                className={`flex-shrink-0 w-20 h-20 rounded-md border-2 overflow-hidden ${mainImgIdx === i ? "border-orange-500 ring-2 ring-orange-300" : "border-gray-300"
+                  }`}
               >
                 <img src={src} alt="" className="w-full h-full object-cover" />
               </button>
@@ -439,7 +452,16 @@ const ProductDetails = () => {
             )}
           </div>
 
-          <p className="text-gray-700">{product.description}</p>
+          {product?.model && (
+            <p className="text-gray-700 -mt-1">
+              Model Size: {product.model}
+            </p>
+          )}
+          {product?.fabric && (
+            <p className="text-gray-700 -mt-1">
+              Model Size: {product.fabric}
+            </p>
+          )}
 
           {/* Info Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
@@ -593,9 +615,8 @@ const ProductDetails = () => {
                     onClick={() => setNewReview({ ...newReview, rating: s })}
                   >
                     <Star
-                      className={`w-6 h-6 ${
-                        s <= newReview.rating ? "fill-orange-500 text-orange-500" : "text-gray-300"
-                      }`}
+                      className={`w-6 h-6 ${s <= newReview.rating ? "fill-orange-500 text-orange-500" : "text-gray-300"
+                        }`}
                     />
                   </button>
                 ))}
@@ -655,11 +676,10 @@ const ProductDetails = () => {
               <button
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
-                className={`w-10 h-10 rounded-full font-medium ${
-                  currentPage === i + 1
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+                className={`w-10 h-10 rounded-full font-medium ${currentPage === i + 1
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
               >
                 {i + 1}
               </button>
@@ -678,7 +698,7 @@ const ProductDetails = () => {
                 className="flex gap-6 transition-transform duration-500 ease-in-out"
                 style={{
                   transform: `translateX(-${carouselStart * 26.5}%)`,
-                  width: `${relatedProducts.length * 26.5}%`,
+                  width: `${Math.max(relatedProducts.length * 26.5, 100)}%`,
                 }}
               >
                 {relatedProducts.map((p) => (
