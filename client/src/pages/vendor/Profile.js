@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import { useVendorStore } from "../../stores/useVendorStore"
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -158,24 +159,45 @@ const Profile = () => {
           account_type: vendor.account_type,
         };
       } else if (activeTab === "security" && showPasswordForm) {
-        endpoint = "http://localhost:5000/api/vendor/password";
+        endpoint = "http://localhost:5000/api/vendor/security";
         updateData = {
           currentPassword: passwordFields.currentPassword,
           newPassword: passwordFields.newPassword,
+          confirmPassword: passwordFields.confirmPassword,
         };
       }
 
       await axios.put(endpoint, updateData, { withCredentials: true });
 
-      toast.success("Profile updated successfully!");
-      setIsEditing(false);
-      setShowPasswordForm(false);
-      setPasswordFields({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setErrors({});
+      // 🔹 If password updated, logout vendor automatically
+      if (activeTab === "security") {
+        try {
+          // Call backend logout API
+          await axios.post(
+            "http://localhost:5000/api/vendor/auth/logout",
+            {},
+            { withCredentials: true }
+          );
+
+          // Clear Zustand store and local cookie store
+          const { logout } = useVendorStore.getState();
+          logout();
+          localStorage.removeItem("vendor-store");
+
+          toast.success("Password updated successfully! Please log in again.");
+
+          // Redirect to login
+          window.location.replace("/vendor/login");
+        } catch (error) {
+          console.error("Logout failed after password change:", error);
+          toast.error("Password changed, but logout failed. Please login again.");
+          window.location.replace("/vendor/login");
+        }
+      } else {
+        toast.success("Profile updated successfully!");
+        setIsEditing(false);
+        setErrors({});
+      }
     } catch (error) {
       console.error("Error updating profile", error);
       const errorMessage =
@@ -188,8 +210,6 @@ const Profile = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <Toaster position="top-right" />
-
       {/* Breadcrumb */}
       <div className="mb-4 text-sm text-gray-600">
         Home / <span className="text-orange-600">Profile</span>
@@ -231,11 +251,10 @@ const Profile = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 border-b-2 text-sm font-medium flex-shrink-0 ${
-                activeTab === tab.id
-                  ? "border-orange-600 text-orange-600"
-                  : "border-transparent text-gray-500 hover:text-orange-600"
-              }`}
+              className={`py-3 border-b-2 text-sm font-medium flex-shrink-0 ${activeTab === tab.id
+                ? "border-orange-600 text-orange-600"
+                : "border-transparent text-gray-500 hover:text-orange-600"
+                }`}
             >
               {tab.label}
             </button>
@@ -265,9 +284,8 @@ const Profile = () => {
                       value={vendor[field.name]}
                       onChange={handleInputChange}
                       disabled={field.disabled || !isEditing}
-                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                        errors[field.name] ? "border-red-500" : ""
-                      }`}
+                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${errors[field.name] ? "border-red-500" : ""
+                        }`}
                     />
                     {errors[field.name] && (
                       <p className="text-red-500 text-xs mt-1">
@@ -303,9 +321,8 @@ const Profile = () => {
                       value={vendor[field.name]}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                        errors[field.name] ? "border-red-500" : ""
-                      }`}
+                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${errors[field.name] ? "border-red-500" : ""
+                        }`}
                     />
                     {errors[field.name] && (
                       <p className="text-red-500 text-xs mt-1">
@@ -323,60 +340,93 @@ const Profile = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Bank Details</h4>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { label: "Bank Name", name: "bank_name" },
-                  { label: "Account Number", name: "account_number" },
-                  { label: "IFSC Code", name: "ifsc_code" },
-                  {
-                    label: "Account Type",
-                    name: "account_type",
-                    type: "select",
-                    options: ["Saving", "Current"],
-                  },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="block text-sm text-gray-600">
-                      {field.label}
-                    </label>
-                    {field.type === "select" ? (
-                      <select
-                        name={field.name}
-                        value={vendor[field.name]}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                          errors[field.name] ? "border-red-500" : ""
+                {/* Bank Name */}
+                <div>
+                  <label className="block text-sm text-gray-600">Bank Name</label>
+                  <input
+                    type="text"
+                    name="bank_name"
+                    value={vendor.bank_name}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className={`w-full border rounded-lg px-3 py-2 mt-1 ${errors.bank_name ? "border-red-500" : ""
+                      }`}
+                  />
+                  {errors.bank_name && (
+                    <p className="text-red-500 text-xs mt-1">{errors.bank_name}</p>
+                  )}
+                </div>
+
+                {/* Account Number */}
+                <div>
+                  <label className="block text-sm text-gray-600">Account Number</label>
+                  <input
+                    type="text"
+                    name="account_number"
+                    value={vendor.account_number}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className={`w-full border rounded-lg px-3 py-2 mt-1 ${errors.account_number ? "border-red-500" : ""
+                      }`}
+                  />
+                  {errors.account_number && (
+                    <p className="text-red-500 text-xs mt-1">{errors.account_number}</p>
+                  )}
+                </div>
+
+                {/* IFSC Code */}
+                <div>
+                  <label className="block text-sm text-gray-600">IFSC Code</label>
+                  <input
+                    type="text"
+                    name="ifsc_code"
+                    value={vendor.ifsc_code}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className={`w-full border rounded-lg px-3 py-2 mt-1 uppercase ${errors.ifsc_code ? "border-red-500" : ""
+                      }`}
+                  />
+                  {errors.ifsc_code && (
+                    <p className="text-red-500 text-xs mt-1">{errors.ifsc_code}</p>
+                  )}
+                </div>
+
+                {/* Account Type (enum: savings | current) */}
+                <div>
+                  <label className="block text-sm text-gray-600">Account Type</label>
+                  {isEditing ? (
+                    <select
+                      name="account_type"
+                      value={vendor.account_type || "savings"}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${errors.account_type ? "border-red-500" : ""
                         }`}
-                      >
-                        <option value="">Select Account Type</option>
-                        {field.options.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        name={field.name}
-                        value={vendor[field.name]}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                          errors[field.name] ? "border-red-500" : ""
-                        }`}
-                      />
-                    )}
-                    {errors[field.name] && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors[field.name]}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                    >
+                      {/* <option value="">Select Account Type</option> */}
+                      <option value="savings">Savings</option>
+                      <option value="current">Current</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={
+                        vendor.account_type
+                          ? vendor.account_type.charAt(0).toUpperCase() +
+                          vendor.account_type.slice(1)
+                          : ""
+                      }
+                      disabled
+                      className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                    />
+                  )}
+                  {errors.account_type && (
+                    <p className="text-red-500 text-xs mt-1">{errors.account_type}</p>
+                  )}
+                </div>
               </form>
             </div>
           )}
+
 
           {/* Security */}
           {activeTab === "security" && (
@@ -411,9 +461,8 @@ const Profile = () => {
                       onChange={handlePasswordChange}
                       placeholder={field.placeholder}
                       disabled={isLoading || !isEditing}
-                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${
-                        errors[field.name] ? "border-red-500" : ""
-                      }`}
+                      className={`w-full border rounded-lg px-3 py-2 mt-1 ${errors[field.name] ? "border-red-500" : ""
+                        }`}
                     />
                     <button
                       type="button"

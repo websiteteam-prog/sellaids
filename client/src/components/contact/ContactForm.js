@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 const ContactForm = () => {
     const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ const ContactForm = () => {
     });
 
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -47,19 +49,43 @@ const ContactForm = () => {
         return Object.keys(tempErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validate()) {
-            console.log("Form Submitted:", formData);
-            alert("Your query has been submitted ✅");
 
-            setFormData({
-                name: "",
-                email: "",
-                phone: "",
-                message: "",
-            });
-            setErrors({});
+        if (!validate()) return;
+
+        try {
+            setLoading(true);
+            const res = await axios.post(
+                `${process.env.REACT_APP_API_URL}/api/contact`,
+                formData,
+                {
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+
+            if (res.data.success) {
+                alert("Your query has been submitted ✅");
+
+                // Reset form after success
+                setFormData({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    message: "",
+                });
+                setErrors({});
+            } else {
+                alert("Something went wrong. Please try again later.");
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            alert(
+                error.response?.data?.message ||
+                "Server error. Please try again later."
+            );
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -67,8 +93,13 @@ const ContactForm = () => {
         <div className="flex flex-col md:flex-row items-stretch justify-between gap-8 p-6 md:p-8 bg-gray-50">
             {/* Left Side: Form */}
             <div className="w-full md:w-1/2 bg-white shadow-md rounded-xl p-6 flex flex-col">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Get in Touch</h2>
-                <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                    Get in Touch
+                </h2>
+                <form
+                    onSubmit={handleSubmit}
+                    className="space-y-4 flex-1 flex flex-col"
+                >
                     {/* Name */}
                     <div>
                         <label className="block text-gray-700 font-medium">
@@ -82,7 +113,9 @@ const ContactForm = () => {
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                         {errors.name && (
-                            <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.name}
+                            </p>
                         )}
                     </div>
 
@@ -99,7 +132,9 @@ const ContactForm = () => {
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                         {errors.email && (
-                            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.email}
+                            </p>
                         )}
                     </div>
 
@@ -116,7 +151,9 @@ const ContactForm = () => {
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                         {errors.phone && (
-                            <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.phone}
+                            </p>
                         )}
                     </div>
 
@@ -137,9 +174,14 @@ const ContactForm = () => {
                     {/* Submit */}
                     <button
                         type="submit"
-                        className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition"
+                        disabled={loading}
+                        className={`w-full py-3 rounded-lg transition text-white ${
+                            loading
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-orange-500 hover:bg-orange-600"
+                        }`}
                     >
-                        Submit
+                        {loading ? "Submitting..." : "Submit"}
                     </button>
                 </form>
             </div>

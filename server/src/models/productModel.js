@@ -32,11 +32,11 @@ export const Product = sequelize.define(
     product_group: DataTypes.STRING(100),
     product_type: DataTypes.STRING(100),
     product_condition: {
-      type: DataTypes.ENUM("new", "like_new", "used", "damaged"),
+      type: DataTypes.ENUM("new", "almost_new", "good", "hardly_ever_used", "satisfactory"),
       defaultValue: "new",
     },
     fit: {
-      type: DataTypes.ENUM("Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"),
+      type: DataTypes.ENUM("Slim", "Regular", "Loose", "Oversized", "Tailored", "Modern", "Fitted", "Other"),
       defaultValue: "Regular",
     },
     size: {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
@@ -124,8 +124,17 @@ const MultiStepRegister = () => {
 
   // Move to next step if current step is valid
   const nextStep = () => {
+    // if (validateStep(step)) {
+    //   if (step < 5) {
+    //     setStep((prev) => prev + 1);
+    //   }
+    // }
     if (validateStep(step)) {
-      if (step < 5) setStep((prev) => prev + 1);
+      setStep((prev) => {
+        const newStep = prev + 1;
+        console.log("Updated step:", newStep);
+        return newStep;
+      });
     }
   };
 
@@ -162,7 +171,7 @@ const MultiStepRegister = () => {
           position: "top-right",
           duration: 2000,
         });
-        setTimeout(() => navigate("/vendor/login"), 2000);
+        setTimeout(() => navigate("/vendor/login"), 1000);
         // Reset form
         setFormData({
           name: "",
@@ -207,6 +216,10 @@ const MultiStepRegister = () => {
     }
   };
 
+  useEffect(() => {
+    console.log("Updated step:", step);
+  }, [step]);
+
   // Render form fields based on step
   const renderStep = () => {
     switch (step) {
@@ -223,9 +236,8 @@ const MultiStepRegister = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.name ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
@@ -238,9 +250,8 @@ const MultiStepRegister = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.phone ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
@@ -253,9 +264,8 @@ const MultiStepRegister = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
@@ -268,12 +278,11 @@ const MultiStepRegister = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               <span
-                className="absolute right-3 top-10 cursor-pointer"
+                className="absolute right-3 top-8 cursor-pointer"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? "🙈" : "👁️"}
@@ -294,9 +303,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Designation"
                 value={formData.designation}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.designation ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.designation ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.designation && <p className="text-red-500 text-sm mt-1">{errors.designation}</p>}
             </div>
@@ -309,9 +317,8 @@ const MultiStepRegister = () => {
                 value={formData.business_name}
                 onChange={handleChange}
                 required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.business_name ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.business_name ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.business_name && <p className="text-red-500 text-sm mt-1">{errors.business_name}</p>}
             </div>
@@ -321,9 +328,8 @@ const MultiStepRegister = () => {
                 name="business_type"
                 value={formData.business_type}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.business_type ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.business_type ? "border-red-500" : "border-gray-300"
+                  }`}
               >
                 <option value="">Select Business Type</option>
                 <option value="restaurant">Restaurant</option>
@@ -342,9 +348,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter GST Number"
                 value={formData.gst_number}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.gst_number ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.gst_number ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.gst_number && <p className="text-red-500 text-sm mt-1">{errors.gst_number}</p>}
             </div>
@@ -356,9 +361,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter PAN Number"
                 value={formData.pan_number}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.pan_number ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.pan_number ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.pan_number && <p className="text-red-500 text-sm mt-1">{errors.pan_number}</p>}
             </div>
@@ -376,9 +380,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter House No."
                 value={formData.house_no}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.house_no ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.house_no ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.house_no && <p className="text-red-500 text-sm mt-1">{errors.house_no}</p>}
             </div>
@@ -390,9 +393,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Street Name"
                 value={formData.street_name}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.street_name ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.street_name ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.street_name && <p className="text-red-500 text-sm mt-1">{errors.street_name}</p>}
             </div>
@@ -404,9 +406,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter State"
                 value={formData.state}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.state ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.state ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
             </div>
@@ -418,9 +419,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter City"
                 value={formData.city}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.city ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
             </div>
@@ -432,9 +432,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Pincode"
                 value={formData.pincode}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.pincode ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.pincode ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
             </div>
@@ -452,9 +451,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Contact Person Name"
                 value={formData.contact_person_name}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.contact_person_name ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.contact_person_name ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.contact_person_name && <p className="text-red-500 text-sm mt-1">{errors.contact_person_name}</p>}
             </div>
@@ -466,9 +464,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Contact Person Phone"
                 value={formData.contact_person_phone}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.contact_person_phone ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.contact_person_phone ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.contact_person_phone && <p className="text-red-500 text-sm mt-1">{errors.contact_person_phone}</p>}
             </div>
@@ -486,9 +483,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Account Number"
                 value={formData.account_number}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.account_number ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.account_number ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.account_number && <p className="text-red-500 text-sm mt-1">{errors.account_number}</p>}
             </div>
@@ -500,9 +496,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter IFSC Code"
                 value={formData.ifsc_code}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.ifsc_code ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.ifsc_code ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.ifsc_code && <p className="text-red-500 text-sm mt-1">{errors.ifsc_code}</p>}
             </div>
@@ -514,9 +509,8 @@ const MultiStepRegister = () => {
                 placeholder="Enter Bank Name"
                 value={formData.bank_name}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.bank_name ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.bank_name ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.bank_name && <p className="text-red-500 text-sm mt-1">{errors.bank_name}</p>}
             </div>
@@ -526,9 +520,8 @@ const MultiStepRegister = () => {
                 name="account_type"
                 value={formData.account_type}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.account_type ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.account_type ? "border-red-500" : "border-gray-300"
+                  }`}
               >
                 <option value="">Select Account Type</option>
                 <option value="savings">Savings</option>
@@ -555,7 +548,14 @@ const MultiStepRegister = () => {
 
   return (
     <div className="max-w-lg mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => {
+        e.preventDefault(); // stop default browser submit
+        console.log(step)
+        if (step === 5) {
+          handleSubmit(e); // only submit on final step
+        }
+      }}
+      >
         {renderStep()}
         <div className="flex justify-between mt-6">
           {step > 1 && (
@@ -577,11 +577,11 @@ const MultiStepRegister = () => {
             </button>
           ) : (
             <button
-              type="submit"
+              type="button"
               disabled={isLoading || !acceptTerms}
-              className={`px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 ${
-                isLoading || !acceptTerms ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              onClick={handleSubmit}
+              className={`px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 ${isLoading || !acceptTerms ? "opacity-50 cursor-not-allowed" : ""
+                }`}
             >
               {isLoading ? "Submitting..." : "Submit"}
             </button>

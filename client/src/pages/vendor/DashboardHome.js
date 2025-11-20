@@ -39,11 +39,11 @@ const DashboardHome = () => {
         const summaryRes = await axios.get(summaryUrl, { withCredentials: true });
 
         // ----> Log the API response data for debugging
-        console.log("Dashboard Data:", summaryRes.data);
+        // console.log("Dashboard Data:", summaryRes.data);
         
         // Assuming the response data is properly structured
         const data = summaryRes.data?.data;
-        console.log(data,':::::::::::::::')
+        // console.log(data,':::::::::::::::')
         setSummary({
           totalProducts: data.total_products ?? 0,
           pendingOrders: data.pending_orders ?? 0,
@@ -56,7 +56,7 @@ const DashboardHome = () => {
         const productsRes = await axios.get(productsUrl, { withCredentials: true });
 
         // ----> Log the products response for debugging
-        console.log("Recent Products:", productsRes.data);
+        // console.log("Recent Products:", productsRes.data);
 
         setRecentProducts(productsRes.data.products ?? []);
       } catch (err) {
@@ -80,7 +80,7 @@ const DashboardHome = () => {
      UI
      ------------------------------------------------------------- */
 
-     console.log("Rendering DashboardHome with:", { summary, recentProducts, loading });
+    //  console.log("Rendering DashboardHome with:", { summary, recentProducts, loading });
   return (
     <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
       {/* Header */}

@@ -26,7 +26,12 @@ const CategoryPage = () => {
   const { isAuthenticated, isUserLoading } = useUserStore();
   const { setPendingAdd } = useCartActions();
 
-  // 🧠 Category + Product Fetch
+  // Navigate function with productId
+  const handleNavigate = (id) => {
+    navigate(`/product-details/${id}`);
+  };
+
+  // Category + Product Fetch
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -37,6 +42,7 @@ const CategoryPage = () => {
         );
 
         const { success, data, message } = res.data;
+        console.log(data);
         if (success && data) {
           setData({
             category: data.category || {},
@@ -48,7 +54,7 @@ const CategoryPage = () => {
           toast.error(message || "No data found for this category.");
         }
       } catch (error) {
-        console.error("❌ API error:", error);
+        console.error(" API error:", error);
         toast.error(
           error.response?.data?.message ||
             error.message ||
@@ -62,7 +68,7 @@ const CategoryPage = () => {
     fetchCategory();
   }, [slugPath]);
 
-  // 🛒 ADD TO CART (same logic as Bestsellers)
+  // 🛒 ADD TO CART
   const addToCartDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
@@ -106,7 +112,7 @@ const CategoryPage = () => {
     addToCartDirectly(product);
   };
 
-  // ❤️ ADD TO WISHLIST (same logic as Bestsellers)
+  // ❤️ ADD TO WISHLIST
   const addToWishlistDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
@@ -119,8 +125,7 @@ const CategoryPage = () => {
       toast.success(`${product.product_name} added to wishlist! ❤️`);
       navigate("/user/wishlist");
     } catch (error) {
-      const msg =
-        error.response?.data?.message || "Failed to add to wishlist";
+      const msg = error.response?.data?.message || "Failed to add to wishlist";
       toast.error(msg);
 
       if (error.response?.status === 401) {
@@ -150,7 +155,7 @@ const CategoryPage = () => {
     addToWishlistDirectly(product);
   };
 
-  // 🧠 Filtering + Sorting
+  // Filtering + Sorting
   const filteredProducts = data?.products?.filter((p) => {
     const conditionMatch =
       selectedCondition.length === 0 ||
@@ -172,7 +177,7 @@ const CategoryPage = () => {
     return 0;
   });
 
-  // 🧠 Infinite Scroll
+  // Infinite Scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -195,7 +200,10 @@ const CategoryPage = () => {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-8 py-12">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="animate-pulse bg-white rounded-lg shadow-md overflow-hidden">
+          <div
+            key={i}
+            className="animate-pulse bg-white rounded-lg shadow-md overflow-hidden"
+          >
             <div className="h-72 bg-gray-200"></div>
             <div className="p-4 space-y-3">
               <div className="h-5 bg-gray-200 rounded w-3/4"></div>
@@ -207,7 +215,13 @@ const CategoryPage = () => {
       </div>
     );
 
-  const availableConditions = ["new", "like_new", "used", "damaged"];
+  const availableConditions = [
+    "new",
+    "almost_new",
+    "good",
+    "hardly_ever_used",
+    "satisfactory",
+  ];
   const availableSizes = data?.filters?.sizes || [];
 
   return (
@@ -221,7 +235,9 @@ const CategoryPage = () => {
         {/* Condition Filter */}
         {availableConditions.length > 0 && (
           <div className="mb-8">
-            <p className="font-semibold text-gray-700 mb-3 text-lg">Condition</p>
+            <p className="font-semibold text-gray-700 mb-3 text-lg">
+              Condition
+            </p>
             <div className="space-y-3 text-base">
               {availableConditions.map((cond) => (
                 <label
@@ -327,60 +343,71 @@ const CategoryPage = () => {
 
         {/* PRODUCT CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sortedProducts?.slice(0, visibleCount).map((product) => (
-            <div
-              key={product._id}
-              className="group overflow-hidden border-gray-100 transition-all duration-300"
-            >
-              <div className="relative bg-gray-50">
-                <img
-                  src={
-                    product?.product_img
-                      ? product?.product_img
-                      : "https://cdn-icons-png.flaticon.com/512/2748/2748558.png"
-                  }
-                  alt={product.product_name}
-                  onError={(e) =>
-                    (e.target.src =
-                      "https://cdn-icons-png.flaticon.com/512/2748/2748558.png")
-                  }
-                  className="object-cover w-full h-72 rounded-t-xl transition-transform duration-500 ease-in-out group-hover:scale-105"
-                />
+          {sortedProducts?.slice(0, visibleCount).map((product) => {
+            // 🧩 Parse product_additionalInfo safely
+            let additionalInfo = {};
+            try {
+              additionalInfo = JSON.parse(
+                product?.product_additionalInfo || "{}"
+              );
+            } catch (err) {
+              console.error("Invalid JSON in additionalInfo", err);
+            }
 
-                {/* Hover Icons */}
-                <div className="absolute inset-0 flex justify-center items-end gap-3 opacity-0 translate-y-5 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-in-out pb-4">
-                  <button
-                    onClick={() => handleWishlist(product)}
-                    className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition duration-200"
-                  >
-                    <FaHeart className="text-lg" />
-                  </button>
-                  <button
-                    onClick={() => handleAddToCart(product)}
-                    className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition duration-200"
-                  >
-                    <FaShoppingCart className="text-lg" />
-                  </button>
+            return (
+              <div
+                key={product._id}
+                className="group overflow-hidden border-gray-100 transition-all duration-300"
+              >
+                <div className="relative bg-gray-50">
+                  <img
+                    src={
+                      product?.product_img
+                        ? product?.product_img
+                        : "https://cdn-icons-png.flaticon.com/512/2748/2748558.png"
+                    }
+                    alt={product.product_name}
+                    onError={(e) =>
+                      (e.target.src =
+                        "https://cdn-icons-png.flaticon.com/512/2748/2748558.png")
+                    }
+                    className="object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out group-hover:scale-105"
+                  />
+
+                  {/* Hover Icons */}
+                  <div className="absolute inset-0 flex justify-center items-end gap-3 opacity-0 translate-y-5 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-in-out pb-4">
+                    <button
+                      onClick={() => handleWishlist(product)}
+                      className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition duration-200"
+                    >
+                      <FaHeart className="text-lg" />
+                    </button>
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition duration-200"
+                    >
+                      <FaShoppingCart className="text-lg" />
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="py-5 ps-1 text-start">
-                <h3 className="text-base font-semibold text-gray-800 hover:text-blue-700 transition">
-                  {product?.product_name}
-                </h3>
-                <div className="mt-2">
-                  {product.original_price && (
-                    <span className="line-through text-gray-400 mr-2 text-sm">
-                      ₹{product.original_price}
+                <div className="py-5 ps-1 text-start">
+                  <h3
+                    className="text-base font-normal text-gray-800 hover:text-blue-700 transition cursor-pointer"
+                    onClick={() => handleNavigate(product._id)}
+                  >
+                    {additionalInfo.description}
+                  </h3>
+
+                  <div className="mt-2">
+                    <span className="text-base font-thin text-gray-900">
+                      ₹{product.product_price}
                     </span>
-                  )}
-                  <span className="text-lg font-bold text-gray-900">
-                    ₹{product.product_price}
-                  </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Infinite Scroll Loader */}

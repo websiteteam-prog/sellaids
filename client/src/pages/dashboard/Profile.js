@@ -6,8 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 
 export default function Profile() {
-  const { user, isAuthenticated, isUserLoading, login } = useUserStore();
+  const { user, isAuthenticated, isUserLoading, login, logout } = useUserStore();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +21,7 @@ export default function Profile() {
     newPassword: "",
     confirmPassword: "",
   });
+
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState({
@@ -30,21 +32,18 @@ export default function Profile() {
 
   const nameInputRef = useRef(null);
 
-  // Fetch user profile
+  // === FETCH PROFILE ON MOUNT ===
   useEffect(() => {
-    // If user is loading, do nothing yet
     if (isUserLoading) return;
 
-    // If not authenticated or no user ID, navigate immediately
     if (!isAuthenticated || !user?.id) {
-      toast.error("Please log in to view your profile ❌");
-      navigate("/UserAuth/UserLogin", {
-        state: { from: window.location.pathname },
+      toast.error("Please log in to view your profile [Error]", {
+        duration: 2500,
       });
+      navigate("/UserAuth/UserLogin", { replace: true });
       return;
     }
 
-    // Fetch profile for authenticated user
     const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/list`;
     axios
       .get(endpoint, { withCredentials: true })
@@ -65,32 +64,31 @@ export default function Profile() {
       })
       .catch((err) => {
         if (err.response?.status === 401) {
-          toast.error("Session expired. Please log in again ❌");
-          navigate("/UserAuth/UserLogin", {
-            state: { from: window.location.pathname },
+          toast.error("Session expired. Please log in again [Error]", {
+            duration: 2500,
           });
+          logout();
+          navigate("/UserAuth/UserLogin", { replace: true });
         } else {
-          console.error("Error fetching profile:", err);
-          toast.error("Failed to fetch profile data ❌");
+          toast.error("Failed to load profile [Error]", {
+            duration: 2500,
+          });
         }
       });
-  }, [isAuthenticated, user, isUserLoading, navigate]);
+  }, [isAuthenticated, user, isUserLoading, navigate, logout]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
+  const handleEditClick = () => setIsEditing(true);
 
   useEffect(() => {
     if (isEditing) {
-      setTimeout(() => nameInputRef.current?.focus?.(), 0);
+      setTimeout(() => nameInputRef.current?.focus(), 0);
     }
   }, [isEditing]);
 
   const handleCancelEdit = () => {
-    // Restore original user data when cancelling edit
     if (user?.id) {
       const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/list`;
       axios
@@ -110,11 +108,12 @@ export default function Profile() {
             confirmPassword: "",
           });
         })
-        .catch((err) => console.error("Error fetching profile:", err));
+        .catch(() => {});
     }
     setIsEditing(false);
   };
 
+  // === MAIN SUBMIT HANDLER ===
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -129,54 +128,97 @@ export default function Profile() {
         pincode: formData.pincode,
       };
 
-      // Include password fields only if provided
-      if (formData.newPassword || formData.confirmPassword || formData.currentPassword) {
+      let passwordChanged = false;
+
+      if (
+        formData.currentPassword ||
+        formData.newPassword ||
+        formData.confirmPassword
+      ) {
         if (formData.newPassword !== formData.confirmPassword) {
-          toast.error("New password and confirm password do not match! ❌");
+          toast.error("New passwords do not match! [Error]", {
+            duration: 2500,
+          });
           setLoading(false);
           return;
         }
         updateData.currentPassword = formData.currentPassword;
         updateData.newPassword = formData.newPassword;
         updateData.confirmPassword = formData.confirmPassword;
+        passwordChanged = true;
       }
 
       const endpoint = `${process.env.REACT_APP_API_URL}/api/user/profile/edit`;
       const res = await axios.put(endpoint, updateData, {
         withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
-      login(res.data); // Update user in store
-      toast.success("Profile updated successfully! ✅");
+
+      login(res.data); // Update store
+      toast.success("Profile updated! [Success]", {
+        duration: 2500,
+      });
+
+      // === PASSWORD CHANGED → LOGOUT + REDIRECT ===
+      if (passwordChanged) {
+        toast.success("Password changed! Logging out for security... [Lock]", {
+          duration: 3000,
+        });
+
+        try {
+          await axios.post(
+            `${process.env.REACT_APP_API_URL}/api/user/logout`,
+            {},
+            { withCredentials: true }
+          );
+        } catch (err) {
+          console.warn("Backend logout failed (continuing anyway):", err);
+        }
+
+        logout();
+
+        setFormData((prev) => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
+
+        navigate("/UserAuth/UserLogin", { replace: true });
+        return;
+      }
+
       setIsEditing(false);
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-      });
+      }));
     } catch (error) {
       if (error.response?.status === 401) {
-        toast.error("Session expired. Please log in again ❌");
-        navigate("/UserAuth/UserLogin", {
-          state: { from: window.location.pathname },
+        toast.error("Session expired. Logging out... [Error]", {
+          duration: 2500,
         });
+        logout();
+        navigate("/UserAuth/UserLogin", { replace: true });
       } else if (error.response?.data?.error === "Current password is incorrect") {
-        toast.error("Current password is incorrect! ❌");
-        setLoading(false);
-        return;
+        toast.error("Current password is wrong! [Error]", {
+          duration: 2500,
+        });
       } else if (error.response?.status === 400 && error.response?.data?.errors) {
-        // Handle validation errors as toasts
-        const errorMessages = Array.isArray(error.response.data.errors)
+        const errs = Array.isArray(error.response.data.errors)
           ? error.response.data.errors
-          : error.response.data.errors.map((err) => err.msg);
-        errorMessages.forEach((errorMsg) => toast.error(errorMsg + " ❌"));
+          : error.response.data.errors.map((e) => e.msg);
+        errs.forEach((msg) =>
+          toast.error(msg + " [Error]", { duration: 2500 })
+        );
       } else {
-        console.error("Error updating profile:", error.response?.data || error.message);
-        toast.error(error.response?.data?.message || "Failed to update profile: Unknown error ❌");
+        toast.error(error.response?.data?.message || "Update failed [Error]", {
+          duration: 2500,
+        });
       }
+    } finally {
       setLoading(false);
     }
   };
@@ -184,34 +226,37 @@ export default function Profile() {
   const togglePassword = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
-  // Format address for display
   const formatAddress = () => {
     const { address_line, city, state, pincode } = formData;
     const parts = [address_line, city, state, pincode].filter(Boolean);
-    return parts.length > 0 ? parts.join(", ") : "Not provided";
+    return parts.length ? parts.join(", ") : "Not provided";
   };
 
-  // Early return for loading user state
+  // === RENDER ===
   if (isUserLoading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
-        <Toaster />
+        <Toaster
+          position="top-right"
+          toastOptions={{ duration: 2500 }}
+        />
         <p className="text-center mt-10">Loading user...</p>
       </div>
     );
   }
 
-  // Early return if not authenticated or no user ID (navigation handled in useEffect)
-  if (!isAuthenticated || !user?.id) {
-    return null;
-  }
+  if (!isAuthenticated || !user?.id) return null;
 
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
-      <Toaster />
+      <Toaster
+        position="top-right"
+        toastOptions={{ duration: 2500 }}
+      />
       <h1 className="text-3xl font-bold mb-6 text-gray-800">My Profile</h1>
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Full Name */}
+        {/* Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Full Name
@@ -220,15 +265,16 @@ export default function Profile() {
             type="text"
             name="name"
             ref={nameInputRef}
-            value={formData.name || ""}
+            value={formData.name}
             onChange={handleChange}
             disabled={!isEditing}
-            placeholder={isEditing ? "Enter new full name" : ""}
+            placeholder={isEditing ? "Enter name" : ""}
             className={`w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none ${
               !isEditing ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
           />
         </div>
+
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -236,12 +282,12 @@ export default function Profile() {
           </label>
           <input
             type="email"
-            name="email"
-            value={formData.email || ""}
+            value={formData.email}
             disabled
-            className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed focus:outline-none"
+            className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed"
           />
         </div>
+
         {/* Phone */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -250,90 +296,74 @@ export default function Profile() {
           <input
             type="tel"
             name="phone"
-            value={formData.phone || ""}
+            value={formData.phone}
             onChange={(e) => {
-              // Allow only digits and limit to 10 characters
               const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
               setFormData({ ...formData, phone: digits });
             }}
-            inputMode="numeric"
-            pattern="[0-9]*"
             maxLength={10}
             disabled={!isEditing}
-            placeholder={isEditing ? "Enter new phone" : ""}
+            placeholder={isEditing ? "Enter phone" : ""}
             className={`w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none ${
               !isEditing ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
           />
         </div>
+
         {/* Address */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Address
           </label>
           {isEditing ? (
-            <div className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  name="address_line"
-                  value={formData.address_line || ""}
-                  onChange={handleChange}
-                  placeholder="Enter address line"
-                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city || ""}
-                  onChange={handleChange}
-                  placeholder="Enter city"
-                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <input
-                  type="text"
-                  name="state"
-                  value={formData.state || ""}
-                  onChange={handleChange}
-                  placeholder="Enter state"
-                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <input
-                  type="text"
-                  name="pincode"
-                  value={formData.pincode || ""}
-                  onChange={(e) => {
-                    // Allow only digits and limit to 6 characters
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
-                    setFormData({ ...formData, pincode: digits });
-                  }}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={6}
-                  placeholder="Enter pincode"
-                  className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
-                />
-              </div>
+            <div className="space-y-3">
+              <input
+                name="address_line"
+                value={formData.address_line}
+                onChange={handleChange}
+                placeholder="Address line"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500"
+              />
+              <input
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="City"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500"
+              />
+              <input
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                placeholder="State"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500"
+              />
+              <input
+                name="pincode"
+                value={formData.pincode}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setFormData({ ...formData, pincode: digits });
+                }}
+                maxLength={6}
+                placeholder="Pincode"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500"
+              />
             </div>
           ) : (
-            <div className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed">
+            <div className="w-full border rounded-lg p-3 bg-gray-100">
               {formatAddress()}
             </div>
           )}
         </div>
+
         {/* Password Section */}
         {isEditing && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
               Change Password
             </h2>
-            {/* Current Password */}
+
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Current Password
@@ -343,17 +373,18 @@ export default function Profile() {
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleChange}
-                placeholder="Enter current password"
-                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                placeholder="Current password"
+                className="w-full border rounded-lg p-3 pr-10 focus:ring-2 focus:ring-red-500"
               />
-              <span
+              <button
+                type="button"
                 onClick={() => togglePassword("current")}
-                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+                className="absolute right-3 top-10 text-gray-600"
               >
                 {showPassword.current ? <EyeOff size={18} /> : <Eye size={18} />}
-              </span>
+              </button>
             </div>
-            {/* New Password */}
+
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 New Password
@@ -363,17 +394,18 @@ export default function Profile() {
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleChange}
-                placeholder="Enter new password"
-                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                placeholder="New password"
+                className="w-full border rounded-lg p-3 pr-10 focus:ring-2 focus:ring-red-500"
               />
-              <span
+              <button
+                type="button"
                 onClick={() => togglePassword("new")}
-                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+                className="absolute right-3 top-10 text-gray-600"
               >
                 {showPassword.new ? <EyeOff size={18} /> : <Eye size={18} />}
-              </span>
+              </button>
             </div>
-            {/* Confirm Password */}
+
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm Password
@@ -384,24 +416,26 @@ export default function Profile() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm new password"
-                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                className="w-full border rounded-lg p-3 pr-10 focus:ring-2 focus:ring-red-500"
               />
-              <span
+              <button
+                type="button"
                 onClick={() => togglePassword("confirm")}
-                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+                className="absolute right-3 top-10 text-gray-600"
               >
                 {showPassword.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
-              </span>
+              </button>
             </div>
           </div>
         )}
+
         {/* Buttons */}
-        <div className="flex justify-end mt-6 gap-3">
+        <div className="flex justify-end gap-3 mt-6">
           {!isEditing ? (
             <button
               type="button"
               onClick={handleEditClick}
-              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition"
+              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700"
             >
               Edit Profile
             </button>
@@ -410,14 +444,14 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                className="bg-gray-400 text-white px-6 py-3 rounded-lg hover:bg-gray-500 transition"
+                className="bg-gray-400 text-white px-6 py-3 rounded-lg hover:bg-gray-500"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {loading ? "Saving..." : "Save Changes"}
               </button>

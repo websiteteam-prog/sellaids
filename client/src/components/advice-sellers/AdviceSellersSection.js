@@ -1,7 +1,13 @@
 import React from "react";
 import bgImage from "../../assets/images/cta-image.webp";
+import { useNavigate } from "react-router";
 
 export default function AdviceSellersSection() {
+    const navigate = useNavigate();
+
+    const handleSellClick = () => {
+        navigate("/vendor/login"); 
+    };
     return (
         <div>
             {/* Advice for Sellers Section */}
@@ -161,7 +167,7 @@ export default function AdviceSellersSection() {
                         more — because fashion deserves a second life.
                     </h2>
 
-                    <button className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition">
+                    <button onClick={handleSellClick} className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition">
                         START SELLING
                     </button>
                 </div>

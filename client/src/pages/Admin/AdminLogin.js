@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useAdminStore } from "../../stores/useAdminStore";
 import toast from "react-hot-toast";
-import Cookies from "js-cookie";
 
 function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -14,12 +13,6 @@ function AdminLogin() {
   const { login } = useAdminStore(); // admin state from store
   const navigate = useNavigate();
 
-  // ✅ Redirect if already logged in
-  // useEffect(() => {
-  //   if (admin) {
-  //     navigate("/admin");
-  //   }
-  // }, [admin, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,15 +29,14 @@ function AdminLogin() {
         login(data); // store admin data
         setEmail("");
         setPassword("");
-        // Cookies.set("session_cookie_name", JSON.stringify(data))
         toast.success(message)
-        navigate("/admin", { replace: true }); // redirect to dashboard
+        navigate("/admin", { replace: true }); 
       } else {
         toast.error(message)
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      toast.error("Invalid Credentials ❌");
+      toast.error("Invalid Credentials");
     }
   };
 

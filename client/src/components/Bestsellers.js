@@ -38,6 +38,7 @@ function Bestsellers() {
           `${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`
         );
         const topProducts = res.data?.data?.top_products || [];
+        console.log(topProducts)
         setProducts(topProducts);
       } catch (error) {
         console.error("Error fetching bestsellers:", error);
@@ -229,79 +230,80 @@ function Bestsellers() {
   }
 
   // ==================== PRODUCT CARD COMPONENT ====================
-  const ProductCard = ({ product }) => (
-    <div className="px-3">
-      <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 rounded-lg">
-        {/* Image */}
-        <div className="relative overflow-hidden bg-gray-50">
-          <img
-            src={
-              product.img && product.img !== "null" && product.img.trim()
-                ? product.img
-                : "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image"
-            }
-            alt={product.name}
-            className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
-            onError={(e) =>
+  const ProductCard = ({ product }) => {
+    const info = product.info ? JSON.parse(product.info) : {};
+
+    return (
+      <div className="px-3">
+        <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 rounded-lg">
+          {/* Image */}
+          <div className="relative overflow-hidden bg-gray-50">
+            <img
+              src={
+                product.img && product.img !== "null" && product.img.trim()
+                  ? product.img
+                  : "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image"
+              }
+              alt={product.name}
+              className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
+              onError={(e) =>
               (e.target.src =
                 "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
-            }
-          />
+              }
+            />
 
-          {/* Hover Actions */}
-          <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
-            {/* Wishlist */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleWishlist(product);
-              }}
-              className="text-gray-600 hover:text-red-500 transition"
-            >
-              <Heart size={20} />
-            </button>
+            {/* Hover Actions */}
+            <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleWishlist(product);
+                }}
+                className="text-gray-600 hover:text-red-500 transition"
+              >
+                <Heart size={20} />
+              </button>
 
-            {/* Cart */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddToCart(product);
-              }}
-              className="text-gray-600 hover:text-green-600 transition"
-            >
-              <ShoppingCart size={20} />
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart(product);
+                }}
+                className="text-gray-600 hover:text-green-600 transition"
+              >
+                <ShoppingCart size={20} />
+              </button>
 
-            {/* View → Product Details */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/product-details/${product.id}`);
-              }}
-              className="text-gray-600 hover:text-orange-600 transition"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/product-details/${product.id}`);
+                }}
+                className="text-gray-600 hover:text-orange-600 transition"
+              >
+                <Eye size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="p-4 text-start bg-white">
+            <h3
+              className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition cursor-pointer"
+              onClick={() => navigate(`/product-details/${product.id}`)}
             >
-              <Eye size={20} />
-            </button>
+              {info.description}
+            </h3>
+
+            <p className="text-lg font-bold text-black mt-2">
+              ₹{parseFloat(product.price).toLocaleString("en-IN")}
+            </p>
           </div>
         </div>
-
-        {/* Details */}
-        <div className="p-4 text-center bg-white">
-          {/* Product Name → Clickable */}
-          <h3
-            className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition cursor-pointer"
-            onClick={() => navigate(`/product-details/${product.id}`)}
-          >
-            {product.name}
-          </h3>
-
-          <p className="text-lg font-bold text-black mt-2">
-            ₹{parseFloat(product.price).toLocaleString("en-IN")}
-          </p>
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
 
   // ==================== MAIN RENDER ====================
   return (
@@ -376,7 +378,7 @@ function Bestsellers() {
       )}
 
       {/* Animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes slide-up {
           from {
             transform: translateY(100%);

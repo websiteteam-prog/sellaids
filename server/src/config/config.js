@@ -38,10 +38,7 @@ const config = {
   },
   xpressbees: {
     baseUrl: process.env.XPRESSBEES_API_BASE_URL,
-    username: process.env.XPRESSBEES_USERNAME,
-    password: process.env.XPRESSBEES_PASSWORD,
-    clientId: process.env.XPRESSBEES_CLIENT_ID,
-    clientSecret: process.env.XPRESSBEES_CLIENT_SECRET,
+    token: process.env.XPRESSBEES_TOKEN
   },
 };
 

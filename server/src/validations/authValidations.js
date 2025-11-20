@@ -56,7 +56,7 @@ export const vendorRegisterSchema = yup.object({
 
     phone: yup
         .string()
-        .matches(/^\+?[1-9]\d{1,14}$/, "Phone must be valid")
+        .matches(/^[6-9]\d{9}$/, "Invalid phone number").required("Phone number is required")
         .required("Phone number is required"),
 
     email: yup
@@ -86,7 +86,7 @@ export const vendorRegisterSchema = yup.object({
 
     gst_number: yup
         .string()
-        .matches(/^([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1})$/, "Invalid GST number")
+        .matches(/^([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{3})$/, "Invalid GST number")
         .nullable()
         .optional(),
 
@@ -118,7 +118,7 @@ export const vendorRegisterSchema = yup.object({
     contact_person_name: yup.string().max(100).nullable(),
     contact_person_phone: yup
         .string()
-        .matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
+        // .matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
         .nullable(),
 
     status: yup

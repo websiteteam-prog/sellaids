@@ -69,7 +69,7 @@ const sessionMiddleware = session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 30 * 60 * 1000,
+        maxAge: 0.5 * 60 * 1000,
         httpOnly: true,
         sameSite: "lax",
         secure: false, // local dev me false rakho

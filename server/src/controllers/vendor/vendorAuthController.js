@@ -46,7 +46,7 @@ export const vendorLogoutController = (req, res) => {
                 logger.error(`Logout error: ${err.message}`);
                 return errorResponse(res, 400, err);
             }
-            res.clearCookie("connect.sid");
+            res.clearCookie("session_cookie_name", { path: "/" })
             logger.info(`Vendor logged out: ${email}`);
             return successResponse(res, 200, "Logout successfully");
         });

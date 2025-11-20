@@ -1,7 +1,13 @@
 import React from "react";
 import bgImage from "../../assets/images/cta-image.webp";
+import { useNavigate } from "react-router";
 
 export default function WeDontSellSection() {
+    const navigate = useNavigate();
+
+    const handleSellClick = () => {
+        navigate("/vendor/login"); 
+    };
     return (
         <div>
             {/* We Don’t Sell Section */}
@@ -144,7 +150,7 @@ export default function WeDontSellSection() {
                         More—Because Fashion Deserves A Second Life.
                     </h2>
 
-                    <button className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold hover:bg-orange-600 transition">
+                    <button onClick={handleSellClick} className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold hover:bg-orange-600 transition">
                         SELL NOW
                     </button>
                 </div>

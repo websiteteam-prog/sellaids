@@ -42,15 +42,18 @@ const AdminDashboard = () => {
           totalOrders: data.total_orders || 0,
         });
         setTopProducts(
-          data.top_products?.map((p, i) => ({
-            id: p.id,
-            name: p.name,
-            // img: <img src={p.img} className="w-[70px] h-[70px] rounded-lg" />,
-            img : p.img,
-            sales: p.sales,
-            price: p.price,
-            info: p.info,
-          })) || []
+          data.top_products?.map((p, i) => {
+            const productInfo = JSON.parse(p.info)
+            // console.log(productInfo)
+            return {
+              id: p.id,
+              name: p.name,
+              img: p.img,
+              sales: p.sales,
+              price: p.price,
+              fabric: productInfo.fabric
+            };
+          }) || []
         );
         toast.success(message)
       } else {
@@ -107,15 +110,15 @@ const AdminDashboard = () => {
 
           {/* Product List */}
           <div className="space-y-4">
-            {topProducts.map((item, i) => (
+            {topProducts?.map((item, i) => (
               <div key={i} className="flex items-center justify-between h-[80px]">
                 {/* Product Info */}
                 <div className="flex items-start gap-3 w-60">
-                  <img src={item.img ? item.img : productImage} className="text-2xl w-[70px] h-[70px] rounded-lg"/>
+                  <img src={item.img ? item.img : productImage} className="text-2xl w-[70px] h-[70px] rounded-lg" />
                   <div>
                     <p className="text-sm font-medium text-gray-800 mt-0">{item.name}</p>
-                    <p className="text-sm font-medium text-gray-800 mt-0">{item.info}</p>
-                    <p className="text-xs text-gray-500 mt-0">#{i + 1} best seller</p>
+                    <p className="text-sm font-medium text-gray-800 mt-[5px]">{item.fabric}</p>
+                    <p className="text-xs text-gray-500 mt-[5px]">#{i + 1} best seller</p>
                   </div>
                 </div>
 

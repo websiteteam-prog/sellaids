@@ -29,7 +29,7 @@ const UserLogout = () => {
       if (success || message === "User not logged in or session expired") {
         logout();
         clearCookies();
-
+        localStorage.removeItem("user-store")
         toast.success("Logged out successfully!");
         console.log("Navigating to login page");
         navigate("/UserAuth/UserLogin"); // Remove { replace: true }
