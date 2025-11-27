@@ -123,6 +123,126 @@ export const createProductService = async (vendorId, data, images) => {
   }
 };
 
+export const updateProductService = async (productId, vendorId, data, images) => {
+  const t = await sequelize.transaction();
+  try {
+    const product = await Product.findOne({
+      where: { id: productId, vendor_id: vendorId },
+      transaction: t,
+    });
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    // === RECALCULATE SKU ONLY IF product_group OR product_type CHANGES ===
+    let sku = product.sku;
+
+    const shouldRegenerateSku =
+      data.product_group?.trim() !== product.product_group ||
+      data.product_type?.trim() !== product.product_type;
+
+    if (shouldRegenerateSku) {
+      const cleanGroup = (data.product_group || "XX").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 2);
+      const cleanType = (data.product_type || "XX").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 2);
+      const prefix = `SA/${cleanGroup}/${cleanType}`;
+
+      const lastProduct = await Product.findOne({
+        where: {
+          sku: sequelize.where(
+            sequelize.fn("LOWER", sequelize.col("sku")),
+            "LIKE",
+            `${prefix.toLowerCase()}%`
+          ),
+          id: { [Op.ne]: productId },
+        },
+        order: [["id", "DESC"]],
+        attributes: ["sku"],
+        transaction: t,
+      });
+
+      let nextNumber = 1;
+      if (lastProduct?.sku) {
+        const match = lastProduct.sku.match(/(\d+)$/);
+        if (match) nextNumber = parseInt(match[1], 10) + 1;
+      }
+
+      sku = `${prefix}/${String(nextNumber).padStart(2, "0")}`;
+    }
+
+    // === PREPARE UPDATE DATA ===
+    const updateData = {
+      category_id: data.category_id ? parseInt(data.category_id, 10) : product.category_id,
+      product_group: data.product_group?.trim() || product.product_group,
+      product_type: data.product_type?.trim() || product.product_type,
+      product_condition: data.product_condition || product.product_condition,
+      fit: data.fit || product.fit,
+      product_color: data.product_color?.trim() || product.product_color,
+      brand: data.brand?.trim() || product.brand,
+      model_name: data.model_name?.trim() || product.model_name,
+
+      invoice: data.invoice || product.invoice,
+      needs_repair: data.needs_repair || product.needs_repair,
+      original_box: data.original_box || product.original_box,
+      dust_bag: data.dust_bag || product.dust_bag,
+
+      additional_items: data.additional_items?.trim() ?? product.additional_items,
+      reason_to_sell: data.reason_to_sell?.trim() ?? product.reason_to_sell,
+      purchase_place: data.purchase_place?.trim() ?? product.purchase_place,
+      product_link: data.product_link?.trim() ?? product.product_link,
+      additional_info: data.additional_info?.trim() ?? product.additional_info,
+
+      purchase_price: data.purchase_price ? parseInt(data.purchase_price, 10) : product.purchase_price,
+      selling_price: data.selling_price ? parseInt(data.selling_price, 10) : product.selling_price,
+      purchase_year: data.purchase_year ? parseInt(data.purchase_year, 10) : product.purchase_year,
+
+      // Images - only update if new file uploaded
+      front_photo: images.front_photo,
+      back_photo: images.back_photo,
+      label_photo: images.label_photo,
+      inside_photo: images.inside_photo,
+      button_photo: images.button_photo,
+      wearing_photo: images.wearing_photo,
+      invoice_photo: images.invoice_photo,
+      repair_photo: images.repair_photo,
+      more_images: images.more_images,
+
+      // SKU & Status
+      sku,
+      status: product.status === "approved" ? "pending" : product.status, // Re-review if was approved
+    };
+
+    // === HANDLE SIZE ===
+    if (data.size && data.size !== "Other") {
+      updateData.size = data.size;
+      updateData.size_other = null;
+    } else if (data.size === "Other") {
+      updateData.size = "Other";
+      updateData.size_other = data.size_other?.trim() || null;
+    } else {
+      // If size removed
+      updateData.size = null;
+      updateData.size_other = null;
+    }
+
+    // === UPDATE PRODUCT ===
+    await product.update(updateData, { transaction: t });
+
+    await t.commit();
+
+    return await Product.findByPk(productId, {
+      include: [
+        { model: Category, as: "category" },
+        { model: Vendor, as: "vendor", attributes: { exclude: ["password"] } },
+      ],
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("updateProductService Error:", error);
+    throw new Error(error.message || "Failed to update product");
+  }
+};
+
 export const fetchCategories = async (search = "") => {
   return await Category.findAll({
     where: {
