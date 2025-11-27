@@ -1,5 +1,5 @@
 import express from "express";
-import { addProductController, getCategories, getProductTypes, getAllProductsController, getProductByIdController, getDashboardController, getEarningsController } from "../../controllers/product/productFormController.js";
+import { addProductController, getCategories, getProductTypes, getAllProductsController, getProductByIdController, getDashboardController, getEarningsController, updateProductController } from "../../controllers/product/productFormController.js";
 import { isVendorLoginIn, isVendorOrAdminLoggedIn } from "../../middlewares/authMiddlewares.js";
 import { upload } from "../../middlewares/productUpload.js";
 
@@ -21,6 +21,9 @@ const uploadFields = upload.fields([
 router.post("/add", isVendorLoginIn, uploadFields, addProductController);
 router.get("/categories-list", getCategories);
 router.get("/", getProductTypes);
+
+// Update Form APIs for Vendor
+router.put("/:id", isVendorLoginIn, uploadFields, updateProductController);
 
 // For Fetch Products Apis for vendors
 router.get("/products-list", isVendorOrAdminLoggedIn, getAllProductsController); 

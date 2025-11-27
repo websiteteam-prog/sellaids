@@ -459,7 +459,7 @@ const AddProductForm = () => {
 
           {/* STEP 1: PRODUCT */}
           {step === 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">s
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Product</h3>
               {[
                 { name: "product_group", label: "Group *", type: "select", options: ["", "Men", "Women", "Girl", "Boy"] },
