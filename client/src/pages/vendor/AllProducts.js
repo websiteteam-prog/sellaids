@@ -2,6 +2,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 
+// ENV BASE URL + FLICKER-FREE IMAGE HELPER
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const getImageUrl = (path) => {
+  if (!path) return "/placeholder-image.jpg";
+  if (path.startsWith("http")) return path;
+  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -20,8 +29,8 @@ export default function Products() {
   // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/product/categories-list", {
-        withCredentials: true
+      const res = await axios.get(`${API_URL}/api/product/categories-list`, {
+        withCredentials: true,
       });
       setCategories([{ id: "", name: "All Categories" }, ...res.data.data]);
     } catch (err) {
@@ -30,21 +39,21 @@ export default function Products() {
     }
   }, []);
 
-  // Fetch products from backend
+  // Fetch products
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+
       const params = new URLSearchParams();
       params.append("page", currentPage);
       params.append("limit", 10);
-
       if (category) params.append("category_id", category);
       if (searchName || searchSKU) params.append("search", searchName || searchSKU);
       if (vendorId) params.append("vendor_id", vendorId);
 
       const res = await axios.get(
-        `http://localhost:5000/api/product/products-list?${params.toString()}`,
+        `${API_URL}/api/product/products-list?${params.toString()}`,
         { withCredentials: true }
       );
 
@@ -60,17 +69,14 @@ export default function Products() {
     }
   }, [category, currentPage, searchName, searchSKU, vendorId]);
 
-  // Initial load
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Fetch products when dependencies change
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Refresh products when navigating back
   useEffect(() => {
     if (location.state?.refresh) {
       fetchProducts();
@@ -88,14 +94,12 @@ export default function Products() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold mb-3">My Products</h1>
       <nav className="text-sm mb-4 text-gray-600">
-        Home &gt; <span className="text-orange-600 cursor-pointer">Products</span>
+        Home  <span className="text-orange-600 cursor-pointer">Products</span>
       </nav>
 
-      {/* Error Message */}
+      {/* Error */}
       {error && (
-        <div className="bg-red-100 text-red-700 p-4 rounded mb-6">
-          {error}
-        </div>
+        <div className="bg-red-100 text-red-700 p-4 rounded mb-6">{error}</div>
       )}
 
       {/* Filters */}
@@ -108,7 +112,9 @@ export default function Products() {
             onChange={(e) => setCategory(e.target.value)}
           >
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
             ))}
           </select>
         </div>
@@ -136,7 +142,7 @@ export default function Products() {
         </div>
 
         <div className="flex space-x-2">
-          <button 
+          <button
             onClick={fetchProducts}
             className="bg-orange-600 text-white px-5 py-2 rounded hover:bg-orange-700"
           >
@@ -151,8 +157,8 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+      {/* Table */}
+      <div className="overflow-x-auto">
         {loading ? (
           <p className="text-center py-10 text-gray-500">Loading products...</p>
         ) : products.length > 0 ? (
@@ -179,42 +185,53 @@ export default function Products() {
                     <td className="py-4 px-4 font-semibold">
                       {(currentPage - 1) * 10 + index + 1}
                     </td>
-                    <td className="py-4 px-4 text-orange-600 cursor-pointer">{product.sku}</td>
+                    <td className="py-4 px-4 text-orange-600 font-medium">{product.sku}</td>
                     <td className="py-4 px-4">{product.category?.name || "N/A"}</td>
                     <td className="py-4 px-4">{product.product_group}</td>
                     <td className="py-4 px-4">{product.brand}</td>
                     <td className="py-4 px-4 font-semibold">{product.model_name}</td>
-                    <td className="py-4 px-4 font-bold">
+                    <td className="py-4 px-4 font-bold text-green-600">
                       ₹{parseFloat(product.selling_price).toLocaleString()}
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs ${
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
                           product.status === "Approved"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-green-100 text-green-800"
                             : product.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {product.status}
+                        {product.status || "pending"}
                       </span>
                     </td>
                     <td className="py-4 px-4">{product.vendor?.name || "N/A"}</td>
+
+                    {/* FINAL FIXED IMAGE - NO FLICKER */}
                     <td className="py-4 px-4">
-                      <img
-                        src={product.front_photo}
-                        alt="Front"
-                        className="w-16 h-16 object-cover rounded"
-                        onError={(e) => (e.target.src = "/placeholder-image.jpg")}
-                      />
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                        <img
+                          src={getImageUrl(product.front_photo)}
+                          alt="Product"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onLoad={(e) => (e.target.style.opacity = 1)}
+                          onError={(e) => {
+                            e.target.src = "/placeholder-image.jpg";
+                            e.target.style.opacity = 1;
+                          }}
+                          style={{ opacity: 0, transition: "opacity 300ms" }}
+                        />
+                      </div>
                     </td>
+
                     <td className="py-4 px-4">
                       <Link
                         to={`/vendor/view-product/${product.id}`}
-                        className="text-orange-600 hover:text-orange-800 cursor-pointer p-1 rounded"
+                        className="text-orange-600 hover:text-orange-800 font-medium hover:underline"
                       >
-                        View
+                        View →
                       </Link>
                     </td>
                   </tr>
@@ -223,22 +240,22 @@ export default function Products() {
             </table>
 
             {/* Pagination */}
-            <div className="flex justify-between items-center p-4 border-t">
-              <span className="text-sm text-gray-500">
-                Page {currentPage} of {totalPages}
+            <div className="flex justify-between items-center p-4 bg-white border-t">
+              <span className="text-sm text-gray-600">
+                Showing page {currentPage} of {totalPages}
               </span>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
-                  onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  className="px-5 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50 transition"
                 >
-                  Prev
+                  Previous
                 </button>
                 <button
-                  onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  className="px-5 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50 transition"
                 >
                   Next
                 </button>
@@ -246,7 +263,9 @@ export default function Products() {
             </div>
           </>
         ) : (
-          <p className="text-center py-10 text-gray-500">No products found.</p>
+          <p className="text-center py-16 text-gray-500 text-lg">
+            No products found.
+          </p>
         )}
       </div>
     </div>
