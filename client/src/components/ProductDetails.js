@@ -387,10 +387,9 @@ const ProductDetails = () => {
         <div className="space-y-4">
           <div className="relative bg-gray-100 rounded-lg overflow-hidden">
             <img
-              src={product.images[mainImgIdx] || "https://via.placeholder.com/600x600/f3f3f3/999?text=No+Image"}
+              src={`${process.env.REACT_APP_API_URL}/${product.images[mainImgIdx]}`}
               alt={product.name}
               className="w-full h-auto object-cover aspect-square"
-              onError={(e) => (e.target.src = "https://via.placeholder.com/600x600/f3f3f3/999?text=Error")}
             />
             <button
               onClick={() =>
@@ -417,7 +416,7 @@ const ProductDetails = () => {
                 className={`flex-shrink-0 w-20 h-20 rounded-md border-2 overflow-hidden ${mainImgIdx === i ? "border-orange-500 ring-2 ring-orange-300" : "border-gray-300"
                   }`}
               >
-                <img src={src} alt="" className="w-full h-full object-cover" />
+                <img src={`${process.env.REACT_APP_API_URL}/${src}`} alt="" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
@@ -716,10 +715,9 @@ const ProductDetails = () => {
                     >
                       <div className="bg-gray-100 rounded-xl w-full h-64 mb-3 overflow-hidden">
                         <img
-                          src={p.image}
+                          src={`${process.env.REACT_APP_API_URL}/${p.image}`}
                           alt={p.name}
                           className="w-full h-full object-cover"
-                          onError={(e) => (e.target.src = "https://via.placeholder.com/300")}
                         />
                       </div>
                       <h3 className="font-medium text-gray-900 truncate">{p.name}</h3>
