@@ -5,6 +5,9 @@ import ProductEdit from "./ProductEdit";
 
 // Yeh 3 functions add kiye — bas itna hi naya hai
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+// File ke top pe ya kisi utils file mein add kar do
+const PLACEHOLDER_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
 
 const safeJsonParse = (data, fallback = []) => {
   if (!data) return fallback;
@@ -18,9 +21,9 @@ const safeJsonParse = (data, fallback = []) => {
 };
 
 const getImageUrl = (path) => {
-  if (!path) return "/placeholder-image.jpg";
+  if (!path) return PLACEHOLDER_DATA_URL;
   if (path.startsWith("http")) return path;
-  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return ${API_URL}${path.startsWith("/") ? "" : "/"}${path};
 };
 
 export default function VendorView() {
@@ -35,7 +38,7 @@ export default function VendorView() {
       try {
         setLoading(true);
         setError(null);
-        const res = await axios.get(`${API_URL}/api/product/products/${productId}`, {
+        const res = await axios.get(${API_URL}/api/product/products/${productId}, {
           withCredentials: true,
         });
         setProduct(res.data.product);
@@ -113,13 +116,12 @@ export default function VendorView() {
               <p>
                 <strong>Status:</strong>{" "}
                 <span
-                  className={`px-3 py-1 rounded-full text-xs ${
-                    product.status === "Approved"
+                  className={`px-3 py-1 rounded-full text-xs ${product.status === "Approved"
                       ? "bg-green-100 text-green-700"
                       : product.status === "pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
                 >
                   {product.status}
                 </span>
@@ -137,7 +139,10 @@ export default function VendorView() {
                     src={getImageUrl(product.invoice_photo)}
                     alt="Invoice"
                     className="w-32 h-32 object-cover rounded mt-1"
-                    onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_DATA_URL;
+                      e.target.onerror = null; // Prevent infinite loop
+                    }}
                   />
                 </p>
               )}
@@ -151,7 +156,10 @@ export default function VendorView() {
                       src={getImageUrl(product.repair_photo)}
                       alt="Repair"
                       className="w-32 h-32 object-cover rounded mt-1"
-                      onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                      onError={(e) => {
+                        e.target.src = PLACEHOLDER_DATA_URL;
+                        e.target.onerror = null; // Prevent infinite loop
+                      }}
                     />
                   </p>
                 </>
@@ -181,7 +189,10 @@ export default function VendorView() {
                           src={getImageUrl(image.src)}
                           alt={image.label}
                           className="w-32 h-32 object-cover rounded"
-                          onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                          onError={(e) => {
+                            e.target.src = PLACEHOLDER_DATA_URL;
+                            e.target.onerror = null; // Prevent infinite loop
+                          }}
                         />
                       </div>
                     )
@@ -195,9 +206,12 @@ export default function VendorView() {
                       <div key={index}>
                         <img
                           src={getImageUrl(img)}
-                          alt={`Additional ${index + 1}`}
+                          alt={Additional ${index + 1}}
                           className="w-32 h-32 object-cover rounded"
-                          onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                          onError={(e) => {
+                            e.target.src = PLACEHOLDER_DATA_URL;
+                            e.target.onerror = null; // Prevent infinite loop
+                          }}
                         />
                       </div>
                     ))}
@@ -247,9 +261,8 @@ export default function VendorView() {
               <p>
                 <strong>Address:</strong>{" "}
                 {product.vendor
-                  ? `${product.vendor.house_no || ""} ${product.vendor.street_name || ""}, ${
-                      product.vendor.city || "N/A"
-                    }, ${product.vendor.state || "N/A"}, ${product.vendor.pincode || "N/A"}`
+                  ? `${product.vendor.house_no || ""} ${product.vendor.street_name || ""}, ${product.vendor.city || "N/A"
+                  }, ${product.vendor.state || "N/A"}, ${product.vendor.pincode || "N/A"}`
                   : "N/A"}
               </p>
               <p><strong>Seller Info:</strong> {product.vendor?.business_name || "N/A"}</p>
