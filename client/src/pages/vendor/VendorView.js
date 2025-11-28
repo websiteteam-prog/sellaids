@@ -23,7 +23,7 @@ const safeJsonParse = (data, fallback = []) => {
 const getImageUrl = (path) => {
   if (!path) return PLACEHOLDER_DATA_URL;
   if (path.startsWith("http")) return path;
-  return ${API_URL}${path.startsWith("/") ? "" : "/"}${path};
+  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
 
 export default function VendorView() {
@@ -38,7 +38,7 @@ export default function VendorView() {
       try {
         setLoading(true);
         setError(null);
-        const res = await axios.get(${API_URL}/api/product/products/${productId}, {
+        const res = await axios.get(`${API_URL}/api/product/products/${productId}`, {
           withCredentials: true,
         });
         setProduct(res.data.product);
@@ -206,7 +206,7 @@ export default function VendorView() {
                       <div key={index}>
                         <img
                           src={getImageUrl(img)}
-                          alt={Additional ${index + 1}}
+                          alt={`Additional ${index + 1}`}
                           className="w-32 h-32 object-cover rounded"
                           onError={(e) => {
                             e.target.src = PLACEHOLDER_DATA_URL;
