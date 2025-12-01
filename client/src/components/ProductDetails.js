@@ -99,7 +99,7 @@ const ProductDetails = () => {
 
         if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
         if (raw.back_photo) mappedProduct.images.push(raw.back_photo);
-        if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
+        if (raw.label_photo) mappedProduct.images.push(raw.label_photo);
         if (raw.more_images) {
           try {
             const extra = JSON.parse(raw.more_images);
