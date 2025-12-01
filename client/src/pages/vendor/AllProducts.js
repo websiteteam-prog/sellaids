@@ -57,6 +57,8 @@ export default function Products() {
         { withCredentials: true }
       );
 
+      console.log("Fetched Products:", res.data.products);
+
       setProducts(res.data.products || []);
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
@@ -212,16 +214,9 @@ export default function Products() {
                     <td className="py-4 px-4">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
                         <img
-                          src={getImageUrl(product.front_photo)}
-                          alt="Product"
+                          src={`${process.env.REACT_APP_API_URL}/${product.front_photo}`}
+                          alt="not_found"
                           className="w-full h-full object-cover"
-                          loading="lazy"
-                          onLoad={(e) => (e.target.style.opacity = 1)}
-                          onError={(e) => {
-                            e.target.src = "/placeholder-image.jpg";
-                            e.target.style.opacity = 1;
-                          }}
-                          style={{ opacity: 0, transition: "opacity 300ms" }}
                         />
                       </div>
                     </td>

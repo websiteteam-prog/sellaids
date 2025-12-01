@@ -9,8 +9,6 @@ import {
 import toast from "react-hot-toast";
 import { Package, TrendingUp } from "lucide-react";
 
-const productImage = "https://cdn-icons-png.flaticon.com/512/3081/3081559.png"
-
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -20,7 +18,6 @@ const AdminDashboard = () => {
   });
 
   const [topProducts, setTopProducts] = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -114,7 +111,7 @@ const AdminDashboard = () => {
               <div key={i} className="flex items-center justify-between h-[80px]">
                 {/* Product Info */}
                 <div className="flex items-start gap-3 w-60">
-                  <img src={item.img ? item.img : productImage} className="text-2xl w-[70px] h-[70px] rounded-lg" />
+                  <img src={`${process.env.REACT_APP_API_URL}/${item.img}`} className="text-2xl w-[70px] h-[70px] rounded-lg" />
                   <div>
                     <p className="text-sm font-medium text-gray-800 mt-0">{item.name}</p>
                     <p className="text-sm font-medium text-gray-800 mt-[5px]">{item.fabric}</p>
@@ -142,35 +139,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Bottom Section */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        <div className="bg-white shadow rounded-lg p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-gray-700 font-semibold">Recent Orders</h3>
-            <button className="text-sm text-[#FF6A00] font-medium">View All</button>
-          </div>
-          {recentOrders.length === 0 ? (
-            <p className="text-center text-gray-500 py-6">No Orders</p>
-          ) : (
-            recentOrders.map((order, i) => (
-              <div key={i} className="flex justify-between items-center py-3 border-b last:border-none">
-                <div>
-                  <p className="font-medium text-gray-800">
-                    {order.id}
-                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${order.color}`}>
-                      {order.status}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-500">{order.name}</p>
-                  <p className="text-xs text-gray-400">{order.time}</p>
-                </div>
-                <div className="font-semibold text-gray-700">Rs. {order.price.toLocaleString()}</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div> */}
     </div>
   );
 };
