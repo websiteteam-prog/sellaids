@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import '../App.css'; // import the CSS with slider styles
+import '../App.css'; 
 import vogueImage1 from '../assets/images/image1.webp';
 import vogueImage2 from '../assets/images/image2.webp';
 import vogueImage3 from '../assets/images/image3.webp';

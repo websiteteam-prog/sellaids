@@ -151,7 +151,7 @@ export default function VendorView() {
                       src={getImageUrl(product.repair_photo)}
                       alt="Repair"
                       className="w-32 h-32 object-cover rounded mt-1"
-                      onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                      // onError={(e) => (e.target.src = "/placeholder-image.jpg")}
                     />
                   </p>
                 </>
@@ -181,7 +181,7 @@ export default function VendorView() {
                           src={getImageUrl(image.src)}
                           alt={image.label}
                           className="w-32 h-32 object-cover rounded"
-                          onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                          // onError={(e) => (e.target.src = "/placeholder-image.jpg")}
                         />
                       </div>
                     )
@@ -197,7 +197,7 @@ export default function VendorView() {
                           src={getImageUrl(img)}
                           alt={`Additional ${index + 1}`}
                           className="w-32 h-32 object-cover rounded"
-                          onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                          // onError={(e) => (e.target.src = "/placeholder-image.jpg")}
                         />
                       </div>
                     ))}
