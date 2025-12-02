@@ -79,6 +79,14 @@ const ProductDetails = () => {
           console.error("additional_info JSON parse error", e);
         }
 
+        const conditionMap = {
+          new: "New",
+          almost_new: "Almost New",
+          good: "Good",
+          hardly_ever_used: "Hardly Ever Used",
+          satisfactory: "Satisfactory",
+        };
+
         const mappedProduct = {
           id: raw.id,
           name: extraInfo.description,
@@ -92,7 +100,7 @@ const ProductDetails = () => {
             ? [{ hex: getColorHex(raw.product_color), name: raw.product_color }]
             : [],
           sizes: raw.size && raw.size !== "Other" ? [raw.size] : [],
-          condition: raw.product_condition || "Not specified",
+          condition: conditionMap[raw.product_condition] || "Not specified",
           rating: 0,
           review_count: 0,
         };
