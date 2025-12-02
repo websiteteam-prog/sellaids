@@ -8,6 +8,10 @@ import { MapPin, Heart, X, Truck, Package } from "lucide-react";
 import QuantitySelector from "../../pages/checkout/QuantitySelector";
 
 const STORAGE_KEY = "orderData";
+const IMG_BASE = process.env.REACT_APP_API_URL;
+const PLACEHOLDER_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
+
 
 export default function CartStep({ onNext }) {
   const { cart, fetchCart, removeFromCart } = useCartStore();
@@ -41,7 +45,8 @@ export default function CartStep({ onNext }) {
       product.button_photo,
       product.wearing_photo,
       ...moreImages,
-    ].filter(Boolean);
+    ].filter(Boolean)
+    .map(path => `${IMG_BASE}/${path}`); 
   };
 
   // Change active image
@@ -73,7 +78,7 @@ export default function CartStep({ onNext }) {
   };
 
   const handleImageError = (e) => {
-    e.target.src = "https://via.placeholder.com/96";
+    e.target.src = PLACEHOLDER_DATA_URL;
   };
 
   // CLEAR OLD CHECKOUT DATA ON MOUNT
@@ -376,10 +381,10 @@ export default function CartStep({ onNext }) {
                 <Package className="w-3 h-3" />
                 All issue easy returns
               </p>
-              <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+              {/* <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
                 <Truck className="w-4 h-4" />
                 Estimated Delivery by Wed, 5th Nov
-              </p>
+              </p> */}
             </div>
 
             {/* ---- ACTIONS ---- */}

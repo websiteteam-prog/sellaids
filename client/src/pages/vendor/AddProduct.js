@@ -1,9 +1,12 @@
 // src/components/AddProductForm.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast"; // Removed Toaster from here
+import { toast } from "react-hot-toast";
 
-// Reusable Form Field
+// API URL from .env (production mein change kar dena)
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+// Reusable FormField Component (exactly same as before)
 const FormField = ({ field, value, onChange, error, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -89,7 +92,7 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
     );
   }
 
-  // FILE
+  // FILE INPUT
   if (field.type === "file") {
     return (
       <div className="flex flex-col">
@@ -169,7 +172,7 @@ const AddProductForm = () => {
     other_size: "",
     product_color: "",
     brand: "",
-    model_name: "", // <-- REQUIRED
+    model_name: "",
     invoice: "No",
     invoice_photo: null,
     needs_repair: "No",
@@ -207,7 +210,7 @@ const AddProductForm = () => {
     const fetchCategories = async () => {
       setIsLoadingCategories(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/product/categories-list`, { withCredentials: true });
+        const res = await axios.get(`${API_URL}/api/product/categories-list`, { withCredentials: true });
         if (res.data.success) setCategories(res.data.data || []);
         else setApiError("Failed to load categories");
       } catch (err) {
@@ -225,7 +228,7 @@ const AddProductForm = () => {
       if (!formData.category_id) return setTypes([]);
       setIsLoadingTypes(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/product?category_id=${formData.category_id}`, {
+        const res = await axios.get(`${API_URL}/api/product?category_id=${formData.category_id}`, {
           withCredentials: true,
         });
         if (res.data.success) setTypes(res.data.data.map((t) => t.name || t.type_name || ""));
@@ -264,7 +267,6 @@ const AddProductForm = () => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
-    // Clear error on change
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -320,13 +322,10 @@ const AddProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     toast.dismiss();
 
     if (!validateStep()) {
-      const firstError = Object.keys(errors).length > 0
-        ? Object.values(errors)[0]
-        : "Please fill all required fields.";
+      const firstError = Object.keys(errors).length > 0 ? Object.values(errors)[0] : "Please fill all required fields.";
       toast.error(firstError);
       return;
     }
@@ -342,19 +341,16 @@ const AddProductForm = () => {
         } else if (value instanceof File && value) {
           data.append(key, value);
         } else if (key !== "productCategory" && key !== "agree" && value !== null && value !== "") {
-          // Normal fields
           if (key !== "other_size") {
             data.append(key, value);
           }
-
-          // When size is "Other", send size_other
           if (key === "other_size" && formData.size === "Other") {
             data.append("size_other", value.trim());
           }
         }
       });
 
-      const res = await axios.post("http://localhost:5000/api/product/add", data, {
+      const res = await axios.post(`${API_URL}/api/product/add`, data, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
@@ -379,8 +375,9 @@ const AddProductForm = () => {
   const steps = ["Guidelines", "Product", "Condition", "Image", "Price"];
 
   return (
-    <div className="min-h-screen bg-gray-100 px-2 sm:px-4 py-4 sm:py-6">
-      <div className="w-full sm:max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-2 sm:p-4 md:p-6">
+    <div className="min-h-screen py-6">
+      {/* Reduced side padding for mobile */}
+      <div className="w-full max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-4 sm:p-6">
         {apiError && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm border-l-4 border-red-500">
             {apiError}
@@ -388,7 +385,9 @@ const AddProductForm = () => {
         )}
 
         <div className="mb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-center text-gray-800 mb-3 sm:mb-4">Add New Product</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-center text-gray-800 mb-4">Add New Product</h2>
+
+          {/* Progress Bar - Desktop only */}
           <div className="hidden sm:block relative">
             <div className="flex justify-between items-center">
               {steps.map((stepName, index) => (
@@ -427,11 +426,11 @@ const AddProductForm = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+
           {/* STEP 0: GUIDELINES */}
           {step === 0 && (
             <div className="col-span-full">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Guidelines</h3>
               <div className="mt-4">
                 <h4 className="text-md font-semibold text-gray-700">Seller Guidelines – Please Review Before Pickup</h4>
                 <ul className="list-disc pl-5 text-sm text-gray-600 mt-2 space-y-1">
@@ -459,7 +458,7 @@ const AddProductForm = () => {
 
           {/* STEP 1: PRODUCT */}
           {step === 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Product</h3>
               {[
                 { name: "product_group", label: "Group *", type: "select", options: ["", "Men", "Women", "Girl", "Boy"] },
@@ -518,7 +517,7 @@ const AddProductForm = () => {
 
           {/* STEP 2: CONDITION */}
           {step === 2 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Condition</h3>
               {[
                 { name: "invoice", label: "Do You Have Invoice? *", type: "select", options: ["No", "Yes"] },
@@ -527,7 +526,7 @@ const AddProductForm = () => {
                 { name: "repair_photo", label: "Repair Photo", type: "file", accept: "image/*", disabled: formData.needs_repair !== "Yes" },
                 { name: "original_box", label: "Do You Have The Original Box? *", type: "select", options: ["No", "Yes"] },
                 { name: "dust_bag", label: "Do You Have The Dust Bag? *", type: "select", options: ["No", "Yes"] },
-                { name: "additional_items", label: "Any Additional Items? *", type: "textarea" },
+                { name: "additional_items", label: "Any Additional Items?", type: "textarea" },
               ].map((field) => (
                 <FormField
                   key={field.name}
@@ -539,49 +538,38 @@ const AddProductForm = () => {
                 />
               ))}
               {formData.needs_repair === "Yes" && (
-                <p className="text-gray-600 text-sm mt-1 col-span-full">Charges on repair will be extra</p>
+                <p className="text-gray-600 text-sm col-span-full">Charges on repair will be extra</p>
               )}
             </div>
           )}
 
           {/* STEP 3: IMAGE */}
           {step === 3 && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Image</h3>
-                {[
-                  { name: "front_photo", label: "Front Photo *", type: "file", accept: "image/*" },
-                  { name: "back_photo", label: "Back Photo *", type: "file", accept: "image/*" },
-                  { name: "label_photo", label: "Label/Logo Photo *", type: "file", accept: "image/*" },
-                  { name: "inside_photo", label: "Inside/Close Up Material Image *", type: "file", accept: "image/*" },
-                  { name: "button_photo", label: "Button/Studs/Zips/Work Image *", type: "file", accept: "image/*" },
-                  { name: "wearing_photo", label: "Image Of Wearing/Carrying *", type: "file", accept: "image/*" },
-                  { name: "more_images", label: "Upload More Images", type: "file", multiple: true, accept: "image/*" },
-                ].map((field) => (
-                  <FormField
-                    key={field.name}
-                    field={field}
-                    value={formData[field.name]}
-                    onChange={handleChange}
-                    error={errors[field.name]}
-                  />
-                ))}
-              </div>
-              {/* Prevent Enter key from submitting on Image step */}
-              <div
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                  }
-                }}
-                style={{ position: "absolute", left: "-9999px" }}
-              />
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Image</h3>
+              {[
+                { name: "front_photo", label: "Front Photo *", type: "file", accept: "image/*" },
+                { name: "back_photo", label: "Back Photo *", type: "file", accept: "image/*" },
+                { name: "label_photo", label: "Label/Logo Photo *", type: "file", accept: "image/*" },
+                { name: "inside_photo", label: "Inside/Close Up Material Image *", type: "file", accept: "image/*" },
+                { name: "button_photo", label: "Button/Studs/Zips/Work Image *", type: "file", accept: "image/*" },
+                { name: "wearing_photo", label: "Image Of Wearing/Carrying *", type: "file", accept: "image/*" },
+                { name: "more_images", label: "Upload More Images", type: "file", multiple: true, accept: "image/*" },
+              ].map((field) => (
+                <FormField
+                  key={field.name}
+                  field={field}
+                  value={formData[field.name]}
+                  onChange={handleChange}
+                  error={errors[field.name]}
+                />
+              ))}
+            </div>
           )}
 
-          {/* STEP 4: PRICE */}
+          {/* STEP 4: PRICE - RESPONSIVE AGREEMENT FIXED */}
           {step === 4 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800 col-span-full">Price</h3>
               {[
                 { name: "purchase_price", label: "Purchase Price (INR) *", type: "number" },
@@ -592,55 +580,68 @@ const AddProductForm = () => {
                 { name: "product_link", label: "Product Reference Link *", type: "url" },
                 { name: "additional_info", label: "Additional Product Information *", type: "textarea" },
               ].map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={formData[field.name]}
-                  onChange={handleChange}
-                  error={errors[field.name]}
-                />
+                <FormField key={field.name} field={field} value={formData[field.name]} onChange={handleChange} error={errors[field.name]} />
               ))}
-              <div className="sm:col-span-full mt-4">
-                <label className="flex items-start space-x-2">
-                  <FormField
-                    field={{ name: "agree", label: "I agree to the terms *", type: "checkbox" }}
-                    value={formData.agree}
-                    onChange={handleChange}
-                    error={errors.agree}
-                  />
-                  <span className="text-sm text-gray-600">
+
+              {/* RESPONSIVE "I agree to the terms" */}
+              <div className="col-span-full mt-6 p-4 bg-gray-50 rounded-lg border">
+                <label className="flex flex-col sm:flex-row items-start gap-3 cursor-pointer">
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      name="agree"
+                      checked={formData.agree}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
+                    />
+                    <span className="font-semibold text-gray-800">I agree to the terms *</span>
+                  </div>
+                  <span className="text-sm text-gray-600 leading-relaxed">
                     By submitting this form, I agree to abide by our policies, terms and conditions, and seller declaration guidelines.
                   </span>
                 </label>
+                {errors.agree && <p className="text-red-500 text-xs mt-2">{errors.agree}</p>}
               </div>
             </div>
           )}
 
           {/* BUTTONS */}
-          <div className="flex justify-between mt-6">
-            {step > 0 && (
-              <button type="button" onClick={prevStep} className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg transition-colors" disabled={isSubmitting}>
-                Back
-              </button>
-            )}
-            {step < steps.length - 1 ? (
-              <button type="button" onClick={nextStep} className="px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded-lg transition-colors" disabled={isSubmitting}>
-                Next
-              </button>
-            ) : (
-              <button
-                type="submit"
-                className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Submitting..." : "Submit"}
-              </button>
-            )}
+          <div className="mt-8 pt-6 border-t">
+  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center">
+    {step > 0 && (
+      <button
+        type="button"
+        onClick={prevStep}
+        disabled={isSubmitting}
+        className="w-full sm:w-auto px-8 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition disabled:opacity-50 order-2 sm:order-1"
+      >
+        Back
+      </button>
+    )}
+
+    <div className="w-full sm:w-auto order-1 sm:order-2">
+      {step < steps.length - 1 ? (
+        <button
+          type="button"
+          onClick={nextStep}
+          disabled={isSubmitting}
+          className="w-full px-10 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition disabled:opacity-50"
+        >
+          Next
+        </button>
+      ) : (
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full px-10 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-lg"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Product"}
+        </button>
+      )}
+    </div>
+  </div>
           </div>
         </form>
-
-        {/* <Toaster /> REMOVED FROM HERE */}
-        {/* Add <Toaster /> only ONCE in App.jsx or main.jsx */}
       </div>
     </div>
   );

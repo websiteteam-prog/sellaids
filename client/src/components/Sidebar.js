@@ -1,15 +1,6 @@
-import { useState } from "react";
+// src/components/Sidebar.jsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  Home,
-  ShoppingBag,
-  User,
-  Heart,
-  HelpCircle,
-  Menu,
-  X,
-  LogOut,
-} from "lucide-react";
+import { Home, ShoppingBag, User, Heart, HelpCircle, X } from "lucide-react";
 import UserLogout from "./UserAuth/UserLogout";
 
 const menuItems = [
@@ -20,20 +11,9 @@ const menuItems = [
   { path: "/user/support", label: "Support", icon: <HelpCircle size={18} /> },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, closeSidebar }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleSidebar = () => setIsOpen(!isOpen);
-  const closeSidebar = () => setIsOpen(false);
-
-  // Handling logout
-  const handleLogout = () => {
-    // Clear session/token
-    localStorage.removeItem("token"); // example
-    navigate("/UserAuth/UserLogin");
-  };
 
   const renderMenuItems = () =>
     menuItems.map((item) => (
@@ -53,26 +33,16 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Hamburger */}
-      <div className="md:hidden flex items-center justify-between p-4 shadow bg-white fixed top-0 left-0 right-0 z-50">
-        <div className="text-2xl font-bold text-red-600">MyShop</div>
-        <button onClick={toggleSidebar}>
-          <Menu size={28} />
-        </button>
-      </div>
-
-      {/* Sidebar for Desktop */}
+      {/* Desktop Sidebar */}
       <div className="w-64 bg-white shadow-md hidden md:flex flex-col justify-between min-h-screen">
         <div>
           <div className="p-4 text-2xl font-bold text-red-600">MyShop</div>
           <nav className="mt-6 flex flex-col gap-1">{renderMenuItems()}</nav>
         </div>
-
-        {/* Logout Button */}
         <UserLogout />
       </div>
 
-      {/* Sidebar Overlay for Mobile */}
+      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
@@ -80,7 +50,7 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar Drawer for Mobile */}
+      {/* Mobile Drawer */}
       <div
         className={`fixed top-0 left-0 w-64 h-full bg-white shadow-lg z-50 transform transition-transform duration-300 md:hidden flex flex-col justify-between ${
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -95,8 +65,6 @@ export default function Sidebar() {
           </div>
           <nav className="mt-4 flex flex-col gap-1">{renderMenuItems()}</nav>
         </div>
-
-        {/* Mobile Logout Button */}
         <UserLogout />
       </div>
     </>
