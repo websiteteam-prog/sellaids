@@ -5,11 +5,16 @@ import logger from "../config/logger.js";
 
 // Create transporter
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: config.email.user,
     pass: config.email.pass,
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 /**
