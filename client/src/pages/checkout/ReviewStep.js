@@ -117,13 +117,6 @@ export default function ReviewStep({
     });
   };
 
-<<<<<<< HEAD
-  const handleImageError = (e) => {
-    e.target.src = PLACEHOLDER_DATA_URL;
-  };
-
-=======
->>>>>>> 7f26eb2e8c56c19a687f0ffc3ffdec80b6dc20f3
   /* ---------- PROCEED TO PAYMENT ---------- */
   const handleProceed = async () => {
     if (!shippingAddress) {
@@ -313,20 +306,6 @@ export default function ReviewStep({
                   Estimated Delivery by Wed, 5th Nov
                 </p>
               </div>
-<<<<<<< HEAD
-              <p className="text-sm text-gray-600 mt-1">
-                Size: {item.size} | Qty: {item.quantity}
-              </p>
-              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                <Package className="w-3 h-3" />
-                All issue easy returns
-              </p>
-              {/* <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                <Truck className="w-4 h-4" />
-                Estimated Delivery by Wed, 5th Nov
-              </p> */}
-=======
->>>>>>> 7f26eb2e8c56c19a687f0ffc3ffdec80b6dc20f3
             </div>
           </div>
         );
