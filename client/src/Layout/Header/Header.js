@@ -32,6 +32,7 @@ const Header = () => {
           const women = data.find(c => c.slug === "women") || {};
           const men = data.find(c => c.slug === "men") || {};
           const kids = data.find(c => c.slug === "kids") || {};
+          console.log(women)
 
           setWomenCategories(women);
           setMenCategories(men);
@@ -69,24 +70,30 @@ const Header = () => {
           {/* Desktop Menu */}
           <nav className="hidden lg:flex items-center space-x-10 xl:space-x-12 text-sm font-medium">
             <div className="relative group">
-              <span className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
-                Women
+              <Link
+                to={`/product-category/${womenCategories?.slug}`}
+                className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
+                {womenCategories?.name}
                 <ChevronDown size={16} />
-              </span>
+              </Link>
               <MegaMenu womenCategories={womenCategories} />
             </div>
             <div className="relative group">
-              <span className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
-                Men
+              <Link
+                to={`/product-category/${womenCategories?.slug}`}
+                className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
+                {menCategories?.name}
                 <ChevronDown size={16} />
-              </span>
+              </Link>
               <MensMegaMenu menCategories={menCategories} />
             </div>
             <div className="relative group">
-              <span className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
-                Kids
+              <Link
+                to={`/product-category/${kidsCategories?.slug}`}
+                className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
+                {kidsCategories?.name}
                 <ChevronDown size={16} />
-              </span>
+              </Link>
               <KidsMegaMenu kidsCategories={kidsCategories} />
             </div>
             <Link to="/sellwithus" className="hover:text-orange-500 text-base text-gray-700 font-medium">

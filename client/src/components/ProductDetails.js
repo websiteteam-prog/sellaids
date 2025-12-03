@@ -85,6 +85,14 @@ const ProductDetails = () => {
           if (raw.additional_info) extraInfo = JSON.parse(raw.additional_info);
         } catch (e) {}
 
+        const conditionMap = {
+          new: "New",
+          almost_new: "Almost New",
+          good: "Good",
+          hardly_ever_used: "Hardly Ever Used",
+          satisfactory: "Satisfactory",
+        };
+
         const mappedProduct = {
           id: raw.id,
           name: productName,
@@ -98,7 +106,7 @@ const ProductDetails = () => {
             ? [{ hex: getColorHex(raw.product_color), name: raw.product_color }]
             : [],
           sizes: raw.size && raw.size !== "Other" ? [raw.size] : [],
-          condition: raw.product_condition || "Not specified",
+          condition: conditionMap[raw.product_condition] || "Not specified",
           rating: 0,
           review_count: 0,
         };
@@ -237,6 +245,7 @@ const ProductDetails = () => {
   const handleShare = () => {
     const url = window.location.href;
     const title = product.name;
+    // const imageUrl = `${process.env.REACT_APP_API_URL}/${product.front_photo}`    
     if (navigator.share) {
       navigator.share({ title, url }).catch(() => {});
     } else {
