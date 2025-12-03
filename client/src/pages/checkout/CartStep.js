@@ -336,7 +336,6 @@ export default function CartStep({ onNext }) {
                 </span>
               </div>
 
-<<<<<<< HEAD
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                 <Package className="w-3 h-3" />
                 All issue easy returns
@@ -345,7 +344,6 @@ export default function CartStep({ onNext }) {
                 <Truck className="w-4 h-4" />
                 Estimated Delivery by Wed, 5th Nov
               </p> */}
-=======
               <div className="space-y-2 text-sm text-gray-600">
                 <p className="flex items-center gap-2">
                   <Package className="w-4 h-4" />
@@ -356,7 +354,6 @@ export default function CartStep({ onNext }) {
                   Estimated Delivery by Wed, 5th Nov
                 </p>
               </div>
->>>>>>> 7f26eb2e8c56c19a687f0ffc3ffdec80b6dc20f3
             </div>
 
             {/* ---- ACTIONS ---- */}
