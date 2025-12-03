@@ -282,6 +282,7 @@ const ProductDetails = () => {
   const handleShare = async () => {
     const url = window.location.href;
     const title = product.name;
+    // const imageUrl = `${process.env.REACT_APP_API_URL}/${product.front_photo}`    
     if (navigator.share) {
       try { await navigator.share({ title, url }); } catch { fallbackShare(url, title); }
     } else fallbackShare(url, title);
