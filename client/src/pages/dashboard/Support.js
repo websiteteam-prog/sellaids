@@ -5,8 +5,8 @@ export default function Support() {
   const { user } = useWishlistStore(); // logged-in user info
 
   // Default values if user not logged in
-  const email = user?.email || "support@myshop.com";
-  const phone = user?.phone || "+91 9876543210";
+  const email = user?.email || "contact@sellaids.com";
+  const phone = user?.phone || "+91 8800425855";
 
   return (
     <div className="bg-white p-6 rounded-xl shadow max-w-xl">
