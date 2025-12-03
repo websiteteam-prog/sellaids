@@ -3,7 +3,6 @@ import { Category } from "../models/categoryModel.js";
 import { Product } from "../models/productModel.js";
 import { Op } from "sequelize";
 
-// Custom async validation to check category existence
 const categoryExists = async (category_id) => {
   if (!category_id) return true;
   const category = await Category.findByPk(category_id);
@@ -42,7 +41,7 @@ size_other: yup
   .when("size", {
     is: "Other",
     then: (schema) => schema.required("Custom size is required when size is Other"),
-    otherwise: (schema) => schema.nullable().strip(), // don't send if not needed
+    otherwise: (schema) => schema.nullable().strip(), 
   }),
   product_color: yup.string().required("Product color is required"),
   brand: yup.string().required("Brand is required"),
@@ -69,9 +68,9 @@ size_other: yup
   reason_to_sell: yup.string().required("Reason to sell is required"),
   purchase_year: yup.number().required("Purchase year is required"),
   purchase_place: yup.string().required("Purchase place is required"),
-  additional_items: yup.string().required(),
+  additional_items: yup.string().nullable(),
   product_link: yup.string().url().required(),
-  additional_info: yup.string().required(),
+  additional_info: yup.string().nullable(),
 });
 
 const uniqueBrandModelForUpdate = async function (model_name, brand, currentProductId, vendorId) {

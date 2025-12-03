@@ -1,9 +1,8 @@
-// src/components/vendor/VendorForgot.jsx
 import React, { useState } from "react";
 import axios from "axios";
-import { toast} from "react-hot-toast";
+import toast from "react-hot-toast";  // ← Sahi import (tumne "toast}" likha tha pehle, ab theek hai)
 
-const VendorForgot = () => {
+const UserForgot = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -11,7 +10,6 @@ const VendorForgot = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Simple email validation
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       setError("Please enter a valid email address");
       return;
@@ -22,7 +20,7 @@ const VendorForgot = () => {
     setLoading(true);
     try {
       const response = await axios.put(
-        "http://localhost:5000/api/user/auth/forgot-password", 
+        `${process.env.REACT_APP_API_URL}/api/user/auth/forgot-password`,
         { email },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -38,7 +36,6 @@ const VendorForgot = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      {/* <Toaster position="top-right" /> */}
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-orange-600">
           User Forgot Password
@@ -69,4 +66,4 @@ const VendorForgot = () => {
   );
 };
 
-export default VendorForgot;
+export default UserForgot;

@@ -3,6 +3,10 @@ import { MapPin, Truck, Package } from "lucide-react";
 import api from "../../api/axiosInstance";
 import { toast, Toaster } from "react-hot-toast";
 
+const IMG_BASE = process.env.REACT_APP_API_URL;
+const PLACEHOLDER_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
+
 export default function ReviewStep({
   orderData,
   onPrev,
@@ -91,7 +95,8 @@ export default function ReviewStep({
       product.button_photo,
       product.wearing_photo,
       ...moreImages,
-    ].filter(Boolean);
+    ].filter(Boolean)
+    .map(path => `${IMG_BASE}/${path}`);
   };
 
   const changeImage = (productId, offsetOrIndex) => {
@@ -112,6 +117,13 @@ export default function ReviewStep({
     });
   };
 
+<<<<<<< HEAD
+  const handleImageError = (e) => {
+    e.target.src = PLACEHOLDER_DATA_URL;
+  };
+
+=======
+>>>>>>> 7f26eb2e8c56c19a687f0ffc3ffdec80b6dc20f3
   /* ---------- PROCEED TO PAYMENT ---------- */
   const handleProceed = async () => {
     if (!shippingAddress) {
@@ -301,6 +313,20 @@ export default function ReviewStep({
                   Estimated Delivery by Wed, 5th Nov
                 </p>
               </div>
+<<<<<<< HEAD
+              <p className="text-sm text-gray-600 mt-1">
+                Size: {item.size} | Qty: {item.quantity}
+              </p>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <Package className="w-3 h-3" />
+                All issue easy returns
+              </p>
+              {/* <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                Estimated Delivery by Wed, 5th Nov
+              </p> */}
+=======
+>>>>>>> 7f26eb2e8c56c19a687f0ffc3ffdec80b6dc20f3
             </div>
           </div>
         );

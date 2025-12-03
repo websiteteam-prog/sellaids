@@ -1,7 +1,7 @@
 // src/components/Popup.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom"; // ← Link add kiya
 import { Eye, EyeOff, X } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
 import useCartStore from "../stores/useCartStore";
@@ -38,22 +38,20 @@ const Popup = ({ onClose }) => {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState("");
 
-  // === POPUP SHOW LOGIC — HAR BAAR DIKHEGA JAB LOGOUT HO ===
+  // POPUP SHOW LOGIC
   useEffect(() => {
-    // Agar user logged in hai → popup nahi dikhao
     if (isAuthenticated) {
       setVisible(false);
       return;
     }
 
-    // Agar logged out hai → popup dikhao (har page load pe)
     const timer = setTimeout(() => {
       setVisible(true);
       setTimeout(() => setFade(true), 100);
-    }, 800); // 0.8s delay for smooth entry
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated]); // Re-run jab bhi auth status change ho
+  }, [isAuthenticated]);
 
   const handleClose = () => {
     setFade(false);
@@ -63,7 +61,7 @@ const Popup = ({ onClose }) => {
     }, 300);
   };
 
-  // === LOGIN ===
+  // LOGIN
   const validateLogin = () => {
     setLoginError("");
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -102,7 +100,7 @@ const Popup = ({ onClose }) => {
     }
   };
 
-  // === REGISTER ===
+  // REGISTER (same as before)
   const handleRegChange = (e) => {
     const { name, value } = e.target;
     if (name === "mobile") {
@@ -158,7 +156,6 @@ const Popup = ({ onClose }) => {
     }
   };
 
-  // === RENDER ===
   if (!visible || isAuthenticated) return null;
 
   return (
@@ -211,6 +208,7 @@ const Popup = ({ onClose }) => {
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Welcome Back!</h2>
               {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+              
               <input
                 type="email"
                 placeholder="Email"
@@ -219,6 +217,7 @@ const Popup = ({ onClose }) => {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500"
                 autoComplete="email"
               />
+              
               <div className="relative">
                 <input
                   type={showLoginPassword ? "text" : "password"}
@@ -236,6 +235,18 @@ const Popup = ({ onClose }) => {
                   {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              {/* YEHI ADDED HAI - BAKI SAB SAME */}
+              <p className="text-right mt-2 mb-4">
+                <Link
+                  to="/UserAuth/UserForgot"
+                  className="text-red-500 text-sm hover:text-orange-600"
+                  onClick={handleClose}
+                >
+                  Forgot Password?
+                </Link>
+              </p>
+
               <button
                 onClick={handleLoginSubmit}
                 disabled={loginLoading}
@@ -245,7 +256,7 @@ const Popup = ({ onClose }) => {
               </button>
             </div>
           ) : (
-            /* REGISTER FORM */
+            /* REGISTER FORM - BILKUL WAHI JAISE PEHLE THA */
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Create Account</h2>
               {regError && <p className="text-red-500 text-sm">{regError}</p>}
