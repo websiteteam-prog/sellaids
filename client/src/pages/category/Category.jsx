@@ -257,7 +257,7 @@ const CategoryPage = () => {
                     className="accent-blue-600 w-5 h-5"
                   />
                   <span className="capitalize font-medium">
-                    {cond.replace("_", " ")}
+                    {cond.replace(/_/g, " ")}
                   </span>
                 </label>
               ))}
@@ -361,16 +361,8 @@ const CategoryPage = () => {
               >
                 <div className="relative bg-gray-50">
                   <img
-                    src={
-                      product?.product_img
-                        ? product?.product_img
-                        : "https://cdn-icons-png.flaticon.com/512/2748/2748558.png"
-                    }
+                    src={`${process.env.REACT_APP_API_URL}/${product?.product_img}`}
                     alt={product.product_name}
-                    onError={(e) =>
-                      (e.target.src =
-                        "https://cdn-icons-png.flaticon.com/512/2748/2748558.png")
-                    }
                     className="object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out group-hover:scale-105"
                   />
 

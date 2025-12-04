@@ -18,6 +18,7 @@ import LuxuryHighlight from '../components/LuxuryHighlight';
 import CTASection from '../components/CTASection';
 import BrandSection from '../components/BrandSection';
 import ImageGallery from '../components/ImageGallery';
+import InfluencerSection from '../components/InfluencerSection';        
 
 function LandingPage() {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -125,6 +126,7 @@ function LandingPage() {
             {/* Other Sections */}
             <CategoryCarousel />
             <OverlaySection />
+            <InfluencerSection />
             <Feature />
             <Bestsellers />
             <VogueSection />

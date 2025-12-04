@@ -18,6 +18,18 @@ import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
 
+// Yeh function daal diya — ab kabhi JSON.parse crash nahi karega
+const safeJsonParse = (data, fallback = {}) => {
+  if (!data) return fallback;
+  if (typeof data === "object") return data;
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn("Invalid JSON in product.info:", data);
+    return fallback;
+  }
+};
+
 function Bestsellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,15 +42,13 @@ function Bestsellers() {
   const { isAuthenticated, isUserLoading } = useUserStore();
   const { setPendingAdd } = useCartActions();
 
-  // ==================== FETCH BESTSELLERS ====================
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/admin/management/dashboard`
+          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/admin/management/dashboard`
         );
         const topProducts = res.data?.data?.top_products || [];
-        console.log(topProducts)
         setProducts(topProducts);
       } catch (error) {
         console.error("Error fetching bestsellers:", error);
@@ -51,7 +61,8 @@ function Bestsellers() {
     fetchProducts();
   }, []);
 
-  // ==================== AUTO-ADD AFTER LOGIN ====================
+  // Baki sab same (login, cart, wishlist) — kuch nahi badla
+
   useEffect(() => {
     if (isUserLoading) return;
 
@@ -75,19 +86,18 @@ function Bestsellers() {
     }
   }, [isAuthenticated, isUserLoading, products, location, navigate]);
 
-  // ==================== ADD TO CART (DIRECT) ====================
   const addToCartDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
     try {
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/user/cart`,
+        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/user/cart`,
         { product_id: product.id },
         { withCredentials: true }
       );
 
       setCartPopup({
-        name: product.name,
+        name: product.name || "Product",
         price: product.price,
         img: product.img || "https://via.placeholder.com/80",
       });
@@ -112,7 +122,6 @@ function Bestsellers() {
       toast.error("Please wait...");
       return;
     }
-
     if (!isAuthenticated) {
       setPendingAdd({ product, from: location.pathname, type: "cart" });
       toast.error("Please log in to add to cart");
@@ -121,27 +130,23 @@ function Bestsellers() {
       });
       return;
     }
-
     addToCartDirectly(product);
   };
 
-  // ==================== ADD TO WISHLIST (DIRECT) ====================
   const addToWishlistDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
     try {
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/user/wishlist`,
         { product_id: product.id },
         { withCredentials: true }
       );
-
-      toast.success(`${product.name} added to wishlist!`);
+      toast.success(`${product.name || "Product"} added to wishlist!`);
       navigate("/user/wishlist");
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to add to wishlist";
       toast.error(msg);
-
       if (error.response?.status === 401) {
         setPendingAdd({ product, from: location.pathname, type: "wishlist" });
         navigate("/UserAuth/UserLogin", {
@@ -156,7 +161,6 @@ function Bestsellers() {
       toast.error("Please wait...");
       return;
     }
-
     if (!isAuthenticated) {
       setPendingAdd({ product, from: location.pathname, type: "wishlist" });
       toast.error("Please log in to add to wishlist");
@@ -165,11 +169,9 @@ function Bestsellers() {
       });
       return;
     }
-
     addToWishlistDirectly(product);
   };
 
-  // ==================== AUTO-CLOSE POPUP ====================
   useEffect(() => {
     if (cartPopup) {
       const timer = setTimeout(() => setCartPopup(null), 4000);
@@ -177,7 +179,6 @@ function Bestsellers() {
     }
   }, [cartPopup]);
 
-  // ==================== SLIDER ARROWS ====================
   const PrevArrow = ({ onClick }) => (
     <button
       onClick={onClick}
@@ -212,7 +213,6 @@ function Bestsellers() {
     ],
   };
 
-  // ==================== LOADING & EMPTY STATE ====================
   if (loading) {
     return (
       <div className="py-16 text-center">
@@ -229,14 +229,13 @@ function Bestsellers() {
     );
   }
 
-  // ==================== PRODUCT CARD COMPONENT ====================
+  // YEH FIX KIYA — ab kabhi crash nahi hoga!
   const ProductCard = ({ product }) => {
-    const info = product.info ? JSON.parse(product.info) : {};
+    const info = safeJsonParse(product.info, { description: product.name || "Product" });
 
     return (
       <div className="px-3">
         <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 rounded-lg">
-          {/* Image */}
           <div className="relative overflow-hidden bg-gray-50">
             <img
               src={
@@ -244,59 +243,36 @@ function Bestsellers() {
                   ? product.img
                   : "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image"
               }
-              alt={product.name}
+              alt={info.description || "Product"}
               className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
               onError={(e) =>
-              (e.target.src =
-                "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
+                (e.target.src = "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
               }
             />
 
-            {/* Hover Actions */}
             <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleWishlist(product);
-                }}
-                className="text-gray-600 hover:text-red-500 transition"
-              >
+              <button onClick={(e) => { e.stopPropagation(); handleWishlist(product); }} className="text-gray-600 hover:text-red-500 transition">
                 <Heart size={20} />
               </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart(product);
-                }}
-                className="text-gray-600 hover:text-green-600 transition"
-              >
+              <button onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }} className="text-gray-600 hover:text-green-600 transition">
                 <ShoppingCart size={20} />
               </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/product-details/${product.id}`);
-                }}
-                className="text-gray-600 hover:text-orange-600 transition"
-              >
+              <button onClick={(e) => { e.stopPropagation(); navigate(`/product-details/${product.id}`); }} className="text-gray-600 hover:text-orange-600 transition">
                 <Eye size={20} />
               </button>
             </div>
           </div>
 
-          {/* Details */}
           <div className="p-4 text-start bg-white">
             <h3
               className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition cursor-pointer"
               onClick={() => navigate(`/product-details/${product.id}`)}
             >
-              {info.description}
+              {info.description || "Product Name"}
             </h3>
 
             <p className="text-lg font-bold text-black mt-2">
-              ₹{parseFloat(product.price).toLocaleString("en-IN")}
+              ₹{parseFloat(product.price || 0).toLocaleString("en-IN")}
             </p>
           </div>
         </div>
@@ -304,8 +280,6 @@ function Bestsellers() {
     );
   };
 
-
-  // ==================== MAIN RENDER ====================
   return (
     <>
       <div className="bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 mt-[-60px]">
@@ -314,7 +288,6 @@ function Bestsellers() {
             Bestseller
           </h2>
 
-          {/* Grid or Slider */}
           {products.length <= 4 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
@@ -333,65 +306,38 @@ function Bestsellers() {
         </div>
       </div>
 
-      {/* ==================== SUCCESS POPUP ==================== */}
+      {/* Cart Popup */}
       {cartPopup && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-green-500 shadow-2xl p-4 flex items-center justify-between z-50 animate-slide-up max-w-7xl mx-auto rounded-t-xl">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative">
-              <img
-                src={cartPopup.img}
-                alt={cartPopup.name}
-                className="w-16 h-16 object-cover rounded-lg border"
-              />
-              <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                Checkmark
-              </div>
+              <img src={cartPopup.img} alt={cartPopup.name} className="w-16 h-16 object-cover rounded-lg border" />
+              <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">Check</div>
             </div>
             <div>
-              <p className="font-semibold text-sm line-clamp-1">
-                {cartPopup.name}
-              </p>
+              <p className="font-semibold text-sm line-clamp-1">{cartPopup.name}</p>
               <p className="text-sm text-green-600 font-medium">
                 ₹{Number(cartPopup.price).toLocaleString("en-IN")} added to cart
               </p>
             </div>
           </div>
-
           <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setCartPopup(null);
-                navigate("/user/checkout");
-              }}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
-            >
+            <button onClick={() => { setCartPopup(null); navigate("/user/checkout"); }} className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition">
               View Cart
             </button>
-            <button
-              onClick={() => setCartPopup(null)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-            >
+            <button onClick={() => setCartPopup(null)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
               Continue
             </button>
           </div>
         </div>
       )}
 
-      {/* Animation */}
       <style>{`
         @keyframes slide-up {
-          from {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
-        .animate-slide-up {
-          animation: slide-up 0.4s ease-out;
-        }
+        .animate-slide-up { animation: slide-up 0.4s ease-out; }
       `}</style>
     </>
   );

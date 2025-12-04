@@ -208,6 +208,7 @@ export default function Wishlist() {
           {wishlist.map((item) => {
             const images = getProductImages(item.product);
             const activeIndex = activeImages[item.product_id] || 0;
+            const activeImagePath = images[activeIndex];
 
             return (
               <div
@@ -218,11 +219,12 @@ export default function Wishlist() {
                   {/* Product Image Slider */}
                   <div className="relative">
                     {/* Main Centered Image */}
-                    <div className="flex justify-center mb-2 min-h-[192px]">
+                     <div className="flex justify-center mb-2 min-h-[192px]">
                       <img
                         src={
-                          images[activeIndex] ||
-                          "https://via.placeholder.com/96"
+                          activeImagePath
+                            ? `${process.env.REACT_APP_API_URL}/${activeImagePath}`
+                            : "https://via.placeholder.com/96"
                         }
                         alt={item.product?.name || "Product Image"}
                         className="max-w-full h-auto max-h-48 object-contain rounded-md"
@@ -272,12 +274,12 @@ export default function Wishlist() {
                         </svg>
                       </button>
                     </div>
-                    {/* Thumbnail Strip */}
+                    {/* Thumbnail Strip - Now with full URL */}
                     <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
                       {images.map((img, index) => (
                         <img
                           key={index}
-                          src={img}
+                          src={`${process.env.REACT_APP_API_URL}/${img}`}
                           alt={`${item.product?.name} Thumbnail ${index + 1}`}
                           className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
                             activeIndex === index

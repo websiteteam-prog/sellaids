@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const MultiStepRegister = () => {
   const navigate = useNavigate();
@@ -11,7 +13,6 @@ const MultiStepRegister = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Form data state with all fields
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -19,576 +20,383 @@ const MultiStepRegister = () => {
     password: "",
     designation: "",
     business_name: "",
-    business_type: "",
     gst_number: "",
     pan_number: "",
     house_no: "",
     street_name: "",
+    city: "",          
     state: "",
-    city: "",
     pincode: "",
-    contact_person_name: "",
-    contact_person_phone: "",
+    alternate_person_name: "",
+    alternate_person_phone: "",
     account_number: "",
     ifsc_code: "",
     bank_name: "",
     account_type: "",
   });
 
-  // Handle input changes and clear errors for the changed field
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+
+    if (["gst_number", "pan_number", "ifsc_code"].includes(name)) {
+      formattedValue = value.toUpperCase();
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Validation for each step
   const validateStep = (currentStep) => {
     const newErrors = {};
     let isValid = true;
 
     switch (currentStep) {
       case 1:
-        if (!formData.name.trim()) {
-          newErrors.name = "Name is required";
-          isValid = false;
-        }
-        if (!/^\d{10}$/.test(formData.phone)) {
-          newErrors.phone = "Phone is not valid";
-          isValid = false;
-        }
-        if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-          newErrors.email = "Email is not valid";
-          isValid = false;
-        }
-        if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/.test(formData.password)) {
-          newErrors.password = "Password is not valid (must contain uppercase, number, special character, min 6 chars)";
-          isValid = false;
-        }
+        if (!formData.name.trim()) newErrors.name = "Full Name is required";
+        if (!/^\d{10}$/.test(formData.phone))
+          newErrors.phone = "Phone must be exactly 10 digits";
+        if (!/^\S+@\S+\.\S+$/.test(formData.email))
+          newErrors.email = "Enter a valid email address";
+        if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(formData.password))
+          newErrors.password = "Password: min 6 chars, 1 uppercase, 1 number, 1 special char";
         break;
+
       case 2:
-        if (!formData.business_name.trim()) {
+        if (!formData.business_name.trim())
           newErrors.business_name = "Business Name is required";
-          isValid = false;
+
+        if (!formData.gst_number) {
+          newErrors.gst_number = "GST Number is required";
+        } else if (formData.gst_number.length !== 15) {
+          newErrors.gst_number = "GST Number must be exactly 15 characters";
         }
-        if (formData.business_type && !["restaurant", "grocery", "fashion", "electronics", "other"].includes(formData.business_type)) {
-          newErrors.business_type = "Business Type is not valid";
-          isValid = false;
-        }
-        if (formData.gst_number && !/^([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{3})$/.test(formData.gst_number)) {
-          newErrors.gst_number = "GST Number is not valid";
-          isValid = false;
-        }
-        if (formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan_number)) {
-          newErrors.pan_number = "PAN Number is not valid";
-          isValid = false;
+
+        if (!formData.pan_number) {
+          newErrors.pan_number = "PAN Number is required";
+        } else if (formData.pan_number.length !== 10) {
+          newErrors.pan_number = "PAN Number must be exactly 10 characters";
         }
         break;
+
       case 3:
-        if (formData.pincode && !/^\d{6}$/.test(formData.pincode)) {
-          newErrors.pincode = "Pincode is not valid";
-          isValid = false;
-        }
+        if (!formData.house_no.trim()) newErrors.house_no = "House No. is required";
+        if (!formData.street_name.trim()) newErrors.street_name = "Street Name is required";
+        if (!formData.city?.trim()) newErrors.city = "City is required";
+        if (!formData.state.trim()) newErrors.state = "State is required";
+        if (formData.pincode && !/^\d{6}$/.test(formData.pincode))
+          newErrors.pincode = "Pincode must be exactly 6 digits";
         break;
+
       case 4:
-        if (formData.contact_person_phone && !/^\d{10}$/.test(formData.contact_person_phone)) {
-          newErrors.contact_person_phone = "Contact Person Phone is not valid";
-          isValid = false;
-        }
+        if (formData.alternate_person_name?.trim() && !formData.alternate_person_phone?.trim())
+          newErrors.alternate_person_phone = "Phone required if name is provided";
+        if (formData.alternate_person_phone && !/^\d{10}$/.test(formData.alternate_person_phone))
+          newErrors.alternate_person_phone = "Phone must be 10 digits";
         break;
+
       case 5:
-        if (formData.account_number && !/^\d{9,18}$/.test(formData.account_number)) {
-          newErrors.account_number = "Account Number is not valid";
-          isValid = false;
-        }
-        if (formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code)) {
-          newErrors.ifsc_code = "IFSC Code is not valid";
-          isValid = false;
-        }
-        if (formData.account_type && !["savings", "current"].includes(formData.account_type)) {
-          newErrors.account_type = "Account Type is not valid";
-          isValid = false;
-        }
-        if (!acceptTerms) {
-          newErrors.acceptTerms = "Please accept Terms & Conditions";
-          isValid = false;
-        }
+        if (!formData.account_number.trim())
+          newErrors.account_number = "Account Number is required";
+        else if (!/^\d{9,18}$/.test(formData.account_number))
+          newErrors.account_number = "Account Number must be 9 to 18 digits";
+
+        if (!formData.ifsc_code.trim())
+          newErrors.ifsc_code = "IFSC Code is required";
+        else if (formData.ifsc_code.length !== 11)
+          newErrors.ifsc_code = "IFSC Code must be exactly 11 characters";
+
+        if (!formData.bank_name.trim())
+          newErrors.bank_name = "Bank Name is required";
+
+        if (!formData.account_type)
+          newErrors.account_type = "Please select Account Type";
+
+        if (!acceptTerms)
+          newErrors.acceptTerms = "You must accept Terms & Conditions";
         break;
+
       default:
         break;
     }
 
+    if (Object.keys(newErrors).length > 0) isValid = false;
     setErrors(newErrors);
     return isValid;
   };
 
-  // Move to next step if current step is valid
   const nextStep = () => {
-    // if (validateStep(step)) {
-    //   if (step < 5) {
-    //     setStep((prev) => prev + 1);
-    //   }
-    // }
     if (validateStep(step)) {
-      setStep((prev) => {
-        const newStep = prev + 1;
-        console.log("Updated step:", newStep);
-        return newStep;
-      });
+      setStep((prev) => prev + 1);
     }
   };
 
-  // Move to previous step
   const prevStep = () => {
     setStep((prev) => prev - 1);
     setErrors({});
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    console.log("Form Data:", formData);
+    if (!validateStep(5)) return;
 
-    // Validate all steps
-    const allValid = [1, 2, 3, 4, 5].every((stepNum) => validateStep(stepNum));
-
+    const allValid = [1, 2, 3, 4, 5].every((s) => validateStep(s));
     if (!allValid) {
-      setIsLoading(false);
-      toast.error("Please fix errors in the form", { position: "top-right", duration: 3000 });
+      toast.error("Please fill all required fields correctly.");
       return;
     }
 
+    setIsLoading(true);
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/vendor/auth/register",
-        formData,
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const res = await axios.post(`${API_URL}/api/vendor/auth/register`, formData, {
+        headers: { "Content-Type": "application/json" },
+      });
 
       if (res.data.success) {
-        toast.success("✅ Registration successful!", {
-          position: "top-right",
-          duration: 2000,
-        });
-        setTimeout(() => navigate("/vendor/login"), 1000);
-        // Reset form
-        setFormData({
-          name: "",
-          phone: "",
-          email: "",
-          password: "",
-          designation: "",
-          business_name: "",
-          business_type: "",
-          gst_number: "",
-          pan_number: "",
-          house_no: "",
-          street_name: "",
-          state: "",
-          city: "",
-          pincode: "",
-          contact_person_name: "",
-          contact_person_phone: "",
-          account_number: "",
-          ifsc_code: "",
-          bank_name: "",
-          account_type: "",
-        });
-        setStep(1);
-        setAcceptTerms(false);
-        setShowPassword(false);
-        setErrors({});
+        toast.success("Registration Successful! Redirecting...");
+        setTimeout(() => navigate("/vendor/login"), 2000);
       } else {
-        toast.error(`❌ Registration failed: ${res.data.message || "Unknown error"}`, {
-          position: "top-right",
-          duration: 3000,
-        });
+        toast.error(res.data.message || "Registration failed");
       }
-    } catch (error) {
-      console.error("API Error:", error);
-      toast.error(
-        `❌ Server error: ${error.response?.data?.message || error.message || "Unknown error"}`,
-        { position: "top-right", duration: 3000 }
-      );
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Server error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    console.log("Updated step:", step);
-  }, [step]);
-
-  // Render form fields based on step
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Step 1: Basic Information</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Name *</label>
-              <input
-                type="text"
-                name="name"
-                placeholder="Enter Name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Phone *</label>
-              <input
-                type="text"
-                name="phone"
-                placeholder="Enter Phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Email *</label>
-              <input
-                type="email"
-                name="email"
-                placeholder="Enter Email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-            </div>
-            <div className="mb-4 relative">
-              <label className="block text-sm font-medium mb-1">Password *</label>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Enter Password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              <span
-                className="absolute right-3 top-8 cursor-pointer"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </span>
-              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-            </div>
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Step 2: Business Details</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Designation</label>
-              <input
-                type="text"
-                name="designation"
-                placeholder="Enter Designation"
-                value={formData.designation}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.designation ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.designation && <p className="text-red-500 text-sm mt-1">{errors.designation}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Business Name *</label>
-              <input
-                type="text"
-                name="business_name"
-                placeholder="Enter Business Name"
-                value={formData.business_name}
-                onChange={handleChange}
-                required
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.business_name ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.business_name && <p className="text-red-500 text-sm mt-1">{errors.business_name}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Business Type</label>
-              <select
-                name="business_type"
-                value={formData.business_type}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.business_type ? "border-red-500" : "border-gray-300"
-                  }`}
-              >
-                <option value="">Select Business Type</option>
-                <option value="restaurant">Restaurant</option>
-                <option value="grocery">Grocery</option>
-                <option value="fashion">Fashion</option>
-                <option value="electronics">Electronics</option>
-                <option value="other">Other</option>
-              </select>
-              {errors.business_type && <p className="text-red-500 text-sm mt-1">{errors.business_type}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">GST Number</label>
-              <input
-                type="text"
-                name="gst_number"
-                placeholder="Enter GST Number"
-                value={formData.gst_number}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.gst_number ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.gst_number && <p className="text-red-500 text-sm mt-1">{errors.gst_number}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">PAN Number</label>
-              <input
-                type="text"
-                name="pan_number"
-                placeholder="Enter PAN Number"
-                value={formData.pan_number}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.pan_number ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.pan_number && <p className="text-red-500 text-sm mt-1">{errors.pan_number}</p>}
-            </div>
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Step 3: Address</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">House No.</label>
-              <input
-                type="text"
-                name="house_no"
-                placeholder="Enter House No."
-                value={formData.house_no}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.house_no ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.house_no && <p className="text-red-500 text-sm mt-1">{errors.house_no}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Street Name</label>
-              <input
-                type="text"
-                name="street_name"
-                placeholder="Enter Street Name"
-                value={formData.street_name}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.street_name ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.street_name && <p className="text-red-500 text-sm mt-1">{errors.street_name}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">State</label>
-              <input
-                type="text"
-                name="state"
-                placeholder="Enter State"
-                value={formData.state}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.state ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">City</label>
-              <input
-                type="text"
-                name="city"
-                placeholder="Enter City"
-                value={formData.city}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Pincode</label>
-              <input
-                type="text"
-                name="pincode"
-                placeholder="Enter Pincode"
-                value={formData.pincode}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.pincode ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
-            </div>
-          </>
-        );
-      case 4:
-        return (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Step 4: Contact Person</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Contact Person Name</label>
-              <input
-                type="text"
-                name="contact_person_name"
-                placeholder="Enter Contact Person Name"
-                value={formData.contact_person_name}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.contact_person_name ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.contact_person_name && <p className="text-red-500 text-sm mt-1">{errors.contact_person_name}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Contact Person Phone</label>
-              <input
-                type="text"
-                name="contact_person_phone"
-                placeholder="Enter Contact Person Phone"
-                value={formData.contact_person_phone}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.contact_person_phone ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.contact_person_phone && <p className="text-red-500 text-sm mt-1">{errors.contact_person_phone}</p>}
-            </div>
-          </>
-        );
-      case 5:
-        return (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Step 5: Bank Info</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Account Number</label>
-              <input
-                type="text"
-                name="account_number"
-                placeholder="Enter Account Number"
-                value={formData.account_number}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.account_number ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.account_number && <p className="text-red-500 text-sm mt-1">{errors.account_number}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">IFSC Code</label>
-              <input
-                type="text"
-                name="ifsc_code"
-                placeholder="Enter IFSC Code"
-                value={formData.ifsc_code}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.ifsc_code ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.ifsc_code && <p className="text-red-500 text-sm mt-1">{errors.ifsc_code}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Bank Name</label>
-              <input
-                type="text"
-                name="bank_name"
-                placeholder="Enter Bank Name"
-                value={formData.bank_name}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.bank_name ? "border-red-500" : "border-gray-300"
-                  }`}
-              />
-              {errors.bank_name && <p className="text-red-500 text-sm mt-1">{errors.bank_name}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Account Type</label>
-              <select
-                name="account_type"
-                value={formData.account_type}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.account_type ? "border-red-500" : "border-gray-300"
-                  }`}
-              >
-                <option value="">Select Account Type</option>
-                <option value="savings">Savings</option>
-                <option value="current">Current</option>
-              </select>
-              {errors.account_type && <p className="text-red-500 text-sm mt-1">{errors.account_type}</p>}
-            </div>
-            <div className="mb-4 flex items-center">
-              <input
-                type="checkbox"
-                checked={acceptTerms}
-                onChange={() => setAcceptTerms(!acceptTerms)}
-                className="mr-2"
-              />
-              <label className="text-sm font-medium">I accept the Terms & Conditions</label>
-              {errors.acceptTerms && <p className="text-red-500 text-sm mt-1">{errors.acceptTerms}</p>}
-            </div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <form onSubmit={(e) => {
-        e.preventDefault(); // stop default browser submit
-        console.log(step)
-        if (step === 5) {
-          handleSubmit(e); // only submit on final step
-        }
-      }}
-      >
-        {renderStep()}
-        <div className="flex justify-between mt-6">
-          {step > 1 && (
-            <button
-              type="button"
-              onClick={prevStep}
-              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-            >
-              Back
-            </button>
-          )}
-          {step < 5 ? (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={isLoading || !acceptTerms}
-              onClick={handleSubmit}
-              className={`px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 ${isLoading || !acceptTerms ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-            >
-              {isLoading ? "Submitting..." : "Submit"}
-            </button>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white py-10 px-4">
+      <div className="max-w-2xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6 text-center">
+          <h1 className="text-3xl font-bold">Vendor Registration</h1>
+          <p className="mt-2 text-lg">Step {step} of 5</p>
         </div>
-      </form>
-      <Toaster />
+
+        <div className="p-8">
+          <div className="flex justify-center gap-3 mb-10">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className={`h-3 w-16 rounded-full transition-all duration-300 ${
+                  i <= step ? "bg-orange-600" : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {/* Step 1 */}
+            {step === 1 && (
+              <>
+                <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Personal Information</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Full Name *</label>
+                    <input type="text" name="name" value={formData.name} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.name ? "border-red-500" : "border-gray-300"} focus:ring-2 focus:ring-orange-500`} placeholder="Enter Full Name" />
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone Number *</label>
+                    <input type="text" name="phone" value={formData.phone} onChange={handleChange} maxLength="10"
+                      className={`w-full p-3 border rounded-lg ${errors.phone ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Phone Number" />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Email Address *</label>
+                    <input type="email" name="email" value={formData.email} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.email ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Email Address" />
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                  </div>
+                  <div className="relative">
+                    <label className="block text-sm font-medium mb-1">Password *</label>
+                    <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.password ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Password" />
+                    <button type="button" className="absolute right-3 top-10 text-orange-600 text-sm" onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 2 - Business Details */}
+            {step === 2 && (
+              <>
+                <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Business Details</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Your Designation</label>
+                    <input type="text" name="designation" value={formData.designation} onChange={handleChange}
+                      className="w-full p-3 border rounded-lg border-gray-300" placeholder="Enter Designation" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Business Name *</label>
+                    <input type="text" name="business_name" value={formData.business_name} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.business_name ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Business Name" />
+                    {errors.business_name && <p className="text-red-500 text-xs mt-1">{errors.business_name}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">GST Number * (15 characters)</label>
+                    <input type="text" name="gst_number" value={formData.gst_number} onChange={handleChange} maxLength="15"
+                      className={`w-full p-3 border rounded-lg ${errors.gst_number ? "border-red-500" : "border-gray-300"}`} placeholder="Enter GST Number" />
+                    {errors.gst_number && <p className="text-red-500 text-xs mt-1 font-medium">{errors.gst_number}</p>}
+                    <p className="text-xs text-gray-500 mt-1">Example: 27ABCDE1234F1Z5</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">PAN Number * (10 characters)</label>
+                    <input type="text" name="pan_number" value={formData.pan_number} onChange={handleChange} maxLength="10"
+                      className={`w-full p-3 border rounded-lg ${errors.pan_number ? "border-red-500" : "border-gray-300"}`} placeholder="Enter PAN Number" />
+                    {errors.pan_number && <p className="text-red-500 text-xs mt-1 font-medium">{errors.pan_number}</p>}
+                    <p className="text-xs text-gray-500 mt-1">Example: ABCDE1234F</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 3 - Address */}
+            {step === 3 && (
+              <>
+                <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Step 3: Business Address</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">House No. *</label>
+                    <input type="text" name="house_no" value={formData.house_no} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.house_no ? "border-red-500" : "border-gray-300"}`} placeholder="Enter House No." />
+                    {errors.house_no && <p className="text-red-500 text-xs mt-1">{errors.house_no}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Street Name *</label>
+                    <input type="text" name="street_name" value={formData.street_name} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.street_name ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Street Name" />
+                    {errors.street_name && <p className="text-red-500 text-xs mt-1">{errors.street_name}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">City *</label>
+                    <input type="text" name="city" value={formData.city} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.city ? "border-red-500" : "border-gray-300"}`} placeholder="Enter City" />
+                    {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">State *</label>
+                    <input type="text" name="state" value={formData.state} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.state ? "border-red-500" : "border-gray-300"}`} placeholder="Enter State" />
+                    {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Pincode</label>
+                    <input type="text" name="pincode" value={formData.pincode} onChange={handleChange} maxLength="6"
+                      className={`w-full p-3 border rounded-lg ${errors.pincode ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Pincode" />
+                    {errors.pincode && <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 4 - Alternate Contact */}
+            {step === 4 && (
+              <>
+                <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Alternate Contact (Optional)</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Alternate Person Name</label>
+                    <input type="text" name="alternate_person_name" value={formData.alternate_person_name} onChange={handleChange}
+                      className="w-full p-3 border rounded-lg border-gray-300" placeholder="Enter Name" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Alternate Phone Number</label>
+                    <input type="text" name="alternate_person_phone" value={formData.alternate_person_phone} onChange={handleChange} maxLength="10"
+                      className={`w-full p-3 border rounded-lg ${errors.alternate_person_phone ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Phone Number" />
+                    {errors.alternate_person_phone && <p className="text-red-500 text-xs mt-1">{errors.alternate_person_phone}</p>}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 5 - Bank Details */}
+            {step === 5 && (
+              <>
+                <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Bank Details & Terms</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Account Number *</label>
+                    <input type="text" name="account_number" value={formData.account_number} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.account_number ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Account Number" />
+                    {errors.account_number && <p className="text-red-500 text-xs mt-1">{errors.account_number}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">IFSC Code *</label>
+                    <input type="text" name="ifsc_code" value={formData.ifsc_code} onChange={handleChange} maxLength="11"
+                      className={`w-full p-3 border rounded-lg ${errors.ifsc_code ? "border-red-500" : "border-gray-300"}`} placeholder="Enter IFSC Code" />
+                    {errors.ifsc_code && <p className="text-red-500 text-xs mt-1">{errors.ifsc_code}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Bank Name *</label>
+                    <input type="text" name="bank_name" value={formData.bank_name} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.bank_name ? "border-red-500" : "border-gray-300"}`} placeholder="Enter Bank Name" />
+                    {errors.bank_name && <p className="text-red-500 text-xs mt-1">{errors.bank_name}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Account Type *</label>
+                    <select name="account_type" value={formData.account_type} onChange={handleChange}
+                      className={`w-full p-3 border rounded-lg ${errors.account_type ? "border-red-500" : "border-gray-300"}`}>
+                      <option value="">Select Account Type</option>
+                      <option value="savings">Savings</option>
+                      <option value="current">Current</option>
+                    </select>
+                    {errors.account_type && <p className="text-red-500 text-xs mt-1">{errors.account_type}</p>}
+                  </div>
+
+                  <div className="flex items-start gap-3 mt-8">
+                    <input type="checkbox" checked={acceptTerms} onChange={() => setAcceptTerms(!acceptTerms)} className="mt-1 h-5 w-5 text-orange-600" />
+                    <label className="text-sm text-gray-700">
+                      I accept the <a href="https://sellaids.com/terms-conditions" className="text-orange-600 underline">Terms & Conditions</a> and{" "}
+                      <a href="https://sellaids.com/privacy-policy" className="text-orange-600 underline">Privacy Policy</a>
+                    </label>
+                  </div>
+                  {errors.acceptTerms && <p className="text-red-500 text-sm">{errors.acceptTerms}</p>}
+                </div>
+              </>
+            )}
+
+            {/* Buttons - Fully Responsive */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-12">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="w-full sm:w-auto px-10 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium order-2 sm:order-1"
+                >
+                  Back
+                </button>
+              )}
+              <div className="flex-1 sm:flex-none order-1 sm:order-2">
+                {step < 5 ? (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="w-full px-10 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isLoading || !acceptTerms}
+                    className={`w-full px-10 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold
+                      ${isLoading || !acceptTerms ? "opacity-60 cursor-not-allowed" : ""}`}
+                  >
+                    {isLoading ? "Submitting..." : "Submit"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <Toaster position="top-right" />
     </div>
   );
 };

@@ -247,13 +247,13 @@ const Orders = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           {order.front_photo ? (
                             <a
-                              href={order.front_photo}
+                             href={`${process.env.REACT_APP_API_URL}/${order.front_photo}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-block"
                             >
                               <img
-                                src={order.front_photo}
+                                src={`${process.env.REACT_APP_API_URL}/${order.front_photo}`}
                                 alt={order.productName}
                                 className="h-16 w-16 object-contain rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
                               />

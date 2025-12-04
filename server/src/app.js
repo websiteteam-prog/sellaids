@@ -35,7 +35,7 @@ app.use(sessionMiddleware);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const imageDir = path.join(__dirname, "public", "image");
+const imageDir = path.join(__dirname, "public", "uploads");
 app.use("/uploads", express.static(imageDir));
 
 
