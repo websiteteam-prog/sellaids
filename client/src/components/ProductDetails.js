@@ -128,20 +128,53 @@ const ProductDetails = () => {
             }
           } catch (e) {}
         }
+        const getRelatedProductInfo = (p) => {
+          let name = "Beautiful Product";
+          let rating = 0;
 
+          if (p?.additional_info) {
+            try {
+              const info = JSON.parse(p.additional_info);
+              if (typeof info === "object" && info?.description?.trim()) {
+                name = info.description.trim();
+              }
+            } catch (error) {
+              console.warn(`Failed to parse additional_info for product ID ${p?.id}`, error);
+            }
+          }
+
+          if (name === "Beautiful Product") {
+            name = p?.model_name?.trim() || p?.product_type?.trim() || "Beautiful Product";
+          }
+
+          if (p?.avg_rating != null) {
+            rating = parseFloat(p.avg_rating);
+            if (isNaN(rating)) rating = 0;
+          }
+
+          return {
+            name,
+            rating: rating > 0 ? Number(rating.toFixed(1)) : 0,
+          };
+        };
         // RELATED PRODUCTS - Only 4
-        if (productRes.data.relatedProducts && Array.isArray(productRes.data.relatedProducts)) {
-          const limited = productRes.data.relatedProducts.slice(0, 4);
-          setRelatedProducts(
-            limited.map((p) => ({
+      if (productRes.data.relatedProducts && Array.isArray(productRes.data.relatedProducts)) {
+        const limited = productRes.data.relatedProducts.slice(0, 4);
+
+        setRelatedProducts(
+          limited.map((p) => {
+            const { name, rating } = getRelatedProductInfo(p);
+
+            return {
               id: p.id,
-              name: p.model_name || p.product_type || "Product",
-              price: parseFloat(p.selling_price),
+              name,                                    
+              price: parseFloat(p.selling_price) || 0,
               image: p.front_photo || "https://via.placeholder.com/300",
-              rating: 4.5,
-            }))
-          );
-        }
+              rating,                            
+            };
+          })
+        );
+      }
 
         setProduct(mappedProduct);
 

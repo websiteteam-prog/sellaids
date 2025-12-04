@@ -99,7 +99,7 @@ function Bestsellers() {
       setCartPopup({
         name: product.name || "Product",
         price: product.price,
-        img: product.img,
+        img: product.img || "https://via.placeholder.com/80",
       });
 
       await fetchCart();
@@ -240,14 +240,14 @@ function Bestsellers() {
             <img
               src={
                 product.img && product.img !== "null" && product.img.trim()
-                  && product.img
-                  // : "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image"
+                  ? product.img
+                  : "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image"
               }
-              alt={"not_found"}
+              alt={info.description || "Product"}
               className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
-              // onError={(e) =>
-              //   (e.target.src = "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
-              // }
+              onError={(e) =>
+                (e.target.src = "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
+              }
             />
 
             <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
