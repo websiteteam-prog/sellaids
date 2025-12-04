@@ -108,16 +108,10 @@ export default function ReviewStep({
       if (images.length === 0) return prev;
 
       let newIdx;
-      if (typeof offsetOrIndex === "number") {
-        if (offsetOrIndex < 0) {
-          newIdx = (current + offsetOrIndex + images.length) % images.length;
-        } else if (offsetOrIndex === 1) {
-          newIdx = (current + 1) % images.length;
-        } else {
-          newIdx = offsetOrIndex;
-        }
+      if (typeof offsetOrIndex === "number" && offsetOrIndex < 0) {
+        newIdx = (current + offsetOrIndex + images.length) % images.length;
       } else {
-        newIdx = (current + 1) % images.length;
+        newIdx = (current + (typeof offsetOrIndex === "number" ? offsetOrIndex : 1)) % images.length;
       }
       return { ...prev, [productId]: newIdx };
     });
@@ -139,7 +133,7 @@ export default function ReviewStep({
       const res = await api.post("/api/payment/create-order", {
         cartItems,
         shippingAddress,
-        finalTotal,               // ← **THIS WAS MISSING**
+        finalTotal,
       });
 
       if (!res.data.success) throw new Error(res.data.message);
@@ -164,14 +158,14 @@ export default function ReviewStep({
   return (
     <div className="space-y-6">
       <Toaster />
-      <h2 className="text-2xl font-bold">Review Your Order</h2>
+      <h2 className="text-2xl font-bold text-center sm:text-left">Review Your Order</h2>
 
       {/* ADDRESS */}
-      <div className="bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3">
-        <MapPin className="w-5 h-5 text-purple-600 mt-1" />
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-1">
-            <p className="font-semibold">Delivery Address</p>
+      <div className="bg-white rounded-lg shadow-sm border p-4 flex flex-col sm:flex-row items-start gap-4">
+        <MapPin className="w-6 h-6 text-purple-600 flex-shrink-0" />
+        <div className="flex-1 w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+            <p className="font-semibold text-lg">Delivery Address</p>
             <button
               onClick={() => setIsEditing(true)}
               className="text-purple-600 text-sm underline hover:text-purple-700"
@@ -181,44 +175,44 @@ export default function ReviewStep({
           </div>
 
           {isEditing ? (
-            <div className="space-y-3 mt-2">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input
                   placeholder="Address line"
                   value={addr.line}
                   onChange={(e) => setAddr({ ...addr, line: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm"
+                  className="border rounded px-4 py-2 text-sm w-full"
                 />
                 <input
                   placeholder="City"
                   value={addr.city}
                   onChange={(e) => setAddr({ ...addr, city: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm"
+                  className="border rounded px-4 py-2 text-sm w-full"
                 />
                 <input
                   placeholder="Pincode"
                   value={addr.pin}
                   onChange={(e) => setAddr({ ...addr, pin: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm"
+                  className="border rounded px-4 py-2 text-sm w-full"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={saveAddress}
-                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                  className="px-5 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
                 >
                   Save
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="px-4 py-1.5 border rounded text-sm hover:bg-gray-100"
+                  className="px-5 py-2 border rounded text-sm hover:bg-gray-100"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           ) : (
-            <p className="text-gray-700">{shippingAddress || "No address set"}</p>
+            <p className="text-gray-700 text-base">{shippingAddress || "No address set"}</p>
           )}
         </div>
       </div>
@@ -232,104 +226,89 @@ export default function ReviewStep({
         return (
           <div
             key={item.product_id}
-            className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
+            className="bg-white rounded-lg shadow-sm border p-4 flex flex-col lg:flex-row gap-6 items-start"
           >
             {/* IMAGE SLIDER */}
-            <div className="flex-shrink-0 w-48">
+            <div className="w-full lg:w-64 flex-shrink-0">
               <div className="relative">
-                <div className="flex justify-center mb-2 min-h-[192px]">
+                <div className="flex justify-center">
                   <img
-                    src={images[activeIdx] || "https://via.placeholder.com/96"}
+                    src={`${process.env.REACT_APP_API_URL}/${images[activeIdx]}`}
                     alt={product?.name}
-                    className="max-w-full h-auto max-h-48 object-contain rounded-md"
-                    onError={handleImageError}
+                    className="w-full max-w-sm h-auto max-h-72 object-contain rounded-lg mx-auto shadow-sm"
                   />
                 </div>
 
                 {images.length > 1 && (
-                  <div className="flex justify-between mt-2">
-                    <button
-                      onClick={() => changeImage(item.product_id, -1)}
-                      className="text-gray-600 hover:text-gray-800"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                  <>
+                    <div className="flex justify-center gap-10 my-4">
+                      <button
+                        onClick={() => changeImage(item.product_id, -1)}
+                        className="text-gray-600 hover:text-gray-900"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 19l-7-7 7-7"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => changeImage(item.product_id, 1)}
-                      className="text-gray-600 hover:text-gray-800"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => changeImage(item.product_id, 1)}
+                        className="text-gray-600 hover:text-gray-900"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                )}
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
 
-                {images.length > 1 && (
-                  <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
-                    {images.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={img}
-                        alt={`${product?.name} thumb ${idx + 1}`}
-                        className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
-                          activeIdx === idx ? "border-2 border-blue-600" : ""
-                        }`}
-                        onClick={() => changeImage(item.product_id, idx)}
-                        onError={handleImageError}
-                      />
-                    ))}
-                  </div>
+                    <div className="flex overflow-x-auto space-x-3 pb-2 justify-center">
+                      {images.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={`${process.env.REACT_APP_API_URL}/${img}`}
+                          alt={`thumb ${idx + 1}`}
+                          className={`w-20 h-20 object-contain rounded-lg cursor-pointer border-2 transition-all ${
+                            activeIdx === idx ? "border-purple-600" : "border-gray-300"
+                          }`}
+                          onClick={() => changeImage(item.product_id, idx)}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
 
             {/* PRODUCT DETAILS */}
-            <div className="flex-1">
-              <p className="font-medium">{product?.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="font-semibold">
-                  ₹{product?.price * item.quantity}
+            <div className="flex-1 space-y-4 w-full">
+              <div>
+                <p className="font-semibold text-lg">{product?.name}</p>
+                <div className="flex flex-wrap items-center gap-3 mt-2">
+                  <p className="font-bold text-xl">₹{product?.price * item.quantity}</p>
+                  {product?.original_price > product?.price && (
+                    <>
+                      <p className="text-sm text-gray-500 line-through">
+                        ₹{product?.original_price * item.quantity}
+                      </p>
+                      <p className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded">
+                        {Math.round(((product?.original_price - product?.price) / product?.original_price) * 100)}% Off
+                      </p>
+                    </>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Size: <strong>{item.size}</strong> | Qty: <strong>{item.quantity}</strong>
                 </p>
-                {product?.original_price > product?.price && (
-                  <>
-                    <p className="text-sm text-gray-500 line-through">
-                      ₹{product?.original_price * item.quantity}
-                    </p>
-                    <p className="text-sm text-green-600">
-                      {Math.round(
-                        ((product?.original_price - product?.price) /
-                          product?.original_price) *
-                          100
-                      )}
-                      % Off
-                    </p>
-                  </>
-                )}
+              </div>
+
+              <div className="space-y-2 text-sm text-gray-600">
+                <p className="flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  All issue easy returns
+                </p>
+                <p className="flex items-start gap-2">
+                  <Truck className="w-4 h-4" />
+                  Estimated Delivery by Wed, 5th Nov
+                </p>
               </div>
               <p className="text-sm text-gray-600 mt-1">
                 Size: {item.size} | Qty: {item.quantity}
@@ -347,28 +326,28 @@ export default function ReviewStep({
         );
       })}
 
-      {/* PRICE SUMMARY WITH FEES */}
+      {/* PRICE SUMMARY */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="space-y-2">
+        <div className="space-y-3 text-base">
           <div className="flex justify-between">
             <span>Product Total</span>
-            <span>₹{total}</span>
+            <span className="font-medium">₹{total}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-green-600">
               <span>Discount</span>
-              <span>- ₹{discount}</span>
+              <span className="font-medium">- ₹{discount}</span>
             </div>
           )}
           <div className="flex justify-between">
             <span>Shipping Fee</span>
-            <span className="text-green-600">₹{shippingFee}</span>
+            <span className="text-green-600 font-medium">₹{shippingFee}</span>
           </div>
           <div className="flex justify-between">
             <span>Platform Fee</span>
-            <span className="text-green-600">₹{platformFee}</span>
+            <span className="text-green-600 font-medium">₹{platformFee}</span>
           </div>
-          <div className="flex justify-between font-bold mt-2 border-t pt-2">
+          <div className="flex justify-between font-bold text-lg pt-4 border-t border-gray-300">
             <span>Final Total</span>
             <span className="text-purple-600">₹{finalTotal}</span>
           </div>
@@ -376,17 +355,17 @@ export default function ReviewStep({
       </div>
 
       {/* BUTTONS */}
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
         <button
           onClick={onPrev}
-          className="px-5 py-2 border rounded hover:bg-gray-100"
+          className="px-6 py-3 border rounded-lg hover:bg-gray-50 font-medium order-2 sm:order-1"
         >
           Back
         </button>
         <button
           onClick={handleProceed}
           disabled={isEditing || loading || !shippingAddress}
-          className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+          className="w-full sm:w-auto px-8 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition order-1 sm:order-2"
         >
           {loading ? "Creating Order..." : "Proceed to Payment"}
         </button>

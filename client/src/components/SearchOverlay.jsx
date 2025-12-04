@@ -3,58 +3,46 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Search, X, Package } from "lucide-react";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const ProductSearchOverlayModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const modalRef = useRef(null);
   const inputRef = useRef(null);
-  const debounceRef = useRef(null);
 
-  // Focus input when opens
+  // Auto focus input
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current.focus(), 100);
     }
   }, [isOpen]);
 
-  // API Search with Debounce
+  // Debounced search
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
       return;
     }
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/user/search`,
-          {
-            params: { search: query },
-            withCredentials: true,
-          }
-        );
-
-        console.log("Search API Response:", res.data); // DEBUG
-
-        if (res.data.success && Array.isArray(res.data.data)) {
-          setResults(res.data.data);
-        } else {
-          setResults([]);
-        }
+        const res = await axios.get(`${API_URL}/api/user/search`, {
+          params: { search: query },
+          withCredentials: true,
+        });
+        setResults(res.data.success && Array.isArray(res.data.data) ? res.data.data : []);
       } catch (err) {
-        console.error("Search Error:", err.response?.data || err.message);
+        console.error("Search error:", err);
         setResults([]);
       } finally {
         setLoading(false);
       }
-    }, 300);
+    }, 350);
 
-    return () => clearTimeout(debounceRef.current);
+    return () => clearTimeout(timer);
   }, [query]);
 
   // Close on Escape
@@ -68,103 +56,118 @@ const ProductSearchOverlayModal = ({ isOpen, onClose }) => {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
+  // Generate image with initials fallback
+  const getImageSrc = (product) => {
+    const photo = product.front_photo;
+    const name = (product.model_name || product.product_type || "NA").trim();
+
+    if (photo) {
+      return photo.startsWith("http") ? photo : `${API_URL}${photo.startsWith("/") ? "" : "/"}${photo}`;
+    }
+
+    const words = name.split(" ").filter(Boolean);
+    let initials = "NA";
+    if (words.length >= 2) {
+      initials = (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    } else if (words[0]) {
+      initials = words[0].slice(0, 2).toUpperCase();
+    }
+
+    return `https://via.placeholder.com/64/F97316/ffffff?text=${initials}`;
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-start justify-center pt-20 px-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[9999] flex items-start justify-center pt-4 px-4 sm:pt-8 md:pt-12"
       onClick={onClose}
     >
       <div
-        ref={modalRef}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 animate-in fade-in zoom-in duration-200"
+        className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Search Products</h2>
+        {/* Header - Close Button 100% WORKING */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800">Search Products</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+            aria-label="Close search"
           >
-            <X size={22} className="text-gray-600" />
+            <X size={24} className="text-gray-600" />
           </button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <div className="flex items-center border-2 border-gray-300 rounded-xl px-4 py-3 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-100 transition-all">
-            <Search size={22} className="text-gray-500 mr-3" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by product name, category, or SKU..."
-              className="flex-1 outline-none text-lg font-medium text-gray-800"
-            />
-            {loading && (
-              <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            )}
-          </div>
+        {/* Search Input - No Clear (X) Button Inside */}
+        <div className="px-4 pt-4 pb-5">
+          <div className="relative">
+            <div className="flex items-center bg-gray-50 border-2 border-gray-300 rounded-2xl px-4 py-4 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-100 transition-all duration-300">
+              <Search size={22} className="text-gray-500 mr-3 flex-shrink-0" />
+              
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by product name, category, or SKU..."
+                className="flex-1 outline-none bg-transparent text-gray-900 placeholder-gray-500 font-medium text-base leading-7"
+                style={{ minHeight: "36px" }}
+              />
 
-          {/* Results */}
-          {query && (
-            <div className="mt-3 max-h-96 overflow-y-auto border border-gray-200 rounded-xl bg-gray-50">
-              {results.length > 0 ? (
-                results.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center gap-3 p-4 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors"
-                    onClick={() => {
-                      window.location.href = `/product-details/${product.id}`;
-                      onClose();
-                    }}
-                  >
-                    {/* Image */}
-                    {product.front_photo ? (
-                      <img
-                        src={product.front_photo}
-                        alt={product.model_name || product.product_type}
-                        className="w-12 h-12 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = "https://via.placeholder.com/48?text=No+Img";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold">
-                        <Package size={20} />
-                      </div>
-                    )}
-
-                    {/* Product Info */}
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">
-                        {product.model_name || product.product_type || product.sku || "Unnamed Product"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        SKU: {product.sku || "N/A"}
-                      </p>
-                      {product.selling_price && (
-                        <p className="text-sm text-gray-800 font-medium">
-                          ₹{parseFloat(product.selling_price).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="p-8 text-center text-gray-500">
-                  {loading ? "Searching..." : "No products found"}
-                </p>
+              {loading && (
+                <div className="w-5 h-5 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
               )}
             </div>
-          )}
-        </div>
 
-        <p className="mt-4 text-xs text-gray-500 text-center">
-          Press <kbd className="px-2 py-1 bg-gray-100 rounded">Esc</kbd> to close
-        </p>
+            {/* Results */}
+            {query.trim() && (
+              <div className="mt-4 max-h-96 sm:max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-lg">
+                {results.length > 0 ? (
+                  results.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center gap-4 p-4 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0 transition"
+                      onClick={() => {
+                        window.location.href = `/product-details/${product.id}`;
+                        onClose();
+                      }}
+                    >
+                      <div className="flex-shrink-0">
+                        <img
+                          src={getImageSrc(product)}
+                          alt={"not_found"}
+                          className="w-16 h-16 object-cover rounded-xl shadow-sm text-[10px]"
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-base truncate">
+                          {product.model_name || product.product_type || "Unnamed Product"}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          SKU: <span className="font-medium">{product.sku || "N/A"}</span>
+                        </p>
+                        {product.selling_price && (
+                          <p className="text-lg font-bold text-orange-600 mt-2">
+                            ₹{Number(product.selling_price).toLocaleString("en-IN")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-16 text-center">
+                    <Package size={64} className="mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-600 font-medium text-lg">
+                      {loading ? "Searching..." : "No products found"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

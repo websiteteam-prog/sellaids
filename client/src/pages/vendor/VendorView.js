@@ -251,7 +251,7 @@ export default function VendorView() {
               </p>
               <p><strong>Additional Info:</strong> {product.additional_info || "N/A"}</p>
             </div>
-
+ 
             {/* Seller Information */}
             <div className="sm:col-span-2">
               <h3 className="text-lg font-semibold mb-2">Seller Information</h3>

@@ -55,7 +55,7 @@ import UserProtectedRoute from "./components/UserAuth/UserProtectedRoute";
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
 import AddProduct from "./pages/vendor/AddProduct";
 import AllProducts from "./pages/vendor/AllProducts";
-import EditProduct from "./pages/vendor/EditProduct";
+// import EditProduct from "./pages/vendor/EditProduct";
 import OrdersVendor from "./pages/vendor/Orders";
 import Earnings from "./pages/vendor/Earnings";
 import ProfileVendor from "./pages/vendor/Profile";
@@ -172,7 +172,7 @@ const App = () => {
           <Route path="dashboard" element={<DashboardHomeVendor />} />
           <Route path="add-product" element={<AddProduct />} />
           <Route path="all-products" element={<AllProducts />} />
-          <Route path="edit-product/:id" element={<EditProduct />} />
+          {/* <Route path="edit-product/:id" element={<EditProduct />} /> */}
           <Route path="orders" element={<OrdersVendor />} />
           <Route path="earnings" element={<Earnings />} />
           <Route path="profile" element={<ProfileVendor />} />

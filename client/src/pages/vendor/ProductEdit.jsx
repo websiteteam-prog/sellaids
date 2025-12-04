@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -9,12 +10,14 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Select Field
   if (field.type === "select") {
     const options = field.options || [];
     const filtered = searchValue
       ? options.filter((opt) =>
-          (opt.name || opt).toString().toLowerCase().includes(searchValue.toLowerCase())
+          (opt.name || opt)
+            .toString()
+            .toLowerCase()
+            .includes(searchValue.toLowerCase())
         )
       : options;
 
@@ -30,7 +33,9 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
             }`}
             onClick={() => !field.disabled && setIsOpen(!isOpen)}
           >
-            {value ? (options.find(o => (o.id || o) == value)?.name || value) : `Select ${field.label}`}
+            {value
+              ? options.find((o) => (o.id || o) == value)?.name || value
+              : `Select ${field.label}`}
           </div>
 
           {isOpen && !field.disabled && (
@@ -47,7 +52,12 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
                 <div
                   key={i}
                   onClick={() => {
-                    onChange({ target: { name: field.name, value: opt.id || opt.name || opt } });
+                    onChange({
+                      target: {
+                        name: field.name,
+                        value: opt.id || opt.name || opt,
+                      },
+                    });
                     setIsOpen(false);
                     setSearchValue("");
                   }}
@@ -63,14 +73,12 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
     );
   }
 
-  // File Field with Preview
   if (field.type === "file") {
     return (
       <div className="flex flex-col space-y-4">
         <label className="text-gray-700 font-medium text-sm md:text-base">
           {field.label}
         </label>
-
         {previewUrl && (
           <div className="mx-auto w-full max-w-xs">
             <img
@@ -81,7 +89,6 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
             />
           </div>
         )}
-
         <input
           type="file"
           name={field.name}
@@ -94,7 +101,6 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
     );
   }
 
-  // Textarea
   if (field.type === "textarea") {
     return (
       <div className="flex flex-col">
@@ -112,7 +118,6 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
     );
   }
 
-  // Default Input
   return (
     <div className="flex flex-col">
       <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
@@ -130,6 +135,7 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
 };
 
 const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({});
@@ -137,7 +143,11 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   const [types, setTypes] = useState([]);
   const [imagePreviews, setImagePreviews] = useState({});
 
-  // Load Product + Fix Image URLs with Base URL
+  const handleUnauthorized = () => {
+    toast.error("Session expired. Please login again.");
+    navigate("/login");
+  };
+
   useEffect(() => {
     if (!product) return;
 
@@ -147,7 +157,7 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       product_type: product.product_type || "",
       product_condition: product.product_condition || "",
       fit: product.fit || "",
-      size: product.size_other ? "Other" : (product.size || ""),
+      size: product.size_other ? "Other" : product.size || "",
       other_size: product.size_other || "",
       product_color: product.product_color || "",
       brand: product.brand || "",
@@ -176,33 +186,57 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       more_images: [],
     });
 
-    // Full Image URLs with Base URL
     const previews = {};
-    const keys = ["front_photo", "back_photo", "label_photo", "inside_photo", "button_photo", "wearing_photo", "invoice_photo", "repair_photo"];
+    const keys = [
+      "front_photo",
+      "back_photo",
+      "label_photo",
+      "inside_photo",
+      "button_photo",
+      "wearing_photo",
+      "invoice_photo",
+      "repair_photo",
+    ];
     keys.forEach((key) => {
       if (product[key]) {
         const url = product[key];
-        previews[key] = url.startsWith("http") ? url : `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+        previews[key] = url.startsWith("http")
+          ? url
+          : `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
       }
     });
     setImagePreviews(previews);
   }, [product]);
 
-  // Load Categories
   useEffect(() => {
-    axios.get(`${API_URL}/api/product/categories-list`, { withCredentials: true })
-      .then(res => res.data.success && setCategories(res.data.data || []))
-      .catch(() => toast.error("Failed to load categories"));
+    axios
+      .get(`${API_URL}/api/product/categories-list`, { withCredentials: true })
+      .then((res) => {
+        if (res.data.success) setCategories(res.data.data || []);
+      })
+      .catch((err) => {
+        if (err.response?.status === 401) handleUnauthorized();
+      });
   }, []);
 
-  // Load Types
   useEffect(() => {
     if (formData.category_id) {
-      axios.get(`${API_URL}/api/product?category_id=${formData.category_id}`, { withCredentials: true })
-        .then(res => {
+      axios
+        .get(`${API_URL}/api/product?category_id=${formData.category_id}`, {
+          withCredentials: true,
+        })
+        .then((res) => {
           if (res.data.success) {
-            setTypes(res.data.data.map(t => ({ id: t.id, name: t.name || t.type_name })));
+            setTypes(
+              res.data.data.map((t) => ({
+                id: t.id,
+                name: t.name || t.type_name,
+              }))
+            );
           }
+        })
+        .catch((err) => {
+          if (err.response?.status === 401) handleUnauthorized();
         });
     }
   }, [formData.category_id]);
@@ -212,36 +246,45 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
 
     if (type === "file" && files?.length > 0) {
       if (name === "more_images") {
-        setFormData(prev => ({ ...prev, more_images: [...(prev.more_images || []), ...Array.from(files)] }));
+        setFormData((prev) => ({
+          ...prev,
+          more_images: [...(prev.more_images || []), ...Array.from(files)],
+        }));
       } else {
         const file = files[0];
-        setFormData(prev => ({ ...prev, [name]: file }));
-        setImagePreviews(prev => ({ ...prev, [name]: URL.createObjectURL(file) }));
+        setFormData((prev) => ({ ...prev, [name]: file }));
+        setImagePreviews((prev) => ({
+          ...prev,
+          [name]: URL.createObjectURL(file),
+        }));
       }
     } else if (name === "category_id") {
-      setFormData(prev => ({ ...prev, category_id: value, product_type: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        category_id: value,
+        product_type: "",
+      }));
       setTypes([]);
     } else if (name === "size") {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         size: value,
         other_size: value === "Other" ? prev.other_size || "" : "",
       }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleUpdate = async () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
       const value = formData[key];
-      if (!value || value === "") return;
+      if (!value) return;
 
       if (key === "more_images" && Array.isArray(value)) {
-        value.forEach(file => data.append("more_images", file));
+        value.forEach((file) => data.append("more_images", file));
       } else if (value instanceof File) {
         data.append(key, value);
       } else if (key === "size" && value === "Other") {
@@ -254,15 +297,24 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
 
     try {
       setIsSubmitting(true);
-      await axios.put(`${API_URL}/api/product/${product.id || product._id}`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
+      await axios.put(
+        `${API_URL}/api/product/${product.id || product._id}`,
+        data,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
       toast.success("Product updated successfully!");
       onUpdateSuccess?.();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Update failed");
+      if (err.response?.status === 401) {
+        handleUnauthorized();
+      } else {
+        toast.error(err.response?.data?.message || "Update failed");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -274,14 +326,30 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center z-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Edit Product</h2>
-          <button onClick={onClose} className="text-4xl text-gray-500 hover:text-gray-800">×</button>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Edit Product
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-4xl text-gray-500 hover:text-gray-800"
+          >
+            ×
+          </button>
         </div>
 
         <div className="px-8 py-6 flex justify-center gap-8 md:gap-16 text-sm font-medium">
           {steps.map((s, i) => (
-            <div key={i} className={`flex items-center gap-3 ${step === i + 1 ? "text-orange-600" : "text-gray-500"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${step === i + 1 ? "bg-orange-600" : "bg-gray-400"}`}>
+            <div
+              key={i}
+              className={`flex items-center gap-3 ${
+                step === i + 1 ? "text-orange-600" : "text-gray-500"
+              }`}
+            >
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                  step === i + 1 ? "bg-orange-600" : "bg-gray-400"
+                }`}
+              >
                 {i + 1}
               </div>
               <span className="hidden sm:block">{s}</span>
@@ -289,39 +357,121 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 md:px-12 pb-10 space-y-12">
-
-          {/* STEP 1 */}
+        <form
+          onSubmit={(e) => e.preventDefault()}
+          className="px-6 md:px-12 pb-10 space-y-12"
+        >
+          {/* STEP 1 - Product */}
           {step === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <FormField field={{ name: "product_group", label: "Group *", type: "select", options: ["Men", "Women", "Girl", "Boy"] }} value={formData.product_group} onChange={handleChange} />
-              <FormField field={{ name: "category_id", label: "Category *", type: "select", options: categories }} value={formData.category_id} onChange={handleChange} />
-              <FormField field={{ name: "product_type", label: "Type *", type: "select", options: types }} value={formData.product_type} onChange={handleChange} disabled={!formData.category_id} />
-              <FormField field={{ name: "product_condition", label: "Condition *", type: "select", options: ["new", "almost_new", "hardly_ever_used", "good", "satisfactory"] }} value={formData.product_condition} onChange={handleChange} />
-              <FormField field={{ name: "fit", label: "Fit", type: "select", options: ["Slim", "Regular", "Loose", "Oversized", "Other"] }} value={formData.fit} onChange={handleChange} />
-              <FormField field={{ name: "size", label: "Size *", type: "select", options: ["XS", "S", "M", "L", "XL", "XXL", "Other"] }} value={formData.size} onChange={handleChange} />
-              <FormField field={{ name: "product_color", label: "Color", type: "text" }} value={formData.product_color} onChange={handleChange} />
-              <FormField field={{ name: "brand", label: "Brand *", type: "text" }} value={formData.brand} onChange={handleChange} />
-              <FormField field={{ name: "model_name", label: "Model Name *", type: "text" }} value={formData.model_name} onChange={handleChange} />
+              <FormField
+                field={{ name: "product_group", label: "Group *", type: "select", options: ["Men", "Women", "Girl", "Boy"] }}
+                value={formData.product_group}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "category_id", label: "Category *", type: "select", options: categories }}
+                value={formData.category_id}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "product_type", label: "Type *", type: "select", options: types }}
+                value={formData.product_type}
+                onChange={handleChange}
+                disabled={!formData.category_id}
+              />
+              <FormField
+                field={{
+                  name: "product_condition",
+                  label: "Condition *",
+                  type: "select",
+                  options: [
+                    "new",
+                    "almost_new",
+                    "hardly_ever_used",
+                    "good",
+                    "satisfactory",
+                  ],
+                }}
+                value={formData.product_condition}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "fit", label: "Fit", type: "select", options: ["Slim", "Regular", "Loose", "Oversized", "Other"] }}
+                value={formData.fit}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "size", label: "Size *", type: "select", options: ["XS", "S", "M", "L", "XL", "XXL", "Other"] }}
+                value={formData.size}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "product_color", label: "Color", type: "text" }}
+                value={formData.product_color}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "brand", label: "Brand *", type: "text" }}
+                value={formData.brand}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "model_name", label: "Model Name *", type: "text" }}
+                value={formData.model_name}
+                onChange={handleChange}
+              />
               {formData.size === "Other" && (
                 <div className="sm:col-span-2">
-                  <FormField field={{ name: "other_size", label: "Other Size *", type: "text" }} value={formData.other_size} onChange={handleChange} />
+                  <FormField
+                    field={{ name: "other_size", label: "Other Size *", type: "text" }}
+                    value={formData.other_size}
+                    onChange={handleChange}
+                  />
                 </div>
               )}
             </div>
           )}
 
-          {/* STEP 2 */}
+          {/* STEP 2 - Condition */}
           {step === 2 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <FormField field={{ name: "invoice", label: "Invoice? *", type: "select", options: ["No", "Yes"] }} value={formData.invoice} onChange={handleChange} />
-              <FormField field={{ name: "invoice_photo", label: "Invoice Photo", type: "file" }} onChange={handleChange} previewUrl={imagePreviews.invoice_photo} />
-              <FormField field={{ name: "needs_repair", label: "Needs Repair? *", type: "select", options: ["No", "Yes"] }} value={formData.needs_repair} onChange={handleChange} />
-              <FormField field={{ name: "repair_photo", label: "Repair Photo", type: "file" }} onChange={handleChange} previewUrl={imagePreviews.repair_photo} />
-              <FormField field={{ name: "original_box", label: "Original Box? *", type: "select", options: ["No", "Yes"] }} value={formData.original_box} onChange={handleChange} />
-              <FormField field={{ name: "dust_bag", label: "Dust Bag? *", type: "select", options: ["No", "Yes"] }} value={formData.dust_bag} onChange={handleChange} />
+              <FormField
+                field={{ name: "invoice", label: "Invoice?", type: "select", options: ["No", "Yes"] }}
+                value={formData.invoice}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "invoice_photo", label: "Invoice Photo", type: "file" }}
+                onChange={handleChange}
+                previewUrl={imagePreviews.invoice_photo}
+              />
+              <FormField
+                field={{ name: "needs_repair", label: "Needs Repair?", type: "select", options: ["No", "Yes"] }}
+                value={formData.needs_repair}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "repair_photo", label: "Repair Photo", type: "file" }}
+                onChange={handleChange}
+                previewUrl={imagePreviews.repair_photo}
+              />
+              <FormField
+                field={{ name: "original_box", label: "Original Box?", type: "select", options: ["No", "Yes"] }}
+                value={formData.original_box}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "dust_bag", label: "Dust Bag?", type: "select", options: ["No", "Yes"] }}
+                value={formData.dust_bag}
+                onChange={handleChange}
+              />
               <div className="sm:col-span-2">
-                <FormField field={{ name: "additional_items", label: "Additional Items", type: "textarea" }} value={formData.additional_items} onChange={handleChange} />
+                <FormField
+                  field={{ name: "additional_items", label: "Additional Items", type: "textarea" }}
+                  value={formData.additional_items}
+                  onChange={handleChange}
+                />
               </div>
             </div>
           )}
@@ -329,43 +479,120 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
           {/* STEP 3 - Images */}
           {step === 3 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {["front_photo", "back_photo", "label_photo", "inside_photo", "button_photo", "wearing_photo"].map((key) => (
-                <FormField key={key} field={{ name: key, label: key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + " *", type: "file" }} onChange={handleChange} previewUrl={imagePreviews[key]} />
+              {[
+                "front_photo",
+                "back_photo",
+                "label_photo",
+                "inside_photo",
+                "button_photo",
+                "wearing_photo",
+              ].map((key) => (
+                <FormField
+                  key={key}
+                  field={{
+                    name: key,
+                    label:
+                      key
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase()) + " *",
+                    type: "file",
+                  }}
+                  onChange={handleChange}
+                  previewUrl={imagePreviews[key]}
+                />
               ))}
               <div className="lg:col-span-3">
-                <FormField field={{ name: "more_images", label: "More Images (Optional)", type: "file", multiple: true }} onChange={handleChange} />
+                <FormField
+                  field={{
+                    name: "more_images",
+                    label: "More Images (Optional)",
+                    type: "file",
+                    multiple: true,
+                  }}
+                  onChange={handleChange}
+                />
               </div>
             </div>
           )}
 
-          {/* STEP 4 */}
+          {/* STEP 4 - Price & Details */}
           {step === 4 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <FormField field={{ name: "purchase_price", label: "Purchase Price (₹) *", type: "number" }} value={formData.purchase_price} onChange={handleChange} />
-              <FormField field={{ name: "selling_price", label: "Selling Price (₹) *", type: "number" }} value={formData.selling_price} onChange={handleChange} />
-              <FormField field={{ name: "reason_to_sell", label: "Reason to Sell", type: "text" }} value={formData.reason_to_sell} onChange={handleChange} />
-              <FormField field={{ name: "purchase_year", label: "Purchase Year *", type: "number" }} value={formData.purchase_year} onChange={handleChange} />
-              <FormField field={{ name: "purchase_place", label: "Purchase Place", type: "text" }} value={formData.purchase_place} onChange={handleChange} />
-              <FormField field={{ name: "product_link", label: "Product Link", type: "url" }} value={formData.product_link} onChange={handleChange} />
+              <FormField
+                field={{ name: "purchase_price", label: "Purchase Price (₹)", type: "number" }}
+                value={formData.purchase_price}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "selling_price", label: "Selling Price (₹)", type: "number" }}
+                value={formData.selling_price}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "reason_to_sell", label: "Reason to Sell", type: "text" }}
+                value={formData.reason_to_sell}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "purchase_year", label: "Purchase Year", type: "number" }}
+                value={formData.purchase_year}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "purchase_place", label: "Purchase Place", type: "text" }}
+                value={formData.purchase_place}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "product_link", label: "Product Link", type: "url" }}
+                value={formData.product_link}
+                onChange={handleChange}
+              />
               <div className="sm:col-span-2">
-                <FormField field={{ name: "additional_info", label: "Additional Info", type: "textarea" }} value={formData.additional_info} onChange={handleChange} />
+                <FormField
+                  field={{ name: "additional_info", label: "Additional Info", type: "textarea" }}
+                  value={formData.additional_info}
+                  onChange={handleChange}
+                />
               </div>
             </div>
           )}
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-10 border-t">
-            <button type="button" onClick={onClose} className="w-full sm:w-auto px-10 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full sm:w-auto px-10 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+            >
               Cancel
             </button>
+
             <div className="flex gap-4">
-              {step > 1 && <button type="button" onClick={() => setStep(step - 1)} className="px-8 py-3 bg-gray-300 rounded-lg font-medium">Back</button>}
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(step - 1)}
+                  className="px-8 py-3 bg-gray-300 rounded-lg font-medium"
+                >
+                  Back
+                </button>
+              )}
               {step < 4 ? (
-                <button type="button" onClick={() => setStep(step + 1)} className="px-12 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-lg">
+                <button
+                  type="button"
+                  onClick={() => setStep(step + 1)}
+                  className="px-12 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-lg"
+                >
                   Next
                 </button>
               ) : (
-                <button type="submit" disabled={isSubmitting} className="px-14 py-3.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg shadow-xl">
+                <button
+                  type="button"
+                  onClick={handleUpdate}
+                  disabled={isSubmitting}
+                  className="px-14 py-3.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg shadow-xl"
+                >
                   {isSubmitting ? "Updating..." : "Update Product"}
                 </button>
               )}

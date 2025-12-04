@@ -170,10 +170,9 @@ const DashboardHome = () => {
                   <td className="p-2">{product.vendor?.name ?? "N/A"}</td>
                   <td className="p-2">
                     <img
-                      src={product.front_photo}
-                      alt="Front"
+                      src={`${process.env.REACT_APP_API_URL}/${product.front_photo}`}
+                      alt="not_found"
                       className="w-16 h-16 object-cover rounded"
-                      onError={(e) => (e.currentTarget.src = "/placeholder-image.jpg")}
                     />
                   </td>
                   <td className="p-2">

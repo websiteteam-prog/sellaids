@@ -6,7 +6,7 @@ const CallToActionSection = () => {
     const navigate = useNavigate();
 
     const handleSellClick = () => {
-        navigate("/sell"); 
+        navigate("/vendor/login"); 
     };
     return (
         <section
