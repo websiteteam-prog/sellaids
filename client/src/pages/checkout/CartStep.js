@@ -43,10 +43,9 @@ export default function CartStep({ onNext }) {
       product.wearing_photo,
       ...moreImages,
     ].filter(Boolean)
-    .map(path => `${IMG_BASE}/${path}`); 
+      .map(path => `${IMG_BASE}/${path}`);
   };
 
-  // Change active image
   const changeImage = (productId, offsetOrIndex) => {
     setActiveImages((prev) => {
       const current = prev[productId] ?? 0;
@@ -152,27 +151,21 @@ export default function CartStep({ onNext }) {
       (s, i) => s + i.product.price * i.quantity,
       0
     );
-    const discount = cart.reduce(
-      (s, i) =>
-        s + (i.product.original_price - i.product.price) * i.quantity,
-      0
-    );
-    const orderTotal = totalProductPrice - discount;
 
     const SHIPPING_FEE = 100;
     const PLATFORM_FEE = 50;
-    const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
+
+    const finalTotal = totalProductPrice + SHIPPING_FEE + PLATFORM_FEE;
 
     onNext({
       cartItems: cart,
       shippingAddress,
       total: totalProductPrice,
-      discount,
-      orderTotal,
       finalTotal,
       shippingFee: SHIPPING_FEE,
       platformFee: PLATFORM_FEE,
     });
+
   };
 
   if (loading) return <p className="text-center py-10">Loading…</p>;
@@ -181,25 +174,21 @@ export default function CartStep({ onNext }) {
     (s, i) => s + i.product.price * i.quantity,
     0
   );
-  const discount = cart.reduce(
-    (s, i) => s + (i.product.original_price - i.product.price) * i.quantity,
-    0
-  );
-  const orderTotal = totalProductPrice - discount;
+  const orderTotal = totalProductPrice;
   const SHIPPING_FEE = 100;
   const PLATFORM_FEE = 50;
   const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       <Toaster />
 
-      {/* ADDRESS CARD */}
-      <div className="bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3">
-        <MapPin className="w-5 h-5 text-purple-600 mt-1" />
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-1">
-            <p className="font-semibold">Delivery Address</p>
+      {/* ADDRESS CARD - Responsive */}
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 flex flex-col sm:flex-row items-start gap-4">
+        <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mt-1 flex-shrink-0" />
+        <div className="flex-1 w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-3">
+            <p className="font-semibold text-base sm:text-lg">Delivery Address</p>
             <button
               onClick={() => setIsEditing(true)}
               className="text-purple-600 text-sm underline hover:text-purple-700"
@@ -209,28 +198,28 @@ export default function CartStep({ onNext }) {
           </div>
 
           {isEditing ? (
-            <div className="space-y-3 mt-2">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="space-y-4 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input
                   placeholder="Address line"
                   value={addr.line}
                   onChange={(e) => setAddr({ ...addr, line: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm"
+                  className="border rounded px-3 py-2 text-sm w-full"
                 />
                 <input
                   placeholder="City"
                   value={addr.city}
                   onChange={(e) => setAddr({ ...addr, city: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm"
+                  className="border rounded px-3 py-2 text-sm w-full"
                 />
                 <input
                   placeholder="Pincode"
                   value={addr.pin}
                   onChange={(e) => setAddr({ ...addr, pin: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm"
+                  className="border rounded px-3 py-2 text-sm w-full"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={saveAddress}
                   className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700"
@@ -246,12 +235,12 @@ export default function CartStep({ onNext }) {
               </div>
             </div>
           ) : (
-            <p className="text-gray-700">{shippingAddress}</p>
+            <p className="text-gray-700 text-sm sm:text-base">{shippingAddress || "No address added yet"}</p>
           )}
         </div>
       </div>
 
-      {/* PRODUCT CARDS */}
+      {/* PRODUCT CARDS - Fully Responsive */}
       {cart.map((item) => {
         const product = item.product;
         const images = getProductImages(product);
@@ -260,76 +249,53 @@ export default function CartStep({ onNext }) {
         return (
           <div
             key={item.product_id}
-            className="bg-white rounded-lg shadow-sm border p-4 flex gap-4 items-start"
+            className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 flex flex-col lg:flex-row gap-6 items-start"
           >
-            {/* ---- IMAGE SLIDER ---- */}
-            <div className="flex-shrink-0 w-48">
+            {/* IMAGE SLIDER - Responsive */}
+            <div className="w-full lg:w-48 xl:w-56 flex-shrink-0">
               <div className="relative">
-                {/* Main image */}
-                <div className="flex justify-center mb-2 min-h-[192px]">
+                {/* Main Image */}
+                <div className="aspect-square bg-gray-50 rounded-md overflow-hidden flex items-center justify-center">
                   <img
                     src={images[activeIdx] || "https://via.placeholder.com/96"}
                     alt={product?.name}
-                    className="max-w-full h-auto max-h-48 object-contain rounded-md"
+                    className="max-w-full max-h-full h-auto object-contain"
                     onError={handleImageError}
                   />
                 </div>
 
-                {/* Navigation arrows */}
+                {/* Navigation Arrows */}
                 {images.length > 1 && (
-                  <div className="flex justify-between mt-2">
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 pointer-events-none">
                     <button
                       onClick={() => changeImage(item.product_id, -1)}
-                      className="text-gray-600 hover:text-gray-800"
+                      className="pointer-events-auto bg-white/80 hover:bg-white p-1.5 rounded-full shadow-md"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 19l-7-7 7-7"
-                        />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
                     <button
                       onClick={() => changeImage(item.product_id, 1)}
-                      className="text-gray-600 hover:text-gray-800"
+                      className="pointer-events-auto bg-white/80 hover:bg-white p-1.5 rounded-full shadow-md"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </div>
                 )}
 
-                {/* Thumbnail strip */}
+                {/* Thumbnails */}
                 {images.length > 1 && (
-                  <div className="flex overflow-x-auto space-x-2 mt-2 justify-center">
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 snap-x">
                     {images.map((img, idx) => (
                       <img
                         key={idx}
                         src={img}
-                        alt={`${product?.name} thumb ${idx + 1}`}
-                        className={`max-w-12 h-auto max-h-12 object-contain rounded-md cursor-pointer ${
-                          activeIdx === idx ? "border-2 border-blue-600" : ""
-                        }`}
+                        alt={`thumb ${idx + 1}`}
+                        className={`w-12 h-12 sm:w-14 sm:h-14 object-cover rounded cursor-pointer flex-shrink-0 snap-center border-2 transition-all ${activeIdx === idx ? "border-purple-600" : "border-gray-200"
+                          }`}
                         onClick={() => changeImage(item.product_id, idx)}
                         onError={handleImageError}
                       />
@@ -339,60 +305,61 @@ export default function CartStep({ onNext }) {
               </div>
             </div>
 
-            {/* ---- PRODUCT DETAILS ---- */}
-            <div className="flex-1">
-              <p className="font-medium">{product?.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="font-semibold">
-                  ₹{product?.price * item.quantity}
-                </p>
-                {product?.original_price > product?.price && (
+            {/* PRODUCT DETAILS */}
+            <div className="flex-1 space-y-3 min-w-0">
+              <p className="font-medium text-base sm:text-lg pr-2">{product?.name}</p>
+
+              <div className="flex flex-wrap items-center gap-3 text-lg">
+                <p className="font-semibold">₹{product?.price * item.quantity}</p>
+                {/* {product?.original_price > product?.price && (
                   <>
                     <p className="text-sm text-gray-500 line-through">
                       ₹{product?.original_price * item.quantity}
                     </p>
-                    <p className="text-sm text-green-600">
+                    <p className="text-sm text-green-600 font-medium">
                       {Math.round(
                         ((product?.original_price - product?.price) /
                           product?.original_price) *
-                          100
+                        100
                       )}
                       % Off
                     </p>
                   </>
-                )}
+                )} */}
               </div>
 
-              {/* ← ONLY THIS LINE CHANGED → */}
-              <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
-                Size: {item.size} | Qty:
-                <QuantitySelector
-                  productId={item.product_id}
-                  initialQty={item.quantity}
-                  disabled={isEditing}
-                />
+              <p className="text-sm text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span>Size: {item.size}</span>
+                <span className="hidden sm:inline">|</span>
+                <span className="flex items-center gap-2">
+                  Qty:
+                  <QuantitySelector
+                    productId={item.product_id}
+                    initialQty={item.quantity}
+                    disabled={isEditing}
+                  />
+                </span>
               </p>
-              {/* ← END CHANGE → */}
-
-              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              {/* 
+              <p className="text-xs text-gray-500 flex items-center gap-1">
                 <Package className="w-3 h-3" />
                 All issue easy returns
-              </p>
+              </p> */}
             </div>
 
-            {/* ---- ACTIONS ---- */}
-            <div className="flex items-center gap-3 text-sm">
+            {/* ACTIONS - Stack on mobile */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 text-sm w-full lg:w-auto mt-4 lg:mt-0">
               <button
                 onClick={() => moveToWishlist(item.product_id)}
-                className="flex items-center gap-1 text-gray-700 hover:text-purple-600"
+                className="flex items-center gap-1 text-gray-700 hover:text-purple-600 whitespace-nowrap"
               >
                 <Heart className="w-4 h-4" />
                 Move to Wishlist
               </button>
-              <span className="text-gray-400">|</span>
+              <span className="hidden sm:block text-gray-400">|</span>
               <button
                 onClick={() => removeFromCart(item.product_id)}
-                className="flex items-center gap-1 text-gray-700 hover:text-red-600"
+                className="flex items-center gap-1 text-gray-700 hover:text-red-600 whitespace-nowrap"
               >
                 <X className="w-4 h-4" />
                 Remove
@@ -402,40 +369,40 @@ export default function CartStep({ onNext }) {
         );
       })}
 
-      {/* PRICE SUMMARY WITH FEES */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
+      {/* PRICE SUMMARY */}
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+        <div className="space-y-3 text-sm sm:text-base">
+          <div className="flex justify-between">
             <span>Product Total</span>
             <span>₹{totalProductPrice}</span>
           </div>
-          {discount > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
+          {/* {discount > 0 && (
+            <div className="flex justify-between text-green-600">
               <span>Discounts Applied</span>
               <span>- ₹{discount}</span>
             </div>
-          )}
-          <div className="flex justify-between text-sm">
+          )} */}
+          <div className="flex justify-between">
             <span>Shipping Fee</span>
             <span className="text-green-600">₹{SHIPPING_FEE}</span>
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between">
             <span>Platform Fee</span>
             <span className="text-green-600">₹{PLATFORM_FEE}</span>
           </div>
-          <div className="flex justify-between font-bold mt-3 pt-3 border-t border-gray-300">
+          <div className="flex justify-between font-bold text-base sm:text-lg mt-4 pt-4 border-t border-gray-300">
             <span>Final Total</span>
             <span className="text-purple-600">₹{finalTotal}</span>
           </div>
         </div>
       </div>
 
-      {/* CONTINUE */}
+      {/* CONTINUE BUTTON */}
       <div className="flex justify-end">
         <button
           onClick={handleContinue}
           disabled={isEditing}
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
         >
           Continue
         </button>
