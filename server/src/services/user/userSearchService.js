@@ -1,5 +1,6 @@
 import { Product } from "../../models/productModel.js";
-import { Op, fn, col, where, literal } from "sequelize";
+import { Category } from "../../models/categoryModel.js";
+import { Op, fn, col, where } from "sequelize";
 
 export const searchProductsService = async (query) => {
   const searchTerm = `%${query.toLowerCase()}%`;
@@ -23,10 +24,21 @@ export const searchProductsService = async (query) => {
           where(fn("LOWER", col("product_color")), { [Op.like]: searchTerm }),
           where(fn("LOWER", col("additional_info")), { [Op.like]: searchTerm }),
           where(fn("LOWER", col("additional_items")), { [Op.like]: searchTerm }),
-           where(fn("LOWER", col("selling_price")), { [Op.like]: searchTerm }),
-           where(fn("LOWER", col("purchase_price")), { [Op.like]: searchTerm }),
+          where(fn("LOWER", col("selling_price")), { [Op.like]: searchTerm }),
+          where(fn("LOWER", col("purchase_price")), { [Op.like]: searchTerm }),
+          where(fn("LOWER", col("category.name")), { [Op.like]: searchTerm }),
+          where(fn("LOWER", col("category.slug")), { [Op.like]: searchTerm }),
         ],
       },
+
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name", "slug"],
+        },
+      ],
+
       attributes: [
         "id",
         "product_group",
@@ -42,11 +54,12 @@ export const searchProductsService = async (query) => {
         "product_type",
         "purchase_price",
         "model_name",
-
-
+        "category_id"
+        
       ],
-      order: [["created_at", "DESC"]],
-      limit: 50,
+
+      order: [["category_id", "DESC"]],
+      limit: 5000,
     });
   } catch (error) {
     throw new Error(error.message || "Database error during search");

@@ -1,4 +1,4 @@
-import { raiseSupportTicket } from "../../services/user/userSupportService.js";
+import { raiseSupportTicket, getAllTicketsByUser } from "../../services/user/userSupportService.js";
 import { successResponse, errorResponse } from "../../utils/helpers.js";
 import { supportTicketSchema } from "../../validations/supportValidation.js";
 import logger from "../../config/logger.js";
@@ -30,5 +30,18 @@ export const userCreateTicketController = async (req, res) => {
       return res.status(400).json({ success: false, error: errors, message: "Validation failed" });
     }
     return errorResponse(res, 500, err.message || "Internal server error");
+  }
+};
+
+export const userGetAllTicketsController = async (req, res) => {
+  try {
+    const userId = req.session.user.userId;
+
+    const tickets = await getAllTicketsByUser(userId);
+
+    return successResponse(res, 200, "Tickets fetched successfully", { tickets });
+  } catch (err) {
+    logger.error(err);
+    return errorResponse(res, 500, err.message);
   }
 };

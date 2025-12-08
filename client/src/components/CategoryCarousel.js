@@ -18,9 +18,9 @@ import cat13 from "../assets/images/cat13.webp";
 const categories = [
     { name: "Saree", img: cat1, link: "/product-category/women/designer-aid/sarees" },
     { name: "Indian Edit", img: cat2, link: "/product-category/women/designer-aid/indian-edit" },
-    { name: "Men Apparel", img: cat3, link: "/product-category/men/fashion-aid/apparel" },
-    { name: "Men Shoes", img: cat4, link: "/product-category/men/fashion-aid/shoes" },
-    { name: "Bespoke Studio", img: cat5, link: "/product-category/men/designer-aid/bespoke-studio" },
+    { name: "Men Apparel", img: cat3, link: "/product-category/men/fashion-aid-men/apparel-men" },
+    { name: "Men Shoes", img: cat4, link: "product-category/men/fashion-aid-men/shoes-men" },
+    { name: "Bespoke Studio", img: cat5, link: "/product-category/men/designer-aid-men/bespoke-studio" },
     { name: "Ethnic Accessories", img: cat6, link: "/product-category/women/designer-aid/ethnic-accessories" },
     { name: "Baby Gear", img: cat7, link: "/product-category/kids/baby-gear" },
     { name: "Kids Boys", img: cat8, link: "/product-category/kids/boys" },

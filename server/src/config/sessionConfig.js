@@ -68,13 +68,14 @@ const sessionMiddleware = session({
     store,
     resave: false,
     saveUninitialized: false,
-    cookie: {
-        maxAge: 0.5 * 60 * 1000,
-        httpOnly: true,
-        sameSite: "lax",
-        secure: false, // local dev me false rakho
-    },
     rolling: true,
+    cookie: {
+        maxAge: 30 * 60 * 1000,
+        httpOnly: true,
+        secure: config.env === "production", // true only in prod (HTTPS)
+        sameSite: "lax", // same-domain → strict or lax works, lax is safest
+    },
 });
+
 
 export default sessionMiddleware;

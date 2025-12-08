@@ -24,6 +24,7 @@ const ProductDetails = () => {
         { withCredentials: true }
       );
       const { success, data, message } = res.data;
+      console.log(data);
       if (success) {
         setProduct(data);
       } else {
@@ -82,6 +83,17 @@ const ProductDetails = () => {
 
   // Convert JSON string to array safely
   const moreImages = product.more_images ? JSON.parse(product.more_images) : [];
+  const additionalInfo = product.additional_info
+    ? JSON.parse(product.additional_info)
+    : null;
+
+  const productConditionMap = {
+    new: "New",
+    good: "Good",
+    almost_new: "Almost New",
+    hardly_ever_used: "Hardly Ever Used",
+    satisfactory: "Satisfactory",
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -103,46 +115,40 @@ const ProductDetails = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <img
-              src={product.front_photo || fallbackImage}
+              src={`${process.env.REACT_APP_API_URL}/${product.front_photo}`}
               alt="Front"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
             <img
-              src={product.back_photo || fallbackImage}
+              src={`${process.env.REACT_APP_API_URL}/${product.back_photo}`}
               alt="Back"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <img
-              src={product.label_photo || fallbackImage}
+              src={`${process.env.REACT_APP_API_URL}/${product.label_photo}`}
               alt="Label"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
             <img
-              src={product.inside_photo || fallbackImage}
+              src={`${process.env.REACT_APP_API_URL}/${product.inside_photo}`}
               alt="Inside"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <img
-              src={product.button_photo || fallbackImage}
+              src={`${process.env.REACT_APP_API_URL}/${product.button_photo}`}
               alt="Button"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
             <img
-              src={product.wearing_photo || fallbackImage}
+              src={`${process.env.REACT_APP_API_URL}/${product.wearing_photo}`}
               alt="Wearing"
               className="w-full h-40 object-cover rounded-lg border"
-              onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
             />
           </div>
 
@@ -153,10 +159,9 @@ const ProductDetails = () => {
                 {moreImages.map((img, i) => (
                   <img
                     key={i}
-                    src={img || fallbackImage}
+                    src={`${process.env.REACT_APP_API_URL}/${img}`}
                     alt={`More ${i}`}
                     className="w-full h-40 object-cover rounded-lg border"
-                    onError={(e) => {e.target.onerror = null; e.target.src = fallbackImage}}
                   />
                 ))}
               </div>
@@ -183,7 +188,8 @@ const ProductDetails = () => {
             <strong>Size:</strong> {product.size}
           </p>
           <p>
-            <strong>Condition:</strong> {product.product_condition}
+            <strong>Condition:</strong>{" "}
+            {productConditionMap[product.product_condition]}
           </p>
           <p>
             <strong>Purchase Year:</strong> {product.purchase_year}
@@ -195,7 +201,8 @@ const ProductDetails = () => {
             <strong>Reason to Sell:</strong> {product.reason_to_sell}
           </p>
           <p>
-            <strong>Additional Info:</strong> {product.additional_info}
+            {/* <strong>Additional Info:</strong> {product.additional_info}description  */}
+            <strong>Additional Info:</strong> {additionalInfo.description}
           </p>
           <p>
             <strong>Invoice:</strong> {product.invoice}
