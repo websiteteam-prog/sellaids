@@ -18,7 +18,8 @@ import LuxuryHighlight from '../components/LuxuryHighlight';
 import CTASection from '../components/CTASection';
 import BrandSection from '../components/BrandSection';
 import ImageGallery from '../components/ImageGallery';
-import InfluencerSection from '../components/InfluencerSection';        
+import InfluencerSection from '../components/InfluencerSection';
+import Seo from '../components/Seo';        
 
 function LandingPage() {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -46,6 +47,11 @@ function LandingPage() {
 
     return (
         <>
+            <Seo
+                title="Sellaids — Sell Your Preowned Collection"
+                description="Sell Your Preowned Collection With Us Today - Simple, Secure And Rewarding."
+                image={img4}
+            />
             {/* top-marquee */}
             <div className="bg-orange-500 text-white overflow-hidden whitespace-nowrap">
                 <div
@@ -53,14 +59,14 @@ function LandingPage() {
                     style={{ animationDuration: '30s' }}
                 >
                     <span className="mx-4">
-                        Latest Offer: 50% OFF on all products! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        New Collection Coming Soon! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        Free Shipping on Orders Over $50!
+                        Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                      Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                       Up to 70% off from original price on all items
                     </span>
                     <span className="mx-4">
-                        Latest Offer: 50% OFF on all products! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        New Collection Coming Soon! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        Free Shipping on Orders Over $50!
+                       Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                        Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                        Up to 70% off from original price on all items
                     </span>
                 </div>
             </div>

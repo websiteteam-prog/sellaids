@@ -113,7 +113,7 @@ export const vendorRegisterSchema = yup.object({
 
     state: yup.string().max(100).nullable(),
     city: yup.string().max(100).nullable(),
-    pincode: yup.string().matches(/^\d{5,10}$/, "Invalid pincode").nullable(),
+    pincode: yup.string().nullable(),
 
     contact_person_name: yup.string().max(100).nullable(),
     contact_person_phone: yup

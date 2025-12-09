@@ -3,6 +3,7 @@ import axios from "axios";
 import { useUserStore } from "../../stores/useUserStore";
 import { useNavigate } from "react-router-dom";
 
+import UserFooter from "../../components/UserFooter";
 const Orders = () => {
   const { user, isAuthenticated } = useUserStore();
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ const Orders = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const limit = 10;
+  const limit = 4;
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
@@ -100,7 +101,7 @@ const Orders = () => {
     }
 
     return (
-      <div className="flex flex-col sm:flex-row justify-center items-center mt-8 gap-3 text-sm">
+      <div className="flex flex-col sm:flex-row justify-center items-center mt-8 mb-8 gap-3 text-sm">
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -126,7 +127,7 @@ const Orders = () => {
   const showNoMatches = search && filteredOrders.length === 0;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto ">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">My Orders</h1>
 
       {error && (
@@ -179,9 +180,9 @@ const Orders = () => {
             </div>
           </div>
 
-          {/* Responsive Table / Card View */}
+      
           <div className="overflow-x-auto">
-            {/* Desktop Table - Hidden on mobile */}
+         
             <div className="hidden lg:block">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -225,7 +226,7 @@ const Orders = () => {
                                 <img
                                   src={`${process.env.REACT_APP_API_URL}/${order.front_photo}`}
                                   alt={order.productName}
-                                  className="h-16 w-16 object-contain rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
+                                  className="h-16 w-16 object-cover object-center rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
                                 />
                               </a>
                             ) : (
@@ -263,7 +264,7 @@ const Orders = () => {
                             <img
                               src={`${process.env.REACT_APP_API_URL}/${order.front_photo}`}
                               alt={order.productName}
-                              className="h-20 w-20 object-contain rounded-lg border border-gray-200 shadow-sm"
+                              className="h-20 w-20 object-cover object-center rounded-lg border border-gray-200 shadow-sm"
                             />
                           </a>
                         )}
@@ -309,16 +310,17 @@ const Orders = () => {
               )}
             </div>
 
-            {/* Scroll hint for small screens */}
-            <div className="lg:hidden p-3 text-center text-xs text-gray-500 bg-gray-50">
-              ← Scroll horizontally to view more →
-            </div>
+
           </div>
 
           {/* Pagination */}
           {filteredOrders.length > 0 && renderPagination()}
         </div>
       )}
+      {/* ✅ UserFooter added */}
+      <div className="mt-8">
+        <UserFooter />
+      </div>
     </div>
   );
 };

@@ -22,6 +22,7 @@ import WhoCanSell from "./pages/WhoCanSell";
 import AdviceSellers from "./pages/AdviceSellers";
 import Blogs from "./pages/Blogs";
 import Luxury from "./pages/Luxury";
+import SeoPage from "./pages/SeoPage";
 
 // Product Details (User & Admin - Renamed to avoid conflict)
 import ProductDetails from "./components/ProductDetails";
@@ -120,6 +121,7 @@ const App = () => {
       <Route path="/Designeraids" element={<Layout><Luxury /></Layout>} />
       <Route path="/kidsaids" element={<Layout><Kidsaids /></Layout>} />
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
+      <Route path="/seo" element={<Layout><SeoPage /></Layout>} />
 
       {/* Product Details - User */}
       <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />

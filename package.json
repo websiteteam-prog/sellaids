@@ -4,11 +4,12 @@
   "private": true,
   "description": "Fullstack project with client and server running together",
   "scripts": {
-    "start": "npm-run-all --parallel start:client start:server",
-    "start:client": "npm --prefix client start",
-    "start:server": "npm --prefix server run dev"
+    "start": "concurrently \"npm start --prefix client\" \"npm run dev --prefix server\"",
+    "client": "npm --prefix client start",
+    "server": "npm --prefix server run dev"
   },
   "dependencies": {
+    "concurrently": "^9.2.1",
     "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.3",

@@ -135,6 +135,11 @@ const Login = () => {
             Register here
           </Link>
         </p>
+         <div className="mt-4 text-center">
+                  <Link to="/" className="text-blue-500 hover:underline">
+                    Back to website
+                  </Link>
+                </div>
       </div>
     </div>
   );

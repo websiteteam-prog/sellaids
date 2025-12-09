@@ -1,7 +1,7 @@
 // src/pages/dashboard/DashboardHome.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import { useUserStore } from "../../stores/useUserStore";
-import api from "../../api/axiosInstance"; // ← Use api
+import api from "../../api/axiosInstance"; 
 import {
   FiPackage, FiClock, FiHeart, FiMessageSquare,
   FiShoppingCart, FiEye, FiHeadphones,
@@ -11,6 +11,7 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
+import UserFooter from "../../components/UserFooter";
 const DashboardHome = () => {
   const { user } = useUserStore();
 
@@ -64,11 +65,36 @@ const DashboardHome = () => {
   }, [fetchData]);
 
   const cards = [
-    { title: "Total Orders", value: kpi.totalOrders, icon: FiPackage, color: "text-blue-600" },
-    { title: "Pending Orders", value: kpi.pendingOrders, icon: FiClock, color: "text-yellow-600" },
-    { title: "Wishlist Items", value: kpi.wishlistCount, icon: FiHeart, color: "text-pink-600" },
-    { title: "Support Tickets", value: kpi.supportTickets, icon: FiMessageSquare, color: "text-green-600" },
-  ];
+  { 
+    title: "Total Orders", 
+    value: kpi.totalOrders, 
+    icon: FiPackage, 
+    color: "text-blue-600",
+    link: "/user/orders"
+  },
+  { 
+    title: "Pending Orders", 
+    value: kpi.pendingOrders, 
+    icon: FiClock, 
+    color: "text-yellow-600",
+    link: "/user/orders?filter=pending"
+  },
+  { 
+    title: "Wishlist Items", 
+    value: kpi.wishlistCount, 
+    icon: FiHeart, 
+    color: "text-pink-600",
+    link: "/user/wishlist"
+  },
+  { 
+    title: "Support Tickets", 
+    value: kpi.supportTickets, 
+    icon: FiMessageSquare, 
+    color: "text-green-600",
+    link: "/user/support"
+  },
+];
+
 
   const COLORS = ["#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6"];
 
@@ -97,23 +123,28 @@ const DashboardHome = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
         {cards.map((c, i) => {
-          const Icon = c.icon;
-          return (
-            <div key={i} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all border border-gray-100 group cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{c.title}</p>
-                  <p className="text-3xl font-bold mt-2" style={{ color: c.color.replace("600", "700") }}>
-                    {c.value}
-                  </p>
-                </div>
-                <div className={`p-3 rounded-full bg-opacity-10 ${c.color.replace("text-", "bg-")} group-hover:scale-110 transition-transform`}>
-                  <Icon className={`w-8 h-8 ${c.color}`} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+  const Icon = c.icon;
+  return (
+    <div
+      key={i}
+      onClick={() => window.location.href = c.link}
+      className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all border border-gray-100 group cursor-pointer"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{c.title}</p>
+          <p className="text-3xl font-bold mt-2" style={{ color: c.color.replace("600", "700") }}>
+            {c.value}
+          </p>
+        </div>
+
+        <div className={`p-3 rounded-full bg-opacity-10 ${c.color.replace("text-", "bg-")} group-hover:scale-110 transition-transform`}>
+          <Icon className={`w-8 h-8 ${c.color}`} />
+        </div>
+      </div>
+    </div>
+  );
+})}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
@@ -189,14 +220,19 @@ const DashboardHome = () => {
         )}
       </div>
 
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-xl shadow-md">
-        <h3 className="text-xl font-bold">Complete Your Profile!</h3>
+      {/* <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-xl shadow-md">
+        <h3 className="text-xl font-bold">Go t</h3>
         <p className="mt-1 text-sm opacity-90">Add phone & address for faster delivery and exclusive offers.</p>
         <button onClick={() => window.location.href = "/user/profile"} className="mt-4 bg-white text-purple-700 px-5 py-2 rounded-lg font-medium hover:bg-gray-100 transition">
           Complete Now
         </button>
+      </div> */}
+      {/* ✅ UserFooter added */}
+      <div className="mt-8">
+        <UserFooter />
       </div>
     </div>
+    
   );
 };
 

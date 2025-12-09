@@ -56,3 +56,10 @@ export const raiseSupportTicket = async ({ user_id, title, message, user_name, u
     throw err;
   }
 };
+
+export const getAllTicketsByUser = async (user_id) => {
+  return await UserSupport.findAll({
+    where: { user_id },
+    order: [["created_at", "DESC"]],
+  });
+};

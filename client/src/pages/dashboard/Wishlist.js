@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import { toast, Toaster } from "react-hot-toast"; // Import toast and Toaster
+import UserFooter from "../../components/UserFooter";
 
 export default function Wishlist() {
   const { wishlist, setWishlist, removeFromWishlist } = useWishlistStore();
@@ -178,6 +179,7 @@ export default function Wishlist() {
   if (!isAuthenticated || !user?.id) return null;
 
   return (
+    <div>
     <div className="min-h-screen bg-gray-100 p-6">
       <Toaster /> {/* Add Toaster component */}
       <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
@@ -351,6 +353,11 @@ export default function Wishlist() {
           })}
         </div>
       )}
+    </div>
+    {/* ✅ UserFooter added */}
+      <div className="mt-8">
+        <UserFooter />
+      </div>
     </div>
   );
 }

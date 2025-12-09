@@ -1,12 +1,12 @@
-// src/components/AddProductForm.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import UserFooter from "../../components/UserFooter";
 
-// API URL from .env (production mein change kar dena)
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-// Reusable FormField Component (exactly same as before)
+
 const FormField = ({ field, value, onChange, error, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -375,6 +375,7 @@ const AddProductForm = () => {
   const steps = ["Guidelines", "Product", "Condition", "Image", "Price"];
 
   return (
+    <div>
     <div className="min-h-screen py-6">
       {/* Reduced side padding for mobile */}
       <div className="w-full max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-4 sm:p-6">
@@ -464,7 +465,7 @@ const AddProductForm = () => {
                 { name: "product_group", label: "Group *", type: "select", options: ["", "Men", "Women", "Girl", "Boy"] },
                 { name: "productCategory", label: "Product Category *", type: "select", options: isLoadingCategories ? [{ name: "Loading..." }] : categories },
                 { name: "product_type", label: "Product Type *", type: "select", options: isLoadingTypes ? ["Loading..."] : types },
-                { name: "product_condition", label: "Product Condition *", type: "select", options: ["", "new", "almost_new", "good", "hardly_ever_used", "satisfactory"] },
+                { name: "product_condition", label: "Product Condition *", type: "select", options: ["", "new", "almost new", "good", "hardly ever used", "satisfactory"] },
                 { name: "fit", label: "Fit", type: "select", options: ["", "Slim", "Regular", "Loose", "Oversized", "Tailored", "Modern", "Fitted", "Other"] },
                 {
                   name: "size",
@@ -643,6 +644,9 @@ const AddProductForm = () => {
           </div>
         </form>
       </div>
+    </div>
+    {/* UserFooter added */}
+      <UserFooter />
     </div>
   );
 };

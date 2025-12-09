@@ -14,6 +14,7 @@ import api from "../api/axiosInstance";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
+import Seo from "./Seo";
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -280,8 +281,22 @@ const ProductDetails = () => {
   if (error) return <div className="max-w-7xl mx-auto px-4 py-16 text-center"><p className="text-xl text-red-600">{error}</p><button onClick={() => window.location.reload()} className="mt-6 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Retry</button></div>;
   if (!product) return null;
 
+  // Build full image URL for sharing
+  const productImageUrl = product.images && product.images[0]
+    ? product.images[0].startsWith('http')
+      ? product.images[0]
+      : `${process.env.REACT_APP_API_URL}${product.images[0].startsWith('/') ? '' : '/'}${product.images[0]}`
+    : `${process.env.PUBLIC_URL}/site.png`;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 bg-gray-50 min-h-screen">
+    <>
+      <Seo
+        title={product.name}
+        description={`${product.name} - ${product.condition}. Price: ₹${product.price.toLocaleString()}. Preowned item on Sellaids.`}
+        image={productImageUrl}
+        url={typeof window !== 'undefined' ? window.location.href : undefined}
+      />
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 bg-gray-50 min-h-screen">
    
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white  shadow-sm overflow-hidden">
         {/* Images */}
@@ -490,6 +505,7 @@ const ProductDetails = () => {
         </section>
       )}
     </div>
+    </>
   );
 };
 
