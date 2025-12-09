@@ -47,18 +47,7 @@ size_other: yup
   brand: yup.string().required("Brand is required"),
   model_name: yup
     .string()
-    .required("Model name is required")
-    .test(
-      "unique-product",
-      "Product with this brand and model already exists",
-      async function (value) {
-        const vendorId = this.options.context.vendorId;
-        const existing = await Product.findOne({
-          where: { vendor_id: vendorId, model_name: value, brand: this.parent.brand, is_active: true },
-        });
-        return !existing;
-      }
-    ),
+    .required("Model name is required"),
   invoice: yup.string().oneOf(["Yes", "No"]).required(),
   needs_repair: yup.string().oneOf(["Yes", "No"]).required(),
   original_box: yup.string().oneOf(["Yes", "No"]).required(),
@@ -136,17 +125,7 @@ export const updateProductSchema = yup.object().shape({
   model_name: yup
     .string()
     .trim()
-    .nullable()
-    .test(
-      "unique-brand-model",
-      "You already have another product with this brand and model name",
-      async function (value) {
-        if (!value) return true;
-        const { productId, vendorId } = this.options.context || {};
-        if (!vendorId || !productId) return true;
-        return await uniqueBrandModelForUpdate(value, this.parent.brand, productId, vendorId);
-      }
-    ),
+    .nullable(),
 
   invoice: yup.string().oneOf(["Yes", "No", null]).nullable(),
   needs_repair: yup.string().oneOf(["Yes", "No", null]).nullable(),

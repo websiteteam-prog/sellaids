@@ -5,17 +5,22 @@ import logger from "../config/logger.js";
 
 // Create transporter
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtpout.secureserver.net", 
   port: 465,
-  secure: true,
+   secure: true,
+//   requireTLS: true,
   auth: {
     user: config.email.user,
     pass: config.email.pass,
   },
+  debug: true,
   tls: {
     rejectUnauthorized: false
   }
 });
+console.log("SMTP USER =", config.email.user);
+console.log("SMTP PASS LENGTH =", config.email.pass ? config.email.pass.length : "NO PASS");
+
 
 /**
  * Sends an email with the given parameters
@@ -27,7 +32,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to, subject, text, html = null) => {
   try {
     const mailOptions = {
-      from: `"MyShop Support" <${config.email.user}>`,
+      from: `MyShop Support <${config.email.user}>`,
       to,
       subject,
       text,

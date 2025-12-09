@@ -57,34 +57,34 @@ const ProductSearchOverlayModal = ({ isOpen, onClose }) => {
   }, [isOpen, onClose]);
 
   const getProductDescription = (product) => {
-  try {
-    // additional_info string hai, parse karo
-    const info = JSON.parse(product.additional_info || "{}");
-    return info.description || product.model_name || product.product_type || "Unnamed Product";
-  } catch (e) {
-    // Agar parse nahi hua to fallback
-    return product.model_name || product.product_type || "Unnamed Product";
-  }
-};
+    try {
+      // additional_info string hai, parse karo
+      const info = JSON.parse(product.additional_info || "{}");
+      return info.description || product.model_name || product.product_type || "Unnamed Product";
+    } catch (e) {
+      // Agar parse nahi hua to fallback
+      return product.model_name || product.product_type || "Unnamed Product";
+    }
+  };
 
-   const getImageSrc = (product) => {
+  const getImageSrc = (product) => {
     const photo = product.front_photo;
     const displayText = getProductDescription(product);
 
-if (photo) {
-    return photo.startsWith("http") ? photo : `${API_URL}${photo.startsWith("/") ? "" : "/"}${photo}`;
-  }
+    if (photo) {
+      return photo.startsWith("http") ? photo : `${API_URL}${photo.startsWith("/") ? "" : "/"}${photo}`;
+    }
 
-  const words = displayText.split(" ").filter(Boolean);
-  let initials = "NA";
-  if (words.length >= 2) {
-    initials = (words[0][0] + words[words.length - 1][0]).toUpperCase();
-  } else if (words[0]) {
-    initials = words[0].slice(0, 2).toUpperCase();
-  }
+    const words = displayText.split(" ").filter(Boolean);
+    let initials = "NA";
+    if (words.length >= 2) {
+      initials = (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    } else if (words[0]) {
+      initials = words[0].slice(0, 2).toUpperCase();
+    }
 
-  return `https://via.placeholder.com/64/F97316/ffffff?text=${initials}`;
-};
+    return `https://via.placeholder.com/64/F97316/ffffff?text=${initials}`;
+  };
 
   if (!isOpen) return null;
 
@@ -114,7 +114,7 @@ if (photo) {
           <div className="relative">
             <div className="flex items-center bg-gray-50 border-2 border-gray-300 rounded-2xl px-4 py-4 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-100 transition-all duration-300">
               <Search size={22} className="text-gray-500 mr-3 flex-shrink-0" />
-              
+
               <input
                 ref={inputRef}
                 type="text"
@@ -169,7 +169,7 @@ if (photo) {
 
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 text-base truncate">
-                            {getProductDescription(product)}
+                          {getProductDescription(product)}
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
                           SKU: <span className="font-medium">{product.sku || "N/A"}</span>

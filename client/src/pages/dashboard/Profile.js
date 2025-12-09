@@ -4,8 +4,8 @@ import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
-
 import UserFooter from "../../components/UserFooter";
+
 export default function Profile() {
   const { user, isAuthenticated, isUserLoading, login, logout } = useUserStore();
   const navigate = useNavigate();
@@ -245,10 +245,10 @@ const handleSubmit = async (e) => {
   if (isUserLoading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
-        <Toaster
+        {/* <Toaster
           position="top-right"
           toastOptions={{ duration: 2500 }}
-        />
+        /> */}
         <p className="text-center mt-10">Loading user...</p>
       </div>
     );
@@ -257,12 +257,12 @@ const handleSubmit = async (e) => {
   if (!isAuthenticated || !user?.id) return null;
 
   return (
-    <div>
+      <div>
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
-      <Toaster
+      {/* <Toaster
         position="top-right"
         toastOptions={{ duration: 2500 }}
-      />
+      /> */}
       <h1 className="text-3xl font-bold mb-6 text-gray-800">My Profile</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -469,13 +469,11 @@ const handleSubmit = async (e) => {
           )}
         </div>
       </form>
-
     </div>
     {/* ✅ UserFooter added */}
       <div className="mt-8">
         <UserFooter />
       </div>
     </div>
-    
   );
 }

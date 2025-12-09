@@ -27,12 +27,12 @@ export const adminLoginController = async (req, res) => {
         const admin = await loginAdmin(validatedData);
 
         req.session.admin = { adminId: admin.id, email: admin.email };
-        // req.session.cookie.maxAge = 30 * 60 * 1000; // 30 min 
+        req.session.cookie.maxAge = 30 * 60 * 1000; // 30 min 
         console.log(req.session)
         console.log(req.session.admin.adminId)
-        req.session.save((err) => {
-            if (err) console.error("Session save error:", err);
-        });
+        // req.session.save((err) => {
+        //     if (err) console.error("Session save error:", err);
+        // });
 
         logger.info(`Admin logged in: ${admin.email}`);
         return successResponse(res, 200, `${admin.name} login successfully`, { id: admin.id, name: admin.name, email: admin.email });

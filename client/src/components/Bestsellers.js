@@ -18,6 +18,9 @@ import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
 
+const PLACEHOLDER_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
+
 // Yeh function daal diya — ab kabhi JSON.parse crash nahi karega
 const safeJsonParse = (data, fallback = {}) => {
   if (!data) return fallback;
@@ -99,7 +102,7 @@ function Bestsellers() {
       setCartPopup({
         name: product.name || "Product",
         price: product.price,
-        img: product.img,
+        img: product.img || PLACEHOLDER_DATA_URL,
       });
 
       await fetchCart();
@@ -240,14 +243,14 @@ function Bestsellers() {
             <img
               src={
                 product.img && product.img !== "null" && product.img.trim()
-                  && product.img
-                  // : "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image"
+                  ? product.img
+                  : PLACEHOLDER_DATA_URL
               }
-              alt={"not_found"}
+              alt={info.description || "Product"}
               className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
-              // onError={(e) =>
-              //   (e.target.src = "https://via.placeholder.com/400x500/f8f8f8/cccccc?text=No+Image")
-              // }
+              onError={(e) =>
+                (e.target.src = PLACEHOLDER_DATA_URL)
+              }
             />
 
             <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">

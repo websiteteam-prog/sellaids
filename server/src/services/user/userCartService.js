@@ -42,7 +42,7 @@ export const getCartService = async (userId) => {
         {
           model: Product,
           as: "product",
-          attributes: ['id', 'product_type', 'purchase_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
+          attributes: ['id', 'product_type', 'purchase_price', 'selling_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
         },
       ],
     });

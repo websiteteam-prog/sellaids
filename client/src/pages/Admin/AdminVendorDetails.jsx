@@ -162,15 +162,15 @@ const AdminVendorDetails = () => {
         {/* Contact Person */}
         <div className="md:col-span-2">
           <h3 className="text-lg font-semibold mb-3 border-b pb-2">
-            Contact Person
+            Alternate Contact Person
           </h3>
           <div className="space-y-2 text-gray-700">
             <p>
-              <strong>Contact Person Name:</strong> {vendor.contact_person_name}
+              <strong>Alternate Person Name:</strong> {vendor?.contact_person_name}
             </p>
             <p>
-              <strong>Contact Person Phone:</strong>{" "}
-              {vendor.contact_person_phone}
+              <strong>Alternate Person Phone:</strong>{" "}
+              {vendor?.contact_person_phone}
             </p>
           </div>
         </div>
