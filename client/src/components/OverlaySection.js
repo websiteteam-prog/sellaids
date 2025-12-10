@@ -10,19 +10,19 @@ const overlaySections = [
         title: 'FASHION AID',
         img: fashionAidImg,
         buttonText: 'SHOP NOW',
-        buttonLink: '/product-category/women/fashion-aid',
+        buttonLink: '/Fashionaids',
     },
     {
         title: 'DESIGNER AID',
         img: designerAidImg,
         buttonText: 'SHOP NOW',
-        buttonLink: '/product-category/women/designer-aid',
+        buttonLink: '/Designeraids',
     },
     {
         title: 'KIDS AID',
         img: kidsAidImg,
         buttonText: 'SHOP NOW',
-        buttonLink: '/product-category/kids',
+        buttonLink: '/Kidsaids',
     },
 ];
 function OverlaySection() {

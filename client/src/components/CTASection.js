@@ -6,7 +6,7 @@ function CTASection() {
     return (
         <>
             {/* Desktop View - Jaise pehle tha (unchanged) */}
-            <section className="hidden md:block relative h-[550px] w-full overflow-hidden bg-fixed bg-center bg-cover"
+            <section className="hidden md:block relative h-[550px] w-full overflow-hidden bg-center bg-cover"
                 style={{ backgroundImage: `url(${ctaImage})` }}>
                 <div className="absolute inset-0 bg-black/30"></div>
                 <div className="absolute inset-0 flex flex-col justify-center items-start px-6 md:px-20 text-white">

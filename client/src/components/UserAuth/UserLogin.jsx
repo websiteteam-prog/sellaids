@@ -176,8 +176,14 @@ function UserLogin() {
               >
                 {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
               </span>
+             
             )}
+            
           </div>
+          <p className="text-xs text-gray-500 mt-1">
+    Include uppercase, lowercase, number & special character
+
+  </p>
           {passwordError && <div className="text-red-500 text-sm mb-2">{passwordError}</div>}
           {loginError && <div className="text-red-500 text-sm mb-4">{loginError}</div>}
 

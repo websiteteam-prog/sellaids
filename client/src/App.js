@@ -55,6 +55,7 @@ import UserProtectedRoute from "./components/UserAuth/UserProtectedRoute";
 // Vendor Dashboard
 import DashboardHomeVendor from "./pages/vendor/DashboardHome";
 import AddProduct from "./pages/vendor/AddProduct";
+import BulkOrder from "./pages/vendor/BulkOrder";
 import AllProducts from "./pages/vendor/AllProducts";
 // import EditProduct from "./pages/vendor/EditProduct";
 import OrdersVendor from "./pages/vendor/Orders";
@@ -125,9 +126,6 @@ const App = () => {
 
       {/* Product Details - User */}
       <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />
-      {/* Checkout Flow - Public */}
-      {/* <Route path="/add-to-cart" element={<Layout><AddToCartPage /></Layout>} />
-      <Route path="/checkout" element={<Layout><CheckoutPage /></Layout>} /> */}
 
       {/* ===================== USER AUTH ===================== */}
       <Route element={<UserPublicRoute />}>
@@ -138,9 +136,7 @@ const App = () => {
       </Route>
 
       <Route path="/UserAuth/UserLogout" element={<UserLogout />} />
-      {/* === USER CHECKOUT FLOW === */}
-      {/* <Route path="/add-to-cart" element={<AddToCartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} /> */}
+      
       {/* ===================== User Dashboard Routes ===================== */}
       <Route element={<UserProtectedRoute />}>
         <Route path="/user" element={<DashboardLayout />}>
@@ -172,7 +168,8 @@ const App = () => {
         <Route path="/vendor" element={<VendorDashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardHomeVendor />} />
-          <Route path="add-product" element={<AddProduct />} />
+          <Route path="add-product" element={<AddProduct />} />\
+          <Route path="BulkOrder" element={<BulkOrder />} />
           <Route path="all-products" element={<AllProducts />} />
           {/* <Route path="edit-product/:id" element={<EditProduct />} /> */}
           <Route path="orders" element={<OrdersVendor />} />

@@ -1,6 +1,6 @@
 // components/Fashionaids.js
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaClock, FaMoneyBillWave, FaLeaf } from 'react-icons/fa';
 import {
@@ -26,42 +26,42 @@ const categories = [
   {
     title: 'WOMEN APPAREL',
     image: womenApparel,
-    link: '/women-apparel',
+    link: 'https://sellaids.com/product-category/women/fashion-aid/apparel',
   },
   {
     title: 'WOMEN BAGS',
     image: womenBags,
-    link: '/women-bags',
+    link: 'https://sellaids.com/product-category/women/fashion-aid/bags',
   },
   {
     title: 'MEN APPAREL',
     image: menApparel,
-    link: '/men-apparel',
+    link: 'https://sellaids.com/product-category/men/fashion-aid-men/apparel-men',
   },
   {
     title: 'MEN SHOES',
     image: menShoes,
-    link: '/category/men-shoes',
+    link: 'https://sellaids.com/product-category/men/fashion-aid-men/shoes-men',
   },
   {
     title: 'WOMEN SHOES',
     image: womenShoes,
-    link: '/women-shoes',
+    link: 'https://sellaids.com/product-category/women/fashion-aid/shoes',
   },
   {
     title: 'WOMEN ACCESSORIES',
     image: womenAccessories,
-    link: '/women-accessories',
+    link: 'https://sellaids.com/product-category/women/fashion-aid/accessories',
   },
   {
     title: 'MEN ACCESSORIES',
     image: menAccessories,
-    link: '/men-accessories',
+    link: 'https://sellaids.com/product-category/men/fashion-aid-men/accessories-men',
   },
   {
     title: 'MEN BAGS',
     image: menBags,
-    link: '/men-bags',
+    link: 'https://sellaids.com/product-category/men/fashion-aid-men/bags-men',
   },
 ];
 
@@ -111,10 +111,16 @@ const howItWorks = [
 ];
 
 const Fashionaids = () => {
+
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       {/* FASHION AID COLLECTION SECTION */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 mt-10 sm:mt-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 mt-10 sm:mt-4">
         {/* Heading */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-heading text-orange-600 leading-tight mb-6 md:mb-4">
@@ -186,10 +192,8 @@ const Fashionaids = () => {
           backgroundImage: `url(${sellBanner})`,
         }}
       >
-        {/* Optional dark overlay */}
         <div className="absolute inset-0 bg-black opacity-40"></div>
 
-        {/* Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-left text-white">
           <h4 className="uppercase text-orange-400 tracking-widest mb-2 font-semibold text-sm sm:text-base">
             Selling your highly loved fashion items
@@ -203,7 +207,7 @@ const Fashionaids = () => {
             you no longer wear.
           </p>
           <Link
-            to="/sell-now"
+            to="/vendor/login"
             className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 font-semibold text-sm shadow transition"
           >
             Sell Now
@@ -218,10 +222,14 @@ const Fashionaids = () => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-center max-w-7xl mx-auto">
           {howItWorks.map((step, index) => (
-            <div key={index} className="">
+            <div key={index}>
               {step.icon}
-              <h3 className="font-semibold text-gray-900 mb-2">{step.title}</h3>
-              <p className="text-gray-700 text-sm font-body">{step.description}</p>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                {step.title}
+              </h3>
+              <p className="text-gray-700 text-sm font-body">
+                {step.description}
+              </p>
             </div>
           ))}
         </div>

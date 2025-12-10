@@ -312,13 +312,9 @@ export default function ReviewStep({
                 </div>
 
                 <p className="text-sm text-gray-600">
-                  Size: <strong>{item.size}</strong> | Qty: <strong>{item.quantity}</strong>
+                  Size: <strong>{item.size}</strong> 
                 </p>
 
-                {/* <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Package className="w-4 h-4" />
-                  All issue easy returns
-                </p> */}
               </div>
             </div>
           </div>

@@ -5,7 +5,6 @@ import {
   Star,
   StarHalf,
   Heart,
-  Share2,
   ChevronLeft,
   ChevronRight,
   Send,
@@ -31,7 +30,7 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [quantity, setQuantity] = useState(1);
+  // const [quantity, setQuantity] = useState(1);
   const [mainImgIdx, setMainImgIdx] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, text: "" });
@@ -253,13 +252,13 @@ const ProductDetails = () => {
       navigate("/UserAuth/UserLogin", { state: { from: location.pathname, addToCart: product.id } });
       return;
     }
-    try {
-      await api.post("/api/user/cart", { product_id: product.id, quantity });
-      toast.success(`${product.name} added to cart!`);
-      navigate("/user/checkout");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add to cart");
-    }
+    // try {
+    //   await api.post("/api/user/cart", { product_id: product.id, quantity });
+    //   toast.success(`${product.name} added to cart!`);
+    //   navigate("/user/checkout");
+    // } catch (err) {
+    //   toast.error(err.response?.data?.message || "Failed to add to cart");
+    // }
   };
 
   const handleAddToWishlist = async () => {
@@ -276,16 +275,16 @@ const ProductDetails = () => {
     }
   };
 
-  const handleShare = () => {
-    const url = window.location.href;
-    const title = product.name;
-    // const imageUrl = `${process.env.REACT_APP_API_URL}/${product.front_photo}`    
-    if (navigator.share) {
-      navigator.share({ title, url }).catch(() => {});
-    } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`Check out: ${title} - ${url}`)}`, "_blank");
-    }
-  };
+  // const handleShare = () => {
+  //   const url = window.location.href;
+  //   const title = product.name;
+  //   // const imageUrl = `${process.env.REACT_APP_API_URL}/${product.front_photo}`    
+  //   if (navigator.share) {
+  //     navigator.share({ title, url }).catch(() => {});
+  //   } else {
+  //     window.open(`https://wa.me/?text=${encodeURIComponent(`Check out: ${title} - ${url}`)}`, "_blank");
+  //   }
+  // };
 
   const handleAddReview = async () => {
     if (!newReview.text.trim()) return toast.error("Review text is required");
@@ -404,26 +403,26 @@ const ProductDetails = () => {
               <div className="bg-gray-50 p-4 rounded-xl text-center"><p className="text-xs uppercase text-gray-500 font-medium">Size</p><div className="mt-2">{getUnifiedBadge(product.sizes[0] || "N/A")}</div></div>
             </div>
 
-            <div className="flex items-center gap-4 mt-8">
+            {/* <div className="flex items-center gap-4 mt-8">
               <span className="font-medium">Quantity:</span>
               <div className="flex items-center border rounded-lg">
                 <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-3 hover:bg-gray-100">-</button>
                 <span className="w-16 text-center font-bold text-lg">{quantity}</span>
                 <button onClick={() => setQuantity(q => q + 1)} className="p-3 hover:bg-gray-100">+</button>
               </div>
-            </div>
+            </div> */}
 
             <div className="mt-8">
               <div className="hidden sm:flex items-center gap-4">
                 <button onClick={handleAddToCart} className="flex-1 bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition">Add to Cart</button>
                 <button onClick={handleAddToWishlist} className="p-4 border-2 border-gray-300 rounded-xl hover:border-red-500 hover:bg-red-50 group transition"><Heart className="w-6 h-6 text-gray-700 group-hover:text-red-500 group-hover:fill-red-500 transition" /></button>
-                <button onClick={handleShare} className="p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 transition"><Share2 className="w-6 h-6 text-gray-700" /></button>
+                {/* <button onClick={handleShare} className="p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 transition"><Share2 className="w-6 h-6 text-gray-700" /></button> */}
               </div>
               <div className="sm:hidden space-y-4">
                 <button onClick={handleAddToCart} className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition">Add to Cart</button>
                 <div className="flex gap-4">
                   <button onClick={handleAddToWishlist} className="flex-1 p-4 border-2 border-gray-300 rounded-xl hover:border-red-500 hover:bg-red-50 group transition flex items-center justify-center"><Heart className="w-6 h-6 text-gray-700 group-hover:text-red-500 group-hover:fill-red-500 transition" /></button>
-                  <button onClick={handleShare} className="flex-1 p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 transition flex items-center justify-center"><Share2 className="w-6 h-6 text-gray-700" /></button>
+                  {/* <button onClick={handleShare} className="flex-1 p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 transition flex items-center justify-center"><Share2 className="w-6 h-6 text-gray-700" /></button> */}
                 </div>
               </div>
             </div>

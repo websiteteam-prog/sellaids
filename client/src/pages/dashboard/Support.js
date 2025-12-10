@@ -55,8 +55,9 @@ export default function Support() {
         <div className="bg-gray-50 p-5 rounded-lg mb-8">
           <p className="text-gray-700 mb-4">Need help? Contact us anytime:</p>
           <div className="space-y-2 text-lg">
-            <p>Email: <span className="text-red-600 font-bold">{data.email}</span></p>
-            <p>Phone: <span className="text-red-600 font-bold">{data.phone}</span></p>
+            <p>Email: <a href={`mailto:${data.email}`} className="text-red-600 font-bold">{data.email}</a></p>
+<p>Phone: <a href={`tel:${data.phone}`} className="text-red-600 font-bold">{data.phone}</a></p>
+
           </div>
           <Link to="/user/raise-ticket">
             <button className="mt-5 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 font-medium">

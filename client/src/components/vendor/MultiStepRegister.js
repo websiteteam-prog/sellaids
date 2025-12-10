@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast"; 
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -12,6 +12,7 @@ const MultiStepRegister = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [hasShownSuccess, setHasShownSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,6 +36,14 @@ const MultiStepRegister = () => {
     account_type: "",
   });
 
+  const fieldToStep = {
+    name: 1, phone: 1, email: 1, password: 1,
+    designation: 2, business_name: 2, gst_number: 2, pan_number: 2,
+    house_no: 3, street_name: 3, city: 3, state: 3, pincode: 3,
+    alternate_person_name: 4, alternate_person_phone: 4,
+    account_number: 5, ifsc_code: 5, bank_name: 5, account_type: 5,
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
@@ -44,7 +53,7 @@ const MultiStepRegister = () => {
     }
 
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear error on typing
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateStep = (currentStep) => {
@@ -65,15 +74,11 @@ const MultiStepRegister = () => {
       case 2:
         if (!formData.business_name.trim())
           newErrors.business_name = "Business Name is required";
-
-        // GST Validation - Real Indian GSTIN format
         if (!formData.gst_number) {
           newErrors.gst_number = "GST Number is required";
         } else if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gst_number)) {
           newErrors.gst_number = "Invalid GST Number format (e.g., 27ABCDE1234F1Z5)";
         }
-
-        // PAN Validation - Real Indian PAN format
         if (!formData.pan_number) {
           newErrors.pan_number = "PAN Number is required";
         } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan_number)) {
@@ -102,7 +107,6 @@ const MultiStepRegister = () => {
         else if (!/^\d{9,18}$/.test(formData.account_number))
           newErrors.account_number = "Invalid Account Number - Must be 9 to 18 digits";
 
-        // IFSC Validation - Real Indian IFSC format
         if (!formData.ifsc_code.trim())
           newErrors.ifsc_code = "IFSC Code is required";
         else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code)) {
@@ -129,9 +133,7 @@ const MultiStepRegister = () => {
   };
 
   const nextStep = () => {
-    if (validateStep(step)) {
-      setStep((prev) => prev + 1);
-    }
+    if (validateStep(step)) setStep((prev) => prev + 1);
   };
 
   const prevStep = () => {
@@ -150,19 +152,52 @@ const MultiStepRegister = () => {
     }
 
     setIsLoading(true);
+    setHasShownSuccess(false);
+
     try {
       const res = await axios.post(`${API_URL}/api/vendor/auth/register`, formData, {
         headers: { "Content-Type": "application/json" },
       });
 
-      if (res.data.success) {
+      if (res.data.success && !hasShownSuccess) {
         toast.success("Registration Successful! Redirecting...");
-        setTimeout(() => navigate("/vendor/login"), 2000);
-      } else {
-        toast.error(res.data.message || "Registration failed");
+        setHasShownSuccess(true);
       }
+
+      setTimeout(() => navigate("/vendor/login"), 2000);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Server error");
+      if (err.response?.data?.error && Array.isArray(err.response.data.error)) {
+        const backendErrors = {};
+
+        err.response.data.error.forEach((errorItem) => {
+          if (errorItem.path) {
+            const field = errorItem.path;
+            let userMessage = "This field is invalid";
+
+            if (field === "phone") userMessage = "This phone number is already registered";
+            else if (field === "email") userMessage = "This email is already registered";
+            else if (field === "pan_number") userMessage = "This PAN Number is already registered";
+            else if (field === "gst_number") userMessage = "This GST Number is already registered";
+            else if (field === "account_number") userMessage = "This Account Number is already registered";
+            else userMessage = errorItem.message || "Please enter a valid value";
+
+            backendErrors[field] = userMessage;
+          }
+        });
+
+        setErrors((prev) => ({ ...prev, ...backendErrors }));
+
+        if (Object.keys(backendErrors).length > 0) {
+          let errorStep = 5;
+          Object.keys(backendErrors).forEach((field) => {
+            const s = fieldToStep[field] || 5;
+            if (s < errorStep) errorStep = s;
+          });
+          setStep(errorStep);
+        }
+      } else {
+        toast.error(err.response?.data?.message || "Something went wrong. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -181,15 +216,13 @@ const MultiStepRegister = () => {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className={`h-3 w-16 rounded-full transition-all duration-300 ${
-                  i <= step ? "bg-orange-600" : "bg-gray-300"
-                }`}
+                className={`h-3 w-16 rounded-full transition-all duration-300 ${i <= step ? "bg-orange-600" : "bg-gray-300"}`}
               />
             ))}
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Step 1 - Same */}
+            {/* Step 1 */}
             {step === 1 && (
               <>
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Personal Information</h2>
@@ -220,12 +253,17 @@ const MultiStepRegister = () => {
                       {showPassword ? "Hide" : "Show"}
                     </button>
                     {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                    {!errors.password && formData.password && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Include uppercase, lowercase, number & special character
+                      </p>
+                    )}
                   </div>
                 </div>
               </>
             )}
 
-            {/* Step 2 - GST & PAN with Real Format Validation */}
+            {/* Step 2 */}
             {step === 2 && (
               <>
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Business Details</h2>
@@ -259,7 +297,7 @@ const MultiStepRegister = () => {
               </>
             )}
 
-            {/* Step 3 - Address  */}
+            {/* Step 3 */}
             {step === 3 && (
               <>
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Step 3: Business Address</h2>
@@ -278,7 +316,7 @@ const MultiStepRegister = () => {
               </>
             )}
 
-            {/* Step 4 & 5 - Same as before */}
+            {/* Step 4 */}
             {step === 4 && (
               <>
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Alternate Contact (Optional)</h2>
@@ -294,6 +332,7 @@ const MultiStepRegister = () => {
               </>
             )}
 
+            {/* Step 5 */}
             {step === 5 && (
               <>
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Bank Details & Terms</h2>
@@ -340,7 +379,7 @@ const MultiStepRegister = () => {
               </>
             )}
 
-            {/* Buttons */}
+            {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mt-12">
               {step > 1 && (
                 <button type="button" onClick={prevStep}
@@ -366,7 +405,9 @@ const MultiStepRegister = () => {
           </form>
         </div>
       </div>
-      <Toaster position="top-right" />
+
+      {/* TOASTER HATA DIYA — AB DOUBLE TOAST KABHI NHI AAYEGA */}
+      {/* Sirf App.jsx mein ek <Toaster /> hona chahiye */}
     </div>
   );
 };

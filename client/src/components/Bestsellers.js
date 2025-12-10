@@ -221,7 +221,7 @@ function Bestsellers() {
       <div className="py-16 text-center">
         <div className="inline-block animate-spin rounded-full h-10 w-10 border-t-4 border-orange-600 border-solid"></div>
       </div>
-    );
+    )
   }
 
   if (products.length === 0) {
@@ -238,7 +238,7 @@ function Bestsellers() {
 
     return (
       <div className="px-3">
-        <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 rounded-lg">
+        <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 ">
           <div className="relative overflow-hidden bg-gray-50">
             <img
               src={
@@ -247,7 +247,7 @@ function Bestsellers() {
                   : PLACEHOLDER_DATA_URL
               }
               alt={info.description || "Product"}
-              className="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-110"
+              className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110"
               onError={(e) =>
                 (e.target.src = PLACEHOLDER_DATA_URL)
               }
@@ -287,7 +287,7 @@ function Bestsellers() {
     <>
       <div className="bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 mt-[-60px]">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-heading text-black leading-tight text-center mt-0 mb-6 md:mb-12">
+          <h2 className="text-4xl font-heading text-black leading-tight text-center mt-0 mb-6 md:mb-12">
             Bestseller
           </h2>
 
@@ -310,7 +310,7 @@ function Bestsellers() {
       </div>
 
       {/* Cart Popup */}
-      {cartPopup && (
+      {/* {cartPopup && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-green-500 shadow-2xl p-4 flex items-center justify-between z-50 animate-slide-up max-w-7xl mx-auto rounded-t-xl">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative">
@@ -333,7 +333,7 @@ function Bestsellers() {
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       <style>{`
         @keyframes slide-up {

@@ -330,7 +330,7 @@ export default function CartStep({ onNext }) {
 
               <p className="text-sm text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <span>Size: {item.size}</span>
-                <span className="hidden sm:inline">|</span>
+                {/* <span className="hidden sm:inline">|</span>
                 <span className="flex items-center gap-2">
                   Qty:
                   <QuantitySelector
@@ -338,16 +338,9 @@ export default function CartStep({ onNext }) {
                     initialQty={item.quantity}
                     disabled={isEditing}
                   />
-                </span>
+                </span> */}
               </p>
-              {/* 
-              <p className="text-xs text-gray-500 flex items-center gap-1">
-                <Package className="w-3 h-3" />
-                All issue easy returns
-              </p> */}
             </div>
-
-            {/* ACTIONS - Stack on mobile */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 text-sm w-full lg:w-auto mt-4 lg:mt-0">
               <button
                 onClick={() => moveToWishlist(item.product_id)}
