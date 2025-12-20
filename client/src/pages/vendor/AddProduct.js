@@ -5,13 +5,20 @@ import { toast } from "react-hot-toast";
 
 // API URL from .env (production mein change kar dena)
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
+const PRODUCT_CONDITION_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "almost_new", label: "Almost New" },
+  { value: "good", label: "Good" },
+  { value: "hardly_ever_used", label: "Hardly Ever Used" },
+  { value: "satisfactory", label: "Satisfactory" },
+];
 // Reusable FormField Component (exactly same as before)
 const FormField = ({ field, value, onChange, error, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [filteredOptions, setFilteredOptions] = useState(field.options || []);
   const wrapperRef = useRef(null);
+
 
   useEffect(() => {
     if (searchValue && Array.isArray(field.options)) {
@@ -37,12 +44,35 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
   }, []);
 
   const handleSelect = (selectedValue) => {
-    onChange({
-      target: { name: field.name, value: field.name === "productCategory" ? selectedValue.name : selectedValue },
-    });
+    // If condition field
+    if (field.name === "product_condition") {
+      // selectedValue === "new" / "good" etc.
+      onChange({
+        target: {
+          name: field.name,
+          value: selectedValue
+        }
+      });
+    }
+
+    // If category
+    else if (field.name === "productCategory") {
+      onChange({
+        target: { name: field.name, value: selectedValue.name }
+      });
+    }
+
+    // Default
+    else {
+      onChange({
+        target: { name: field.name, value: selectedValue }
+      });
+    }
+
     setSearchValue("");
     setIsOpen(false);
   };
+
 
   const handleToggle = () => setIsOpen(!isOpen);
 
@@ -59,7 +89,12 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
             className={`border rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
             onClick={disabled ? null : handleToggle}
           >
-            {value || `Select ${field.label}`}
+            {
+              field.name === "product_condition"
+                ? (PRODUCT_CONDITION_OPTIONS.find(x => x.value === value)?.label || "Select Condition")
+                : (value || `Select ${field.label}`)
+            }
+
           </div>
           {isOpen && !disabled && (
             <div className="absolute z-10 w-full bg-white border rounded-b mt-1 max-h-40 overflow-y-auto">
@@ -78,7 +113,15 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
                     onClick={() => handleSelect(opt)}
                     className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                   >
-                    {field.name === "productCategory" ? opt.name : opt}
+                    {
+                      field.name === "product_condition"
+                        ? PRODUCT_CONDITION_OPTIONS.find(x => x.value === opt)?.label   // UI label
+                        : field.name === "productCategory"
+                          ? opt.name
+                          : opt
+                    }
+
+
                   </div>
                 ))
               ) : (
@@ -131,6 +174,7 @@ const FormField = ({ field, value, onChange, error, disabled }) => {
           name={field.name}
           value={value}
           onChange={onChange}
+          placeholder={field.placeholder || ""}
           className="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
           rows="4"
         />
@@ -206,21 +250,41 @@ const AddProductForm = () => {
   const [isLoadingTypes, setIsLoadingTypes] = useState(false);
 
   // FETCH CATEGORIES
+  // FETCH CATEGORIES - YE PURA REPLACE KAR DE
   useEffect(() => {
     const fetchCategories = async () => {
+      if (!formData.product_group) {
+        setCategories([]);
+        return;
+      }
+
       setIsLoadingCategories(true);
       try {
-        const res = await axios.get(`${API_URL}/api/product/categories-list`, { withCredentials: true });
-        if (res.data.success) setCategories(res.data.data || []);
-        else setApiError("Failed to load categories");
+        const params = new URLSearchParams();
+        params.append("group", formData.product_group);
+
+        const res = await axios.get(
+          `${API_URL}/api/product/categories-list?${params.toString()}`,
+          { withCredentials: true }
+        );
+
+        if (res.data.success) {
+          setCategories(res.data.data || []);
+        } else {
+          setApiError("Failed to load categories");
+          setCategories([]);
+        }
       } catch (err) {
-        setApiError("Failed to load categories: " + (err.message || ""));
+        setApiError("Failed to load categories");
+        setCategories([]);
+        toast.error("Could not load categories for this group");
       } finally {
         setIsLoadingCategories(false);
       }
     };
+
     fetchCategories();
-  }, []);
+  }, [formData.product_group]); // ← YE SABSE ZAROORI HAI
 
   // FETCH TYPES
   useEffect(() => {
@@ -275,9 +339,9 @@ const AddProductForm = () => {
   const validateStep = () => {
     const newErrors = {};
     const requiredFields = {
-      1: ["product_group", "productCategory", "product_type", "product_condition", "fit", "brand", "model_name"],
+      1: ["product_group", "productCategory", "product_type", "product_condition", "brand"],
       2: ["invoice", "needs_repair", "original_box", "dust_bag"],
-      3: ["front_photo", "back_photo", "label_photo", "inside_photo", "button_photo", "wearing_photo"],
+      3: ["front_photo", "back_photo", "label_photo", "inside_photo", "button_photo"],
       4: ["purchase_price", "selling_price", "purchase_year", "agree"],
     };
 
@@ -314,6 +378,7 @@ const AddProductForm = () => {
       toast.error(firstError || "Please fill all required fields.");
     }
   };
+
 
   const prevStep = () => {
     setStep(step - 1);
@@ -393,13 +458,12 @@ const AddProductForm = () => {
               {steps.map((stepName, index) => (
                 <div key={index} className="flex-1 text-center relative z-10">
                   <div
-                    className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-semibold ${
-                      step > index
-                        ? "bg-orange-600 text-white"
-                        : step === index
-                          ? "bg-orange-400 text-white"
-                          : "bg-gray-200 text-gray-600"
-                    } transition duration-200`}
+                    className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-semibold ${step > index
+                      ? "bg-orange-600 text-white"
+                      : step === index
+                        ? "bg-orange-400 text-white"
+                        : "bg-gray-200 text-gray-600"
+                      } transition duration-200`}
                   >
                     {index + 1}
                   </div>
@@ -464,8 +528,8 @@ const AddProductForm = () => {
                 { name: "product_group", label: "Group *", type: "select", options: ["", "Men", "Women", "Girl", "Boy"] },
                 { name: "productCategory", label: "Product Category *", type: "select", options: isLoadingCategories ? [{ name: "Loading..." }] : categories },
                 { name: "product_type", label: "Product Type *", type: "select", options: isLoadingTypes ? ["Loading..."] : types },
-                { name: "product_condition", label: "Product Condition *", type: "select", options: ["", "new", "almost_new", "good", "hardly_ever_used", "satisfactory"] },
-                { name: "fit", label: "Fit", type: "select", options: ["", "Slim", "Regular", "Loose", "Oversized", "Tailored", "Modern", "Fitted", "Other"] },
+                { name: "product_condition", label: "Product Condition *", type: "select", options: PRODUCT_CONDITION_OPTIONS.map((x) => x.value), labelsMap: PRODUCT_CONDITION_OPTIONS },
+                { name: "fit", label: "Fit(Only For Men Apparel)", type: "select", options: ["", "Slim", "Regular", "Loose", "Oversized", "Tailored", "Modern", "Fitted", "Other"] },
                 {
                   name: "size",
                   label: "Size *",
@@ -480,7 +544,7 @@ const AddProductForm = () => {
                 },
                 { name: "product_color", label: "Product Color", type: "text" },
                 { name: "brand", label: "Brand *", type: "text" },
-                { name: "model_name", label: "Model Name *", type: "text" },
+                { name: "model_name", label: "Model Name ", type: "text" },
               ].map((field) => (
                 <React.Fragment key={field.name}>
                   {field.name === "size" ? (
@@ -553,7 +617,7 @@ const AddProductForm = () => {
                 { name: "label_photo", label: "Label/Logo Photo *", type: "file", accept: "image/*" },
                 { name: "inside_photo", label: "Inside/Close Up Material Image *", type: "file", accept: "image/*" },
                 { name: "button_photo", label: "Button/Studs/Zips/Work Image *", type: "file", accept: "image/*" },
-                { name: "wearing_photo", label: "Image Of Wearing/Carrying *", type: "file", accept: "image/*" },
+                { name: "wearing_photo", label: "Image Of Wearing and Carrying ", type: "file", accept: "image/*" },
                 { name: "more_images", label: "Upload More Images", type: "file", multiple: true, accept: "image/*" },
               ].map((field) => (
                 <FormField
@@ -577,11 +641,27 @@ const AddProductForm = () => {
                 { name: "reason_to_sell", label: "Reason To Sell *", type: "text" },
                 { name: "purchase_year", label: "Purchase Year *", type: "number" },
                 { name: "purchase_place", label: "Purchase Place *", type: "text" },
-                { name: "product_link", label: "Product Reference Link *", type: "url" },
-                { name: "additional_info", label: "Additional Product Information *", type: "textarea" },
+                { name: "product_link", label: "Product Reference Link ", type: "url" },
               ].map((field) => (
                 <FormField key={field.name} field={field} value={formData[field.name]} onChange={handleChange} error={errors[field.name]} />
               ))}
+              {/* Full Width Additional Info */}
+              <div className="col-span-full">
+                <FormField
+                  field={{
+                    name: "additional_info",
+                    label: "Additional Product Information *",
+                    type: "textarea",
+                    placeholder: `Tell us about the measurements if its a stitched garment (upper and bottom separate)
+Tell us about the colour of your product
+Tell us about the dry cleaning/handwash/machine wash instruction if any
+Tell us about the material of your product and give detailed description of your product`,
+                  }}
+                  value={formData.additional_info}
+                  onChange={handleChange}
+                  error={errors.additional_info}
+                />
+              </div>
 
               {/* RESPONSIVE "I agree to the terms" */}
               <div className="col-span-full mt-6 p-4 bg-gray-50 rounded-lg border">
@@ -607,39 +687,39 @@ const AddProductForm = () => {
 
           {/* BUTTONS */}
           <div className="mt-8 pt-6 border-t">
-  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center">
-    {step > 0 && (
-      <button
-        type="button"
-        onClick={prevStep}
-        disabled={isSubmitting}
-        className="w-full sm:w-auto px-8 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition disabled:opacity-50 order-2 sm:order-1"
-      >
-        Back
-      </button>
-    )}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center">
+              {step > 0 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-8 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition disabled:opacity-50 order-2 sm:order-1"
+                >
+                  Back
+                </button>
+              )}
 
-    <div className="w-full sm:w-auto order-1 sm:order-2">
-      {step < steps.length - 1 ? (
-        <button
-          type="button"
-          onClick={nextStep}
-          disabled={isSubmitting}
-          className="w-full px-10 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition disabled:opacity-50"
-        >
-          Next
-        </button>
-      ) : (
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full px-10 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-lg"
-        >
-          {isSubmitting ? "Submitting..." : "Submit Product"}
-        </button>
-      )}
-    </div>
-  </div>
+              <div className="w-full sm:w-auto order-1 sm:order-2">
+                {step < steps.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={isSubmitting}
+                    className="w-full px-10 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full px-10 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-lg"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Product"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </form>
       </div>

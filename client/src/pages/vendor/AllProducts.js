@@ -12,6 +12,7 @@ const getImageUrl = (path) => {
 };
 
 export default function Products() {
+  const [selectedGroup, setSelectedGroup] = useState("");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState("");
@@ -27,17 +28,34 @@ export default function Products() {
   const vendorId = vendorInfo?.id;
 
   // Fetch categories
+  // Fetch categories - GROUP WISE
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/product/categories-list`, {
-        withCredentials: true,
-      });
-      setCategories([{ id: "", name: "All Categories" }, ...res.data.data]);
+      const params = new URLSearchParams();
+      if (selectedGroup) {
+        params.append("group", selectedGroup);
+      }
+
+      const res = await axios.get(
+        `${API_URL}/api/product/categories-list?${params.toString()}`,
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setCategories([
+          { id: "", name: "All Categories" },
+          ...(res.data.data || [])
+        ]);
+      }
     } catch (err) {
       console.error("Error fetching categories:", err);
-      setError("Failed to fetch categories. Please try again.");
+      setCategories([{ id: "", name: "All Categories" }]);
     }
-  }, []);
+  }, [selectedGroup]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   // Fetch products
   const fetchProducts = useCallback(async () => {
@@ -103,15 +121,36 @@ export default function Products() {
       {error && (
         <div className="bg-red-100 text-red-700 p-4 rounded mb-6">{error}</div>
       )}
-
       {/* Filters */}
-      <div className="bg-white p-4 rounded-md shadow mb-6 flex flex-wrap gap-4 items-end">
-        <div className="flex-1 min-w-[150px]">
+      <div className="bg-white p-4 rounded-md shadow mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        {/* Group Filter */}
+        <div>
+          <label className="block font-semibold mb-1">Group</label>
+          <select
+            className="border border-gray-300 rounded px-3 py-2 w-full"
+            value={selectedGroup}
+            onChange={(e) => {
+              setSelectedGroup(e.target.value);
+              setCategory("");
+              setCurrentPage(1);
+            }}
+          >
+            <option value="">All Groups</option>
+            <option value="Men">Men</option>
+            <option value="Women">Women</option>
+            <option value="Girl">Girl</option>
+            <option value="Boy">Boy</option>
+          </select>
+        </div>
+
+        {/* Category Filter */}
+        <div>
           <label className="block font-semibold mb-1">Category</label>
           <select
             className="border border-gray-300 rounded px-3 py-2 w-full"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            disabled={!selectedGroup && selectedGroup !== ""} // optional UX
           >
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
@@ -121,18 +160,20 @@ export default function Products() {
           </select>
         </div>
 
-        <div className="flex-1 min-w-[150px]">
+        {/* Model Name */}
+        <div>
           <label className="block font-semibold mb-1">Model Name</label>
           <input
             type="text"
-            placeholder="Search by model name"
+            placeholder="Search by model"
             className="border border-gray-300 rounded px-3 py-2 w-full"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
           />
         </div>
 
-        <div className="flex-1 min-w-[150px]">
+        {/* SKU */}
+        <div>
           <label className="block font-semibold mb-1">SKU</label>
           <input
             type="text"
@@ -143,7 +184,8 @@ export default function Products() {
           />
         </div>
 
-        <div className="flex space-x-2">
+        {/* Buttons */}
+        <div className="flex gap-3">
           <button
             onClick={fetchProducts}
             className="bg-orange-600 text-white px-5 py-2 rounded hover:bg-orange-700"
@@ -151,7 +193,13 @@ export default function Products() {
             Search
           </button>
           <button
-            onClick={resetFilters}
+            onClick={() => {
+              setSelectedGroup("");
+              setCategory("");
+              setSearchName("");
+              setSearchSKU("");
+              setCurrentPage(1);
+            }}
             className="bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800"
           >
             Reset
@@ -197,13 +245,12 @@ export default function Products() {
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          product.status === "Approved"
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${product.status === "Approved"
                             ? "bg-green-100 text-green-800"
                             : product.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
                       >
                         {product.status || "pending"}
                       </span>

@@ -179,7 +179,7 @@ export const updateProductService = async (productId, vendorId, data, images) =>
       fit: data.fit || product.fit,
       product_color: data.product_color?.trim() || product.product_color,
       brand: data.brand?.trim() || product.brand,
-      model_name: data.model_name?.trim() || product.model_name,
+      model_name: data.model_name?.trim() ?? product.model_name,
 
       invoice: data.invoice || product.invoice,
       needs_repair: data.needs_repair || product.needs_repair,
@@ -243,13 +243,20 @@ export const updateProductService = async (productId, vendorId, data, images) =>
   }
 };
 
-export const fetchCategories = async (search = "") => {
-  return await Category.findAll({
+export const fetchCategories = async (search = "", selectedGroup = "") => {
+  return Category.findAll({
     where: {
-      // status: "active",
-      name: { [Op.like]: `%${search}%` },
+      ...(search && { name: { [Op.like]: `%${search}%` } }),
+      ...(selectedGroup && {
+        [Op.and]: sequelize.where(
+          sequelize.fn('JSON_SEARCH', sequelize.col('group'), 'one', selectedGroup),
+          'IS NOT',
+          null
+        )
+      })
     },
     order: [["name", "ASC"]],
+    attributes: ["id", "name"], 
   });
 };
 

@@ -30,7 +30,12 @@ export const Category = sequelize.define(
     },
     adminId: {
       type: DataTypes.INTEGER,
-      allowNull: false, 
+      allowNull: false,
+    },
+    group: {
+      type: DataTypes.JSON, 
+      allowNull: false,
+      defaultValue: [] 
     },
     created_at: {
       type: DataTypes.DATE,
