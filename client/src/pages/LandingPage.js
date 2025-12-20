@@ -18,7 +18,8 @@ import LuxuryHighlight from '../components/LuxuryHighlight';
 import CTASection from '../components/CTASection';
 import BrandSection from '../components/BrandSection';
 import ImageGallery from '../components/ImageGallery';
-import InfluencerSection from '../components/InfluencerSection';        
+import InfluencerSection from '../components/InfluencerSection';
+import Seo from '../components/Seo';
 
 function LandingPage() {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -27,14 +28,18 @@ function LandingPage() {
     const images = [img1, img2, img3, img4, img5, img6];
 
     useEffect(() => {
-        // Show popup after 300ms when the page loads
         const timer = setTimeout(() => setIsPopupOpen(true), 300);
         return () => clearTimeout(timer);
     }, []);
 
-    const closePopup = () => {
-        setIsPopupOpen(false);
-    };
+    useEffect(() => {
+        const autoplayTimer = setInterval(() => {
+            setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+        }, 3000);
+        return () => clearInterval(autoplayTimer);
+    }, [images.length]);
+
+    const closePopup = () => setIsPopupOpen(false);
 
     const prevSlide = () => {
         setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -46,27 +51,31 @@ function LandingPage() {
 
     return (
         <>
-            {/* top-marquee */}
-            <div className="bg-orange-500 text-white overflow-hidden whitespace-nowrap">
-                <div
-                    className="inline-flex animate-marquee py-2"
-                    style={{ animationDuration: '30s' }}
-                >
+            <Seo
+                title="Sellaids — Sell Your Preowned Collection"
+                description="Sell Your Preowned Collection With Us Today - Simple, Secure And Rewarding."
+                image={img4}
+            />
+
+            {/* Top Marquee */}
+            <div className="bg-orange-500 text-white overflow-hidden whitespace-nowrap mt-[2px]">
+                <div className="inline-flex animate-marquee py-3" style={{ animationDuration: '40s' }}>
                     <span className="mx-4">
-                        Latest Offer: 50% OFF on all products! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        New Collection Coming Soon! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        Free Shipping on Orders Over $50!
+                        Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                        Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                        Up to 70% off from original price on all items
                     </span>
                     <span className="mx-4">
-                        Latest Offer: 50% OFF on all products! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        New Collection Coming Soon! &nbsp; &nbsp; | &nbsp; &nbsp;
-                        Free Shipping on Orders Over $50!
+                        Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                        Up to 70% off from original price on all items &nbsp; &nbsp; | &nbsp; &nbsp;
+                        Up to 70% off from original price on all items
                     </span>
                 </div>
             </div>
 
             {/* Image Banner */}
-            <div className="image-banner w-screen flex overflow-hidden m-0 p-0">
+            <div className="image-banner w-screen flex overflow-hidden m-0 p-0 relative">
+
                 {/* Desktop View */}
                 <div className="hidden md:flex w-full">
                     {images.map((img, i) => (
@@ -76,14 +85,13 @@ function LandingPage() {
                     ))}
                 </div>
 
-                {/* Mobile/Tablet View with Arrows */}
-                <div className="relative w-full md:hidden flex items-center leading-none overflow-hidden">
+                {/* Mobile/Tablet View */}
+                <div className="relative w-full h-[400px] md:hidden overflow-hidden">
                     <img
                         src={images[currentIndex]}
                         alt={`Banner ${currentIndex + 1}`}
                         className="w-full h-full object-cover block"
                     />
-
                     {/* Left Arrow */}
                     <button
                         onClick={prevSlide}
@@ -99,14 +107,30 @@ function LandingPage() {
                     >
                         ❯
                     </button>
-                </div>
 
+                    {/* Marquee Overlap on Mobile */}
+                    <div className="absolute bottom-0 left-0 w-full bg-orange-500 text-white overflow-hidden">
+                        <div
+                            className="flex animate-marquee whitespace-nowrap items-center text-[16px] font-normal font-poppins tracking-wide "
+                            style={{ animationDuration: '40s' }}
+                        >
+                            {[...Array(4)].map((_, i) => (
+                                <React.Fragment key={i}>
+                                    <span className="mx-12">**FLAUNT IT**</span>
+                                    <span className="mx-12">**USE IT**</span>
+                                    <span className="mx-12">**SET IT FREE**</span>
+                                    <span className="mx-12">**FIND IT**</span>
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Marquee */}
-            <div className="w-full overflow-hidden bg-orange-500 text-white">
+            {/* Desktop Only: Same Marquee Below Banner */}
+            <div className="hidden md:block w-full bg-orange-500 text-white overflow-hidden">
                 <div
-                    className="flex animate-marquee whitespace-nowrap items-center text-[16px] font-normal font-poppins tracking-wide will-change-transform"
+                    className="flex animate-marquee whitespace-nowrap items-center text-[16px] font-normal font-poppins tracking-wide"
                     style={{ animationDuration: '20s' }}
                 >
                     {[...Array(2)].map((_, i) => (
@@ -123,17 +147,21 @@ function LandingPage() {
             {/* Popup */}
             {isPopupOpen && <Popup onClose={closePopup} />}
 
-            {/* Other Sections */}
-            <CategoryCarousel />
-            <OverlaySection />
-            <InfluencerSection />
-            <Feature />
-            <Bestsellers />
-            <VogueSection />
-            <CTASection />
-            <LuxuryHighlight />
-            <BrandSection />
-            <ImageGallery />
+            <div className="-mt-20 md:mt-0">
+
+                {/* Other Sections */}
+                <CategoryCarousel />
+                <OverlaySection />
+                <InfluencerSection />
+                <Feature />
+                <Bestsellers />
+                <VogueSection />
+                <CTASection />
+                <LuxuryHighlight />
+                <BrandSection />
+                <ImageGallery />
+
+            </div>
         </>
     );
 }

@@ -19,7 +19,7 @@ const categories = [
     { name: "Saree", img: cat1, link: "/product-category/women/designer-aid/sarees" },
     { name: "Indian Edit", img: cat2, link: "/product-category/women/designer-aid/indian-edit" },
     { name: "Men Apparel", img: cat3, link: "/product-category/men/fashion-aid-men/apparel-men" },
-    { name: "Men Shoes", img: cat4, link: "product-category/men/fashion-aid-men/shoes-men" },
+    { name: "Men Shoes", img: cat4, link: "/product-category/men/fashion-aid-men/shoes-men" },
     { name: "Bespoke Studio", img: cat5, link: "/product-category/men/designer-aid-men/bespoke-studio" },
     { name: "Ethnic Accessories", img: cat6, link: "/product-category/women/designer-aid/ethnic-accessories" },
     { name: "Baby Gear", img: cat7, link: "/product-category/kids/baby-gear" },
@@ -30,7 +30,6 @@ const categories = [
     { name: "Boutique Fit", img: cat12, link: "/product-category/women/designer-aid/boutique-fit" },
     { name: "Women Bags", img: cat13, link: "/product-category/women/fashion-aid/bags" },
 ];
-
 
 function CategoryCarousel() {
     const scrollRef = useRef(null);
@@ -61,16 +60,14 @@ function CategoryCarousel() {
         );
     };
 
-    // 🔹 Navigate handler
     const handleNavigate = (path) => {
         navigate(path);
     };
 
     return (
         <div className="relative w-full bg-white py-6 mt-10">
-            {/* 🔹 Desktop / Tablet View (6 items scrollable) */}
+            {/* Desktop View */}
             <div className="hidden md:block relative">
-                {/* Left Arrow */}
                 <button
                     className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-orange-500 text-white rounded-full w-10 h-10 flex items-center justify-center"
                     onClick={() => scroll("left")}
@@ -78,7 +75,6 @@ function CategoryCarousel() {
                     &#8592;
                 </button>
 
-                {/* Scrollable Container */}
                 <div className="overflow-hidden px-16">
                     <div
                         ref={scrollRef}
@@ -106,11 +102,9 @@ function CategoryCarousel() {
                                 </p>
                             </div>
                         ))}
-
                     </div>
                 </div>
 
-                {/* Right Arrow */}
                 <button
                     className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-orange-500 text-white rounded-full w-10 h-10 flex items-center justify-center"
                     onClick={() => scroll("right")}
@@ -119,11 +113,11 @@ function CategoryCarousel() {
                 </button>
             </div>
 
-            {/* 🔹 Mobile View (1 item at a time) */}
+            {/* Mobile View */}
             <div className="md:hidden relative w-full flex flex-col items-center">
                 <div
                     className="w-60 h-60 rounded-full overflow-hidden border-2 border-gray-200 shadow-lg cursor-pointer"
-                    onClick={() => handleNavigate(categories[currentIndex].name)} // ✅ Navigate mobile
+                    onClick={() => handleNavigate(categories[currentIndex].link)}  // FIXED
                 >
                     <img
                         src={categories[currentIndex].img}
@@ -133,12 +127,11 @@ function CategoryCarousel() {
                 </div>
                 <p
                     className="mt-2 text-base font-semibold text-center text-black cursor-pointer"
-                    onClick={() => handleNavigate(categories[currentIndex].name)}
+                    onClick={() => handleNavigate(categories[currentIndex].link)} // FIXED
                 >
                     {categories[currentIndex].name}
                 </p>
 
-                {/* Left Arrow */}
                 <button
                     onClick={prevSlide}
                     className="absolute top-1/2 left-4 -translate-y-1/2 bg-orange-500 text-white rounded-full w-10 h-10 flex items-center justify-center"
@@ -146,7 +139,6 @@ function CategoryCarousel() {
                     ❮
                 </button>
 
-                {/* Right Arrow */}
                 <button
                     onClick={nextSlide}
                     className="absolute top-1/2 right-4 -translate-y-1/2 bg-orange-500 text-white rounded-full w-10 h-10 flex items-center justify-center"

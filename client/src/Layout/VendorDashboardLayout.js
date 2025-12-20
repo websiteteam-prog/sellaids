@@ -115,6 +115,18 @@ export default function VendorDashboardLayout() {
                   >
                     Add Product
                   </NavLink>
+                  <NavLink
+                    to="/vendor/BulkOrder"
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-4 py-2 rounded-md hover:bg-orange-50 ${
+                        isActive
+                          ? "bg-orange-100 text-orange-600 font-medium"
+                          : "text-gray-700"
+                      }`
+                    }
+                  >
+                    Add Bulk Product
+                  </NavLink>
                 </div>
               )}
             </div>

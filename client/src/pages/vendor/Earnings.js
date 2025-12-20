@@ -10,6 +10,8 @@ import {
   CartesianGrid,
 } from "recharts";
 
+import UserFooter from "../../components/UserFooter";
+
 const Earnings = () => {
   const [stats, setStats] = useState({
     completedEarning: 0,
@@ -74,6 +76,7 @@ const Earnings = () => {
   ];
 
   return (
+    <div>
     <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
 
@@ -176,6 +179,9 @@ const Earnings = () => {
           </div>
         </div>
       </div>
+      </div>
+      {/* UserFooter added */}
+      <UserFooter />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
-
+import UserFooter from "../../components/UserFooter";
 // ENV BASE URL + FLICKER-FREE IMAGE HELPER
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -111,6 +111,7 @@ export default function Products() {
   };
 
   return (
+    <div>
     <div className="max-w-7xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold mb-3">My Products</h1>
       <nav className="text-sm mb-4 text-gray-600">
@@ -310,6 +311,9 @@ export default function Products() {
           </p>
         )}
       </div>
+    </div>
+    {/* UserFooter added */}
+      <UserFooter />
     </div>
   );
 }

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
+import UserFooter from "../../components/UserFooter";
 
-// ENV SE API URL LE RAHE HAIN
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Profile = () => {
@@ -160,6 +160,7 @@ const Profile = () => {
   ];
 
   return (
+    <div>
     <div className="min-h-screen bg-gray-50 px-2 py-6 sm:px-4 lg:px-8">
       <div className="max-w-6xl mx-auto">
 
@@ -360,6 +361,9 @@ const Profile = () => {
           </div>
         </div>
       </div>
+    </div>
+    {/* UserFooter added */}
+      <UserFooter />
     </div>
   );
 };
