@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../../stores/useCartStore";
 import useWishlistStore from "../../stores/useWishlistStore";
@@ -19,6 +19,9 @@ export default function CartStep({ onNext }) {
   const [isEditing, setIsEditing] = useState(false);
   const [addr, setAddr] = useState({ line: "", city: "", pin: "" });
   const [originalAddr, setOriginalAddr] = useState("");
+
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const debounceRef = useRef(null);
 
   /* ---------- IMAGE SLIDER LOGIC ---------- */
   const [activeImages, setActiveImages] = useState({});
@@ -45,6 +48,43 @@ export default function CartStep({ onNext }) {
     ].filter(Boolean)
       .map(path => `${IMG_BASE}/${path}`);
   };
+
+  const handleAddressTyping = (value) => {
+    setAddr((prev) => ({ ...prev, line: value }));
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (value.length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${value}`
+        );
+        const data = await res.json();
+        setAddressSuggestions(data);
+      } catch {
+        setAddressSuggestions([]);
+      }
+    }, 400);
+  };
+
+  const selectAddressSuggestion = (item) => {
+    setAddr({
+      line: item.display_name,
+      city:
+        item.address.city ||
+        item.address.town ||
+        item.address.village ||
+        "",
+      pin: item.address.postcode || "",
+    });
+    setAddressSuggestions([]);
+  };
+
 
   const changeImage = (productId, offsetOrIndex) => {
     setActiveImages((prev) => {
@@ -152,8 +192,8 @@ export default function CartStep({ onNext }) {
       0
     );
 
-    const SHIPPING_FEE = 100;
-    const PLATFORM_FEE = 50;
+    const SHIPPING_FEE = 0;
+    const PLATFORM_FEE = 0;
 
     const finalTotal = totalProductPrice + SHIPPING_FEE + PLATFORM_FEE;
 
@@ -175,8 +215,8 @@ export default function CartStep({ onNext }) {
     0
   );
   const orderTotal = totalProductPrice;
-  const SHIPPING_FEE = 100;
-  const PLATFORM_FEE = 50;
+  const SHIPPING_FEE = 0;
+  const PLATFORM_FEE = 0;
   const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
 
   return (
@@ -200,12 +240,28 @@ export default function CartStep({ onNext }) {
           {isEditing ? (
             <div className="space-y-4 mt-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  placeholder="Address line"
-                  value={addr.line}
-                  onChange={(e) => setAddr({ ...addr, line: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm w-full"
-                />
+                <div className="relative">
+                  <input
+                    placeholder="Address line"
+                    value={addr.line}
+                    onChange={(e) => handleAddressTyping(e.target.value)}
+                    className="border rounded px-3 py-2 text-sm w-full"
+                  />
+
+                  {addressSuggestions.length > 0 && (
+                    <ul className="absolute z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-auto shadow">
+                      {addressSuggestions.map((item) => (
+                        <li
+                          key={item.place_id}
+                          onClick={() => selectAddressSuggestion(item)}
+                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                        >
+                          {item.display_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <input
                   placeholder="City"
                   value={addr.city}

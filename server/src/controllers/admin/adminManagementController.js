@@ -1,4 +1,4 @@
-import { getAdminDashboardService, getAllUsers, getPaymentsWithFiltersService, getAllProductsService, getProductByIdService, updateProductStatusService, getVendorByIdService, updateVendorStatusService, getAllVendorsService, getAllOrdersService, getOrderDetailsService } from "../../services/admin/adminManagementService.js";
+import { getAdminDashboardService, getAllUsers, getPaymentsWithFiltersService, getAllProductsService, getProductByIdService, updateProductStatusService, getVendorByIdService, updateVendorStatusService, getAllVendorsService, getAllOrdersService, getOrderDetailsService, getPaymentCommissionService } from "../../services/admin/adminManagementService.js";
 import { successResponse, errorResponse } from "../../utils/helpers.js";
 import logger from "../../config/logger.js";
 
@@ -212,5 +212,29 @@ export const getPaymentsController = async (req, res) => {
   } catch (err) {
     logger.error("Error fetching payments:", err.message);
     return errorResponse(res, 500, err);
+  }
+};
+
+export const getPaymentCommission = async (req, res) => {
+  try {
+    const vendorId = req.query.vendorId || "all";
+
+    const result = await getPaymentCommissionService(vendorId);
+
+    logger.info("Fetched payment commission data");
+
+    return successResponse(
+      res,
+      200,
+      "Payment commission fetched successfully",
+      result
+    );
+  } catch (error) {
+    logger.error(
+      "Error fetching payment commission:",
+      error.message
+    );
+
+    return errorResponse(res, 500, error);
   }
 };

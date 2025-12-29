@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const useCartStore = create((set) => ({
   cart: [],
@@ -24,6 +25,7 @@ const useCartStore = create((set) => ({
         withCredentials: true,
       });
       set({ cart: res.data.data || [] });
+      toast.success("Product removed from cart");
     } catch (err) {
       console.error('Failed to remove item from cart:', err);
     }

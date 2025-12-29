@@ -23,7 +23,10 @@ export const addToCartController = async (req, res) => {
     const result = await addToCartService(userId, product_id);
 
     if (!result.status) {
-      return res.status(400).json({ success: false, message: result.message || "Failed to add to cart" });
+      return res.status(200).json({
+        success: false,
+        message: result.message,
+      });
     }
 
     logger.info(`Cart add successful for user ${userId}`);

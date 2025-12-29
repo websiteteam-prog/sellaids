@@ -25,7 +25,10 @@ export const addToWishlist = async (req, res) => {
 
     const result = await addToWishlistService(userId, product_id);
     if (!result.status) {
-      return res.status(400).json({ success: false, message: result.message || "Failed to add to wishlist" });
+      return res.status(200).json({
+        success: false,
+        message: result.message,
+      });
     }
 
     logger.info(`Wishlist action (${result.action}) successful for user ${userId}`);

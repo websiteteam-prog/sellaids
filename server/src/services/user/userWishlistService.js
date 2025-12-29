@@ -11,6 +11,13 @@ export const addToWishlistService = async (userId, productId) => {
       return { status: false, message: "Product not found" };
     }
 
+    if (product.stock <= 0 || product.stock_status === "out_of_stock") {
+      return {
+        status: false,
+        message: "Product is out of stock",
+      };
+    }
+
     const existing = await Wishlist.findOne({
       where: { user_id: userId, product_id: productId },
     });
@@ -18,7 +25,10 @@ export const addToWishlistService = async (userId, productId) => {
     if (existing) {
       // If product already in wishlist, do nothing and return success
       logger.info(`Product ${productId} already in wishlist for user ${userId}`);
-      return { status: true, data: existing, action: "already_present" };
+      return {
+        status: false,
+        message: "Product already in wishlist",
+      };
     }
 
     const newItem = await Wishlist.create({
@@ -35,21 +45,21 @@ export const addToWishlistService = async (userId, productId) => {
 };
 
 export const removeFromWishlistService = async (userId, productId) => {
-    try {
-        const deleted = await Wishlist.destroy({
-            where: { user_id: userId, product_id: productId },
-        });
+  try {
+    const deleted = await Wishlist.destroy({
+      where: { user_id: userId, product_id: productId },
+    });
 
-        if (!deleted) {
-            return { success: false, message: "Product not found in wishlist" };
-        }
-
-        logger.info(`Wishlist removed: user ${userId}, product ${productId}`);
-        return { success: true };
-    } catch (error) {
-        logger.error("Error in removeFromWishlistService:", error);
-        throw error;
+    if (!deleted) {
+      return { success: false, message: "Product not found in wishlist" };
     }
+
+    logger.info(`Wishlist removed: user ${userId}, product ${productId}`);
+    return { success: true };
+  } catch (error) {
+    logger.error("Error in removeFromWishlistService:", error);
+    throw error;
+  }
 };
 
 export const getAllWishlistService = async (userId) => {
@@ -62,14 +72,14 @@ export const getAllWishlistService = async (userId) => {
           model: Product,
           as: "product",  // ADD THIS
           attributes: [
-            'id', 'product_type', 'purchase_price', 
-            'front_photo', 'back_photo', 'label_photo', 
+            'id', 'product_type', 'selling_price',
+            'front_photo', 'back_photo', 'label_photo',
             'inside_photo', 'button_photo', 'wearing_photo', 'more_images'
           ],
         },
         {
           model: User,
-          attributes: ['id', 'name'], 
+          attributes: ['id', 'name'],
         },
       ],
     });
@@ -85,7 +95,7 @@ export const getAllWishlistService = async (userId) => {
         product: item.product ? {  // Now it's `item.product` (lowercase)
           id: item.product.id,
           name: item.product.product_type,
-          price: item.product.purchase_price,
+          price: item.product.selling_price,
           front_photo: item.product.front_photo,
           back_photo: item.product.back_photo,
           label_photo: item.product.label_photo,

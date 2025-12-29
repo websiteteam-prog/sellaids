@@ -3,7 +3,7 @@ import { Vendor } from "../../models/vendorModel.js";
 import { Product } from "../../models/productModel.js"
 import { Order } from "../../models/orderModel.js"
 import { Payment } from "../../models/paymentModel.js"
-import { Op } from "sequelize";
+import { Op, fn, col, literal } from "sequelize";
 import { sequelize } from "../../config/db.js";
 
 
@@ -24,6 +24,8 @@ export const getAdminDashboardService = async () => {
         p.selling_price,
         p.additional_info,
         p.status,
+        p.stock,
+        p.stock_status,
         SUM(o.quantity) AS totalSales
       FROM orders o
       JOIN products p ON o.product_id = p.id
@@ -41,6 +43,8 @@ export const getAdminDashboardService = async () => {
       price: item.selling_price || null,
       info: item.additional_info || null,
       status: item.status || null,
+      stock: item.stock,
+      stock_status: item.stock_status || null,
     }));
 
     return {
@@ -427,4 +431,126 @@ export const getPaymentsWithFiltersService = async ({ transaction_id, status, st
   } catch (err) {
     throw new Error(err.message || "Error fetching payments");
   }
+};
+
+export const getPaymentCommissionService = async (vendorId) => {
+  const where =
+    vendorId === "all" ? {} : { vendor_id: vendorId };
+
+  // 1️⃣ STATS (UPDATED BUSINESS LOGIC)
+  const stats = await Payment.findOne({
+    where,
+    attributes: [
+      // ✅ All orders
+      [fn("COUNT", fn("DISTINCT", col("order_id"))), "totalOrders"],
+
+      // ✅ Total amount (ALL statuses)
+      [fn("SUM", col("amount")), "totalAmount"],
+
+      // ✅ Admin commission (ONLY success)
+      [
+        fn(
+          "SUM",
+          literal(
+            `CASE 
+              WHEN payment_status = 'success' 
+              THEN admin_commission 
+              ELSE 0 
+            END`
+          )
+        ),
+        "adminCommission",
+      ],
+
+      // ✅ Vendor payout (ONLY success)
+      [
+        fn(
+          "SUM",
+          literal(
+            `CASE 
+              WHEN payment_status = 'success' 
+              THEN vendor_earning 
+              ELSE 0 
+            END`
+          )
+        ),
+        "vendorPayout",
+      ],
+
+      // ✅ Vendor earnings (ONLY success)
+      [
+        fn(
+          "SUM",
+          literal(
+            `CASE 
+              WHEN payment_status = 'success' 
+              THEN vendor_earning 
+              ELSE 0 
+            END`
+          )
+        ),
+        "totalVendorEarning",
+      ],
+
+      // 🟡 Pending amount
+      [
+        fn(
+          "SUM",
+          literal(
+            `CASE 
+              WHEN payment_status = 'pending' 
+              THEN amount 
+              ELSE 0 
+            END`
+          )
+        ),
+        "totalPendingAmount",
+      ],
+
+      // 🔴 Failed amount
+      [
+        fn(
+          "SUM",
+          literal(
+            `CASE 
+              WHEN payment_status = 'failed' 
+              THEN amount 
+              ELSE 0 
+            END`
+          )
+        ),
+        "totalFailedAmount",
+      ],
+    ],
+    raw: true,
+  });
+
+  // 2️⃣ PAYMENTS LIST (NO CHANGE)
+  const payments = await Payment.findAll({
+    where,
+    attributes: [
+      "id",
+      "order_id",
+      "amount",
+      "admin_commission",
+      "vendor_earning",
+      "payment_status",
+      "transaction_id",
+      [fn("DATE", col("payment_date")), "payment_date"],
+    ],
+    order: [["created_at", "DESC"]],
+    raw: true,
+  });
+
+  // 3️⃣ VENDORS (NO CHANGE)
+  const vendors = await Vendor.findAll({
+    attributes: ["id", "name"],
+    raw: true,
+  });
+
+  return {
+    stats,
+    payments,
+    vendors,
+  };
 };

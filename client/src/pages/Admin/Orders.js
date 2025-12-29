@@ -4,6 +4,7 @@ import { Download, Eye } from "lucide-react";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
+import { generateDummyInvoice } from "../../utils/invoicePdf";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -15,6 +16,9 @@ const Orders = () => {
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceUrl, setInvoiceUrl] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const itemsPerPage = 10;
 
@@ -60,6 +64,34 @@ const Orders = () => {
     setCurrentPage(1);
     fetchOrders();
   };
+
+  const openInvoiceModal = async (order) => {
+    setSelectedOrder(order);
+
+    if (order?.invoice_pdf_url) {
+      setInvoiceUrl(`${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`);
+    } else {
+      const doc = await generateDummyInvoice(order);
+      setInvoiceUrl(doc.output("bloburl"));
+    }
+    setShowInvoiceModal(true);
+  };
+
+
+  const downloadInvoice = async (order) => {
+    if (order?.invoice_pdf_url) {
+      const link = document.createElement("a");
+      link.href = `${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`;
+      link.download = `invoice-${order.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      const doc = await generateDummyInvoice(order); // ✅ await
+      doc.save(`invoice-${order.id}.pdf`);
+    }
+  };
+
 
   const exportExcel = () => {
     if (!orders?.length) return toast.error("No orders to export");
@@ -168,7 +200,8 @@ const Orders = () => {
               <th className="px-4 py-3 border">Product Name</th>
               <th className="px-4 py-3 border">Amount</th>
               <th className="px-4 py-3 border">Status</th>
-              <th className="px-4 py-3 border">Date</th>
+              {/* <th className="px-4 py-3 border">Date</th> */}
+              <th className="px-4 py-3 border">Invoice</th>
               <th className="px-4 py-3 border">Actions</th>
             </tr>
           </thead>
@@ -193,19 +226,29 @@ const Orders = () => {
                   <td className="px-4 py-3 border">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${o.order_status === "delivered"
-                          ? "bg-green-100 text-green-700"
-                          : o.order_status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : o.order_status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-purple-100 text-purple-700"
+                        ? "bg-green-100 text-green-700"
+                        : o.order_status === "pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : o.order_status === "cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-purple-100 text-purple-700"
                         }`}
                     >
                       {o.order_status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 border">
+                  {/* <td className="px-4 py-3 border">
                     {o.order_date ? new Date(o.order_date).toISOString().split("T")[0] : "-"}
+                  </td> */}
+                  <td className="p-3 border text-center flex gap-3 justify-center">
+                    <Eye
+                      className="h-5 w-5 text-blue-600 cursor-pointer"
+                      onClick={() => openInvoiceModal(o)}
+                    />
+                    <Download
+                      className="h-5 w-5 text-green-600 cursor-pointer"
+                      onClick={() => downloadInvoice(o)}
+                    />
                   </td>
                   <td className="px-4 py-3 border">
                     <Link
@@ -222,33 +265,6 @@ const Orders = () => {
         </table>
       </div>
 
-      {/* {totalPages > 1 && (
-        <div className="flex justify-end gap-2 mt-4">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            Prev
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-blue-600 text-white" : ""}`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )} */}
       {totalPages > 1 && (
         <div className="flex justify-end gap-2 mt-4">
 
@@ -330,6 +346,41 @@ const Orders = () => {
           </button>
         </div>
       )}
+
+      {showInvoiceModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center">
+          <div className="bg-white w-[80%] h-[95%] rounded-lg p-4 relative">
+            <button
+              onClick={() => setShowInvoiceModal(false)}
+              className="absolute top-2 right-2 text-red-500 font-bold"
+            >
+              ✕
+            </button>
+
+            <iframe
+              src={invoiceUrl}
+              className="w-full h-[90%] border"
+              title="Invoice Preview"
+            />
+
+            <div className="text-right mt-2">
+              {/* <button
+                onClick={() => downloadInvoice(invoiceUrl)}
+                className="px-4 py-2 bg-green-600 text-white rounded"
+              >
+                Download Invoice
+              </button> */}
+            </div>
+            <button
+              onClick={() => downloadInvoice(selectedOrder)}
+              className="px-4 py-2 bg-green-600 text-white rounded"
+            >
+              Download Invoice
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

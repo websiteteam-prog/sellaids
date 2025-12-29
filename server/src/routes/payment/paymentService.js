@@ -9,6 +9,9 @@ import logger from "../../config/logger.js";
 import { sequelize } from "../../config/db.js";
 import { Vendor } from "../../models/vendorModel.js";
 import { sendSMS } from "../../providers/sms/smsAlert.js"
+import { generateInvoicePDF } from "../../utils/generateInvoice.js";
+import { createShipment } from "../../providers/orderTracking/orderTracking.js";
+import { sendInvoiceEmail } from "../../utils/mailer.js"
 // import { createShipmentService } from "../xpressbees/xpressbeesService.js"
 
 export const createRazorpayInstance = () => {
@@ -28,18 +31,18 @@ export const createRazorpayInstance = () => {
 export const createOrderService = async (userId, cartItems, shippingAddress, finalTotalFromFrontend) => {
   const transaction = await sequelize.transaction();
   try {
-  
+
     if (!cartItems?.length) {
       await transaction.rollback();
       return { status: false, message: "Cart is empty" };
     }
 
     let totalAmount = 0;
-   
+
     for (const item of cartItems) {
-    
+
       const product = await Product.findByPk(item.product_id, { transaction });
-    
+
       if (!product) {
         await transaction.rollback();
         return { status: false, message: `Product ${item.product_id} not found in database` };
@@ -56,7 +59,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       }
 
       const sellingPrice = item.product?.price || product.price;
-    
+
       if (!sellingPrice || sellingPrice <= 0) {
         await transaction.rollback();
         return { status: false, message: `Invalid price for ${product.name}: ${sellingPrice}` };
@@ -65,8 +68,8 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       totalAmount += sellingPrice * item.quantity;
     }
 
-    const SHIPPING_FEE = 100;
-    const PLATFORM_FEE = 50;
+    const SHIPPING_FEE = 0;
+    const PLATFORM_FEE = 0;
     const finalAmount = totalAmount + SHIPPING_FEE + PLATFORM_FEE;
 
     if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
@@ -95,13 +98,13 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       };
 
       await Order.update(
-        { 
-          total_amount: totalAmount, 
-          shipping_address: shippingAddress 
+        {
+          total_amount: totalAmount,
+          shipping_address: shippingAddress
         },
-        { 
-          where: { user_id: userId, payment_status: "pending" }, 
-          transaction 
+        {
+          where: { user_id: userId, payment_status: "pending" },
+          transaction
         }
       );
 
@@ -112,9 +115,9 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
         vendor_earning: totalAmount * 0.8,
       }, { transaction });
 
-      orders = await Order.findAll({ 
-        where: { user_id: userId, payment_status: "pending" }, 
-        transaction 
+      orders = await Order.findAll({
+        where: { user_id: userId, payment_status: "pending" },
+        transaction
       });
       payment = existingPayment;
 
@@ -173,7 +176,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       status: true,
       data: {
         razorpayOrderId: razorpayOrder.id,
-        amount: finalAmount, 
+        amount: finalAmount,
         currency: "INR",
         key: process.env.RAZORPAY_KEY_ID,
         orderIds: orders.map(o => o.id),
@@ -235,7 +238,7 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
     }
     await payment.update(
       {
-        payment_status: "success", 
+        payment_status: "success",
         razorpay_payment_id,
         razorpay_signature,
         transaction_id: razorpay_payment_id,
@@ -279,11 +282,92 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
       logger.warn(`User ${userId} not found for post-payment actions.`);
     } else {
       for (const order of updatedOrders) {
+
+        const fullOrder = await Order.findOne({
+          where: { id: order.id },
+          include: [
+            { model: Product, as: "product" },
+            { model: User },
+            { model: Vendor }
+          ]
+        });
+
+        if (!fullOrder) {
+          logger.warn(`Full order not found for order ${order.id}`);
+          continue;
+        }
+
+        try {
+          // 🔹 Invoice number
+          const invoiceNumber = `INV-${fullOrder.id}-${Date.now()}`;
+
+          // 🔹 Prepare invoice data
+          const invoiceData = {
+            id: fullOrder.id,
+
+            invoiceNumber: invoiceNumber,
+            orderNumber: fullOrder.id,
+            orderDate: new Date(fullOrder.created_at).toDateString(),
+            paymentMethod: "Paid Online",
+
+            customerName: fullOrder.User.name,
+            customerEmail: fullOrder.User.email,
+            customerPhone: fullOrder.User.phone,
+            customerAddress: fullOrder.User.address || "",
+            customerCity: fullOrder.User.city || "",
+            customerCountry: "India",
+
+            shipName: fullOrder.User.name,
+            shipAddress: fullOrder.User.address || "",
+            shipCity: fullOrder.User.city || "",
+            shipCountry: "India",
+
+            items: [
+              {
+                name: fullOrder.product.product_type,
+                sku: fullOrder.product.sku,
+                qty: fullOrder.quantity,
+                price: fullOrder.total_amount
+              }
+            ],
+
+            subtotal: fullOrder.total_amount,
+            shipping_fee: 0,
+            platform_fee: 0,
+            total: fullOrder.total_amount,
+          };
+
+
+          // 🔹 Generate invoice PDF
+          const invoicePath = await generateInvoicePDF(invoiceData);
+
+          // 🔹 Save invoice details in DB
+          await fullOrder.update({
+            invoice_number: invoiceNumber,
+            invoice_pdf_url: invoicePath
+          });
+
+          // 🔹 Send invoice email
+          await sendInvoiceEmail(
+            fullOrder.User.email,
+            invoiceNumber,
+            process.cwd() + "/src/public" + invoicePath
+          );
+
+          logger.info(`Invoice generated & emailed for order ${fullOrder.id}`);
+
+        } catch (invoiceError) {
+          logger.error(
+            `Invoice generation failed for order ${order.id}:`,
+            invoiceError
+          );
+        }
+
         try {
           // Send SMS (safe)
           const smsResponse = await sendSMS(
             user.phone,
-            `Hi ${user.name}, your order ${order.id} has been placed successfully. Thank you for shopping with Stylekins!`
+            `Hi ${fullOrder.User.name}, your order ${fullOrder.id} has been placed successfully. Thank you for shopping with Stylekins!`
           );
 
           console.log("SMS Response for", smsResponse);
@@ -308,11 +392,19 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
           logger.error(`Failed to create Xpressbees shipment for order ${order.id}:`, xbError);
         }
         */
+        try {
+          await createShipment(fullOrder);
+          logger.info(`Xpressbees shipment created for order ${order.id}`);
+        } catch (xbError) {
+          logger.error(`Failed to create Xpressbees shipment for order ${order.id}:`, xbError);
+        }
       }
     }
     return { status: true, data: { orderIds, razorpay_order_id, razorpay_payment_id } };
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     logger.error(`verifyPaymentService error for user ${userId}:`, error);
     return { status: false, message: error.message };
   }
@@ -324,7 +416,7 @@ export const cancelPaymentService = async (userId, razorpayOrderId, orderIds) =>
   try {
     for (const orderId of orderIds) {
       const order = await Order.findOne({
-        where: { id: orderId, user_id: userId, payment_status: "pending" }, 
+        where: { id: orderId, user_id: userId, payment_status: "pending" },
         transaction,
       });
       if (!order) {
@@ -352,7 +444,7 @@ export const cancelPaymentService = async (userId, razorpayOrderId, orderIds) =>
     }
     await payment.update(
       {
-        payment_status: "failed", 
+        payment_status: "failed",
         failure_reason: "Payment cancelled by user",
         updated_at: new Date(),
       },
