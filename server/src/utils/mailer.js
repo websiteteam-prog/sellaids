@@ -32,7 +32,7 @@ console.log("SMTP PASS LENGTH =", config.email.pass ? config.email.pass.length :
 export const sendEmail = async (to, subject, text, html = null) => {
   try {
     const mailOptions = {
-      from: `MyShop Support <${config.email.user}>`,
+      from: `Sellaids Support <${config.email.user}>`,
       to,
       subject,
       text,
@@ -54,7 +54,7 @@ export const sendEmail = async (to, subject, text, html = null) => {
  * @param {string} [footer] - Optional footer text
  * @returns {string} - HTML email template
  */
-export const generateEmailTemplate = (header, content, footer = "Thank you for choosing MyShop!") => {
+export const generateEmailTemplate = (header, content, footer = "Thank you for choosing Sellaids!") => {
   return `
     <!DOCTYPE html>
     <html lang="en">

@@ -39,6 +39,7 @@
     "smsalert": "^1.0.1",
     "uuid": "^13.0.0",
     "winston": "^3.18.3",
+    "xlsx": "^0.18.5",
     "yup": "^1.7.1"
   },
   "devDependencies": {

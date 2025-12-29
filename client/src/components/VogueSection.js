@@ -5,7 +5,7 @@ import vogueImage1 from '../assets/images/image1.webp';
 import vogueImage2 from '../assets/images/image2.webp';
 import vogueImage3 from '../assets/images/image3.webp';
 import vogueImage4 from '../assets/images/image4.webp';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 
 function VogueSection() {
     const images = [vogueImage1, vogueImage2, vogueImage3, vogueImage4];
