@@ -14,6 +14,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
 import Seo from "./Seo";
+import CartRightSlider from "./CartRightSlider"
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -22,13 +23,15 @@ const ProductDetails = () => {
   const id = parseInt(productId);
 
   const { isAuthenticated, isUserLoading, user } = useUserStore();
-  const { setPendingAdd } = useCartActions();
+  const { pendingAdd, setPendingAdd } = useCartActions();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCartSliderOpen, setCartSliderOpen] = useState(false);
+  const [sliderProduct, setSliderProduct] = useState(null);
 
   // const [quantity, setQuantity] = useState(1);
   const [mainImgIdx, setMainImgIdx] = useState(0);
@@ -41,6 +44,40 @@ const ProductDetails = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id, location.key]);
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      pendingAdd?.type === "cart" &&
+      pendingAdd?.from === location.pathname &&
+      pendingAdd?.product?.id
+    ) {
+      (async () => {
+        try {
+          const res = await api.post(
+            "/api/user/cart",
+            { product_id: pendingAdd.product.id },
+            { withCredentials: true }
+          );
+
+          if (res.data.success) {
+            toast.success(res.data.message || "Product added to cart");
+
+            // 🔥 SAME AS CATEGORY PAGE
+            setSliderProduct({
+              product_id: res.data.data.product_id,
+              user_id: res.data.data.user_id,
+            });
+
+            setCartSliderOpen(true);
+          }
+        } catch (err) {
+          toast.error("Failed to add to cart");
+        }
+      })();
+    }
+  }, [isAuthenticated]);
+
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
@@ -116,20 +153,23 @@ const ProductDetails = () => {
         if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
         if (raw.back_photo) mappedProduct.images.push(raw.back_photo);
         if (raw.label_photo) mappedProduct.images.push(raw.label_photo);
-        if (raw.more_images) {
-          try {
-            const extra = JSON.parse(raw.more_images);
-            if (Array.isArray(extra)) {
-              mappedProduct.images.push(
-                ...extra.map((img) =>
-                  img.startsWith("http")
-                    ? img
-                    : `${process.env.REACT_APP_API_URL}${img}`
-                )
-              );
-            }
-          } catch (e) { }
-        }
+        if (raw.inside_photo) mappedProduct.images.push(raw.inside_photo);
+        if (raw.wearing_photo) mappedProduct.images.push(raw.wearing_photo);
+        if (raw.more_images) mappedProduct.images.push(raw.more_images);
+        // if (raw.more_images) {
+        //   try {
+        //     const extra = JSON.parse(raw.more_images);
+        //     if (Array.isArray(extra)) {
+        //       mappedProduct.images.push(
+        //         ...extra.map((img) =>
+        //           img.startsWith("http")
+        //             ? img
+        //             : `${process.env.REACT_APP_API_URL}${img}`
+        //         )
+        //       );
+        //     }
+        //   } catch (e) { }
+        // }
         const getRelatedProductInfo = (p) => {
           let name = "Beautiful Product";
           let rating = 0;
@@ -250,13 +290,23 @@ const ProductDetails = () => {
     if (isUserLoading) return toast.error("Please wait...");
 
     if (!isAuthenticated) {
-      setPendingAdd({ product, from: location.pathname, type: "cart" });
-      toast.error("Please log in to add to cart");
-      navigate("/UserAuth/UserLogin", {
-        state: { from: location.pathname, addToCart: product.id },
+      setPendingAdd({
+        product: {
+          id: product.id,   // 🔑 minimal product object
+        },
+        from: location.pathname,
+        type: "cart",
       });
+
+      toast.error("Please log in to add to cart");
+
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname },
+      });
+
       return;
     }
+
 
     try {
       const res = await api.post(
@@ -267,7 +317,11 @@ const ProductDetails = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        navigate("/user/checkout");
+        setSliderProduct({
+          product_id: res.data.data.product_id,
+          user_id: res.data.data.user_id,
+        });
+        setCartSliderOpen(true);
       } else {
         toast.success(res.data.message);
       }
@@ -303,7 +357,6 @@ const ProductDetails = () => {
       toast.error(err.response?.data?.message || "Failed to add to wishlist");
     }
   };
-
 
   // const handleShare = () => {
   //   const url = window.location.href;
@@ -599,6 +652,11 @@ const ProductDetails = () => {
           </section>
         )}
       </div>
+      <CartRightSlider
+        open={isCartSliderOpen}
+        product={sliderProduct}
+        onClose={() => setCartSliderOpen(false)}
+      />
     </>
   );
 };

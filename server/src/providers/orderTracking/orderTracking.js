@@ -163,3 +163,32 @@ export const trackShipment = async (awbNumber) => {
         };
     }
 };
+
+export const generateShiprocketToken = async () => {
+    try {
+        const response = await axios.post(
+            `${config.shiprocket.baseUrl}/auth/login`,
+            {
+                email: config.shiprocket.email,
+                password: config.shiprocket.password,
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        console.log("Shiprocket Auth Response:", response.data.token);
+
+        if (!response.data?.token) {
+          throw new Error("Shiprocket token missing");
+        }
+
+        return response.data.token;
+
+    } catch (error) {
+        console.error("Shiprocket Auth Error:", error.message);
+        throw error; // calling code ko pata chale
+    }
+};

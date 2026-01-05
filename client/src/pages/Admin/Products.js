@@ -4,6 +4,7 @@ import axios from "axios";
 import { Download, Edit } from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
+import AdminProductEdit from "./AdminProductEdit";
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -13,6 +14,7 @@ const ProductManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [editProduct, setEditProduct] = useState(null);
+  const [adminEditProduct, setAdminEditProduct] = useState(null);
 
   const itemsPerPage = 10;
 
@@ -211,6 +213,12 @@ const ProductManagement = () => {
                       onClick={() => openEditModal(p)}
                       className="text-green-500 hover:text-green-700 flex items-center gap-1"
                     >
+                      <Edit size={16} /> Approvement
+                    </button>
+                    <button
+                      onClick={() => setAdminEditProduct(p)}
+                      className="text-green-500 hover:text-green-700 flex items-center gap-1"
+                    >
                       <Edit size={16} /> Edit
                     </button>
                   </td>
@@ -336,6 +344,15 @@ const ProductManagement = () => {
           </div>
         </div>
       )}
+
+      {adminEditProduct && (
+        <AdminProductEdit
+          product={adminEditProduct}
+          onClose={() => setAdminEditProduct(null)}
+          onUpdateSuccess={fetchProducts}
+        />
+      )}
+
     </div>
   );
 };

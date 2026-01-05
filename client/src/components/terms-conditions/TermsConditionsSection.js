@@ -1,7 +1,7 @@
 // src/components/terms-conditions/TermsConditionsSection.js
 import React from "react";
 import bgImage from "../../assets/images/cta-image.webp";
-import { useNavigate } from "react-router";
+import { useNavigate } from 'react-router-dom';
 
 const TermsConditionsSection = () => {
     const navigate = useNavigate();

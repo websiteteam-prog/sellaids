@@ -75,7 +75,7 @@ export const generateInvoicePDF = async (order = {}) => {
   };
 
   /* ================= LOGO ================= */
-  const logoPath = path.join(process.cwd(), "src/public/logo.webp");
+  const logoPath = path.join(process.cwd(), "src/public/Sellaids-logo-white.png");
   if (fs.existsSync(logoPath)) {
     doc.image(logoPath, MARGIN, 30, { width: 100 });
   }
@@ -99,7 +99,7 @@ export const generateInvoicePDF = async (order = {}) => {
   doc.font("Helvetica-Bold").text("CIN NO:", RIGHT_COL, 170);
   rightValue(order.cin || "-", 170);
 
-  doc.font("Helvetica").text(order.companyPhone || "", RIGHT_COL, 190);
+  doc.font("Helvetica").text("+91 8800425855" || "", RIGHT_COL, 190);
 
   /* ================= TITLE ================= */
   doc.font("Helvetica-Bold").fontSize(22).text("INVOICE", MARGIN, 230);

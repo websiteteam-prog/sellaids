@@ -9,7 +9,7 @@ import coach from "../../assets/images/coach.webp";
 import gucci from "../../assets/images/gucci.webp";
 import michaelKors from "../../assets/images/mk.webp";
 import toryBurch from "../../assets/images/tory.webp";
-import { useNavigate } from "react-router";
+import { useNavigate } from 'react-router-dom';
 
 const tabs = [
     { id: "value", label: "VALUE" },

@@ -7,6 +7,7 @@ import { FaHeart, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
 import useCartStore from "../../stores/useCartStore";
 import { useUserStore } from "../../stores/useUserStore";
 import { useCartActions } from "../../stores/useCartActions";
+import CartRightSlider from "../../components/CartRightSlider";
 
 const CategoryPage = () => {
   const { "*": slugPath } = useParams();
@@ -14,6 +15,11 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(12);
   const loaderRef = useRef(null);
+
+
+  const [isCartSliderOpen, setCartSliderOpen] = useState(false);
+  const [sliderProduct, setSliderProduct] = useState(null);
+
 
   // Final applied filters (products ko filter karne ke liye)
   const [appliedCondition, setAppliedCondition] = useState([]);
@@ -34,7 +40,7 @@ const CategoryPage = () => {
 
   const { fetchCart } = useCartStore();
   const { isAuthenticated, isUserLoading } = useUserStore();
-  const { setPendingAdd } = useCartActions();
+  const { pendingAdd, setPendingAdd } = useCartActions();
 
   const handleNavigate = (id) => navigate(`/product-details/${id}`);
 
@@ -46,6 +52,18 @@ const CategoryPage = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      pendingAdd?.type === "cart" &&
+      pendingAdd.product
+    ) {
+      addToCartDirectly(pendingAdd.product);
+      setPendingAdd(null);
+    }
+  }, [isAuthenticated, pendingAdd]);
+
 
   // Fetch Data
   useEffect(() => {
@@ -89,7 +107,13 @@ const CategoryPage = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        navigate("/user/checkout");
+        console.log("Adding to cart slider2", res.data.data);
+        // navigate("/user/checkout");
+        setSliderProduct({
+          product_id: res.data.data.product_id,
+          user_id: res.data.data.user_id,
+        });
+        setCartSliderOpen(true);
       } else {
         toast.success(res.data.message);
       }
@@ -138,7 +162,9 @@ const CategoryPage = () => {
     if (!isAuthenticated) {
       setPendingAdd({ product, from: location.pathname, type: "cart" });
       toast.error("Please log in to add to cart");
-      navigate("/UserAuth/UserLogin");
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname }
+      });
       return;
     }
     addToCartDirectly(product);
@@ -475,6 +501,17 @@ const CategoryPage = () => {
           )}
         </main>
       </div>
+      <CartRightSlider
+        open={isCartSliderOpen}
+        product={sliderProduct}
+        onClose={() => setCartSliderOpen(false)}
+        onRemove={() => {
+          setCartSliderOpen(false);
+          toast.success("Item removed");
+        }}
+        onContinue={() => setCartSliderOpen(false)}
+      />
+
     </>
   );
 };

@@ -1,10 +1,11 @@
 // src/components/UserAuth/UserProtectedRoute.jsx
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom"; // ← useLocation add kiya
 import { useUserStore } from "../../stores/useUserStore";
 import { useEffect, useState } from "react";
 
 const UserProtectedRoute = () => {
   const { isAuthenticated } = useUserStore();
+  const location = useLocation(); // ← Yeh line add ki – current page ko yaad rakhega
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -21,7 +22,12 @@ const UserProtectedRoute = () => {
     );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/UserAuth/UserLogin" replace />;
+  return isAuthenticated ? (
+    <Outlet />
+  ) : (
+    // ← Yeh line update ki – current location ko state mein pass kar raha hai
+    <Navigate to="/UserAuth/UserLogin" state={{ from: location }} replace />
+  );
 };
 
 export default UserProtectedRoute;

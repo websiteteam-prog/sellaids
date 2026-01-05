@@ -1,4 +1,3 @@
-// src/pages/UserAuth/UserLogin.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link, useLocation } from "react-router-dom";
@@ -31,6 +30,7 @@ function UserLogin() {
     setLoginError("");
 
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     if (!email || !emailRegex.test(email)) {
       setEmailError("Please enter a valid email address.");
       isValid = false;
@@ -57,98 +57,113 @@ function UserLogin() {
       );
 
       const { success, data, message } = res.data;
+
       if (success) {
         login(data);
-
-        // DISMISS ALL PREVIOUS TOASTS (Red "Please log in" wala gayab!)
         toast.dismiss();
-
-        // Show success toast
         toast.success(message || "Login Successful!", { duration: 2000 });
 
-        // Check for pending cart item (from Bestsellers, etc.)
-        if (pendingAdd) {
-          try {
-            await axios.post(
-              `${process.env.REACT_APP_API_URL}/api/user/cart`,
-              { product_id: pendingAdd.product.id },
-              { withCredentials: true }
-            );
+        // 1. Pending Cart Add (checkout flow etc.)
+        // if (pendingAdd) {
+        //   try {
+        //     await axios.post(
+        //       `${process.env.REACT_APP_API_URL}/api/user/cart`,
+        //       { product_id: pendingAdd.product.id },
+        //       { withCredentials: true }
+        //     );
+        //     await fetchCart();
+        //     clearPending();
+        //     navigate("/user/checkout", { replace: true });
+        //   } catch (err) {
+        //     toast.error("Failed to add item to cart");
+        //     navigate("/user/checkout", { replace: true });
+        //   }
+        //   return;
+        // }
 
-            await fetchCart();
-            clearPending();
+        // if (pendingAdd?.type === "cart") {
+        //   // 🔑 sirf redirect karo, cart add category page me useEffect karega
+        //   const redirectTo = pendingAdd.from || "/";
+        //   navigate(redirectTo, { replace: true });
+        //   return;
+        // }
 
-            // Redirect to checkout
-            navigate("/user/checkout");
-          } catch (err) {
-            console.error("Auto add to cart failed", err);
-            toast.error("Failed to add item to cart");
-            navigate("/user/checkout"); // Still go to checkout
-          }
-        }
-        // Check for state-based addToCart (from Bestsellers)
-        else if (location.state?.addToCart) {
-          const productId = location.state.addToCart;
-          try {
-            await axios.post(
-              `${process.env.REACT_APP_API_URL}/api/user/cart`,
-              { product_id: productId },
-              { withCredentials: true }
-            );
+        const redirectTo = pendingAdd?.from || "/";
+        console.log("Redirecting to pendingAdd:", pendingAdd);
+        console.log("Redirecting to:", redirectTo);
+        setTimeout(() => {
+          navigate(redirectTo, { replace: true });
+        }, 0);
+        return;
 
-            await fetchCart();
-            toast.success("Product added to cart!");
-            navigate("/user/checkout");
-          } catch (err) {
-            toast.error("Failed to add to cart");
-            navigate("/user/checkout");
-          }
-        }
-        // Check for wishlist
-        else if (location.state?.addToWishlist) {
-          const productId = location.state.addToWishlist;
-          try {
-            await axios.post(
-              `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
-              { product_id: productId },
-              { withCredentials: true }
-            );
+        // 2. State-based Add to Cart (from product page)
+        // if (location.state?.addToCart) {
+        //   const productId = location.state.addToCart;
+        //   try {
+        //     await axios.post(
+        //       `${process.env.REACT_APP_API_URL}/api/user/cart`,
+        //       { product_id: productId },
+        //       { withCredentials: true }
+        //     );
+        //     await fetchCart();
+        //     toast.success("Product added to cart!");
+        //   } catch (err) {
+        //     toast.error("Failed to add to cart");
+        //   }
+        //   // Wapas usi page pe (product page)
+        //   navigate(location.state.from || "/", { replace: true });
+        //   return;
+        // }
 
-            toast.success("Added to wishlist!");
-            navigate("/user/wishlist");
-          } catch (err) {
-            toast.error("Failed to add to wishlist");
-            navigate("/user/wishlist");
-          }
-        }
-        // Normal redirect
-        else {
-          const from = location.state?.from || "/user";
-          navigate(from);
-        }
+        // 3. State-based Wishlist
+        // if (location.state?.addToWishlist) {
+        //   const productId = location.state.addToWishlist;
+        //   try {
+        //     await axios.post(
+        //       `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+        //       { product_id: productId },
+        //       { withCredentials: true }
+        //     );
+        //     toast.success("Added to wishlist!");
+        //   } catch (err) {
+        //     toast.error("Failed to add to wishlist");
+        //   }
+        //   navigate(location.state.from || "/", { replace: true });
+        //   return;
+        // }
+
+        // 4. Normal case - jahan se aaya tha wahan wapas
+        // const from = location.state?.from?.pathname || "/";
+        // navigate(from, { replace: true });
+        // const redirectTo = pendingAdd?.from || "/";
+        // navigate(redirectTo, { replace: true });
       } else {
         setLoginError("Invalid credentials");
       }
     } catch (err) {
-      console.error(err.response?.data || err.message);
       setLoginError(err.response?.data?.message || "Invalid Credentials");
     } finally {
       setLoading(false);
     }
   };
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
-      toast.dismiss(); // Extra safety
-      navigate(location.state?.from || "/user");
-    }
-  }, [isAuthenticated, navigate, location]);
+  // Agar already logged in hai to turant redirect
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     toast.dismiss();
+  //     const from = location.state?.from?.pathname || "/";
+  //     navigate(from, { replace: true });
+  //   }
+  // }, [isAuthenticated, navigate, location]);
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="w-full max-w-sm bg-white shadow-lg rounded-xl p-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">LOGIN</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
+          LOGIN
+        </h2>
+
         <form onSubmit={handleLogin}>
           <input
             type="email"
@@ -176,14 +191,13 @@ function UserLogin() {
               >
                 {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
               </span>
-             
             )}
-            
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-    Include uppercase, lowercase, number & special character
 
-  </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Include uppercase, lowercase, number & special character
+          </p>
+
           {passwordError && <div className="text-red-500 text-sm mb-2">{passwordError}</div>}
           {loginError && <div className="text-red-500 text-sm mb-4">{loginError}</div>}
 
@@ -195,7 +209,8 @@ function UserLogin() {
 
           <button
             type="submit"
-            className={`w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md ${loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             disabled={loading}
           >
             {loading ? "Logging In..." : "LOGIN"}

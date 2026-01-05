@@ -17,6 +17,7 @@ import useCartStore from "../stores/useCartStore";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
+import CartRightSlider from "./CartRightSlider";
 
 const PLACEHOLDER_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
@@ -37,13 +38,15 @@ function Bestsellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cartPopup, setCartPopup] = useState(null);
+  const [isCartSliderOpen, setCartSliderOpen] = useState(false);
+  const [sliderProduct, setSliderProduct] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const { fetchCart } = useCartStore();
   const { isAuthenticated, isUserLoading } = useUserStore();
-  const { setPendingAdd } = useCartActions();
+  const { pendingAdd, setPendingAdd } = useCartActions();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -90,6 +93,38 @@ function Bestsellers() {
     }
   }, [isAuthenticated, isUserLoading, products, location, navigate]);
 
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      pendingAdd?.type === "cart" &&
+      pendingAdd?.from === location.pathname &&
+      pendingAdd?.product?.id
+    ) {
+      (async () => {
+        try {
+          const res = await axios.post(
+            `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/user/cart`,
+            { product_id: pendingAdd.product.id },
+            { withCredentials: true }
+          );
+
+          if (res.data.success) {
+            toast.success(res.data.message);
+
+            setSliderProduct({
+              product_id: res.data.data.product_id,
+              user_id: res.data.data.user_id,
+            });
+
+            setCartSliderOpen(true);
+          }
+        } catch (err) {
+          toast.error("Failed to add to cart");
+        }
+      })();
+    }
+  }, [isAuthenticated]);
+
   const addToCartDirectly = async (product) => {
     if (isUserLoading || !isAuthenticated) return;
 
@@ -104,7 +139,12 @@ function Bestsellers() {
 
       if (response.data.success) {
         toast.success(response.data.message);
-        navigate("/user/checkout");
+        setSliderProduct({
+          product_id: response.data.data.product_id,
+          user_id: response.data.data.user_id,
+        });
+
+        setCartSliderOpen(true)
       } else {
         toast.success(response.data.message);
       }
@@ -132,7 +172,7 @@ function Bestsellers() {
       setPendingAdd({ product, from: location.pathname, type: "cart" });
       toast.error("Please log in to add to cart");
       navigate("/UserAuth/UserLogin", {
-        state: { from: location.pathname, addToCart: product.id },
+        state: { from: location.pathname },
       });
       return;
     }
@@ -362,6 +402,12 @@ function Bestsellers() {
         }
         .animate-slide-up { animation: slide-up 0.4s ease-out; }
       `}</style>
+
+      <CartRightSlider
+        open={isCartSliderOpen}
+        product={sliderProduct}
+        onClose={() => setCartSliderOpen(false)}
+      />
     </>
   );
 }

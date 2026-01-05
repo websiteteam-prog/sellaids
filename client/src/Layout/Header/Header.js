@@ -152,7 +152,7 @@ const Header = () => {
               <button
                 onClick={() => {
                   setShowEmptyCart(false);
-                  navigate("/");
+                  navigate("/shop");
                 }}
                 className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition"
               >

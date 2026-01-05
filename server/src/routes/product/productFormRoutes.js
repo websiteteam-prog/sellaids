@@ -1,13 +1,12 @@
 import express from "express";
-import { addProductController, getCategories, getProductTypes, getAllProductsController, getProductByIdController, getDashboardController, getEarningsController, updateProductController, bulkUploadProducts, bulkUploadProducts } from "../../controllers/product/productFormController.js";
+import { addProductController, getCategories, getProductTypes, getAllProductsController, getProductByIdController, getDashboardController, getEarningsController, updateProductController, bulkUploadProducts, getAllProductsPublicController } from "../../controllers/product/productFormController.js";
 import { isVendorLoginIn, isVendorOrAdminLoggedIn } from "../../middlewares/authMiddlewares.js";
 import { upload } from "../../middlewares/productUpload.js";
-import { uploadExcel } from "../../middlewares/uploadExcel.js";
 import { uploadExcel } from "../../middlewares/uploadExcel.js"
 
 const router = express.Router();
 
-const uploadFields = upload.fields([
+export const uploadFields = upload.fields([
   { name: "front_photo", maxCount: 1 },
   { name: "back_photo", maxCount: 1 },
   { name: "label_photo", maxCount: 1 },
@@ -29,6 +28,7 @@ router.put("/:id", isVendorLoginIn, uploadFields, updateProductController);
 
 // For Fetch Products Apis for vendors
 router.get("/products-list", isVendorOrAdminLoggedIn, getAllProductsController);
+router.get("/shop/all-products", getAllProductsPublicController);
 router.get("/products/:id", getProductByIdController);
 
 // Dashboard API For vendors
@@ -39,6 +39,5 @@ router.get("/earnings", getEarningsController);
 
 router.post("/bulk-upload", uploadExcel, bulkUploadProducts);
 
-router.post("/bulk-upload", uploadExcel, bulkUploadProducts);
 
 export default router;
