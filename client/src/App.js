@@ -93,6 +93,7 @@ import AdminVendorDetails from "./pages/Admin/AdminVendorDetails";
 import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
 import Category from "./pages/category/Category";
 import AffordableLuxury from "./components/AffordableLuxury";
+import PaymentCommissionDashboard from "./pages/Admin/PaymentCommissionDashboard";
 
 const App = () => {
   const hydrate = useUserStore((s) => s.hydrate);
@@ -200,6 +201,7 @@ const App = () => {
           <Route path="payments" element={<AdminPayments />} />
           <Route path="reviews" element={<AdminReviews />} />
           {/* <Route path="reports" element={<AdminReports />} /> */}
+          <Route path="commission" element={<PaymentCommissionDashboard />} />
           <Route path="profile-settings" element={<Profilesetting />} />
           <Route path="security" element={<AdminSecurity />} />
         </Route>

@@ -7,15 +7,28 @@ export const addToCartService = async (userId, productId) => {
   try {
     logger.info(`Adding product ${productId} to cart for user ${userId}`);
 
+    const product = await Product.findByPk(productId);
+
+    if (!product) {
+      return { status: false, message: "Product not found" };
+    }
+
+    if (product.stock <= 0 || product.stock_status === "out_of_stock") {
+      return {
+        status: false,
+        message: "Product is out of stock",
+      };
+    }
+
     const existingCartItem = await Cart.findOne({
       where: { user_id: userId, product_id: productId },
     });
 
     if (existingCartItem) {
-      existingCartItem.quantity += 1;
-      await existingCartItem.save();
-      logger.info(`Updated quantity for product ${productId} in cart`);
-      return { status: true, data: existingCartItem };
+      return {
+        status: false,
+        message: "Product already in cart",
+      };
     }
 
     const newCartItem = await Cart.create({
@@ -53,10 +66,10 @@ export const getCartService = async (userId) => {
       size: item.size || 'XL',
       product: {
         id: item.product?.id,
-        name: item.product?.product_type || 'Unknown Product', 
+        name: item.product?.product_type || 'Unknown Product',
         price: parseFloat(item.product?.selling_price) || parseFloat(item.product?.purchase_price) || 0, // ✅ Use selling_price first
         original_price: parseFloat(item.product?.purchase_price) || 0, // ✅ For discount calculation        front_photo: item.product?.front_photo || 'N/A', 
-        front_photo: item.product?.front_photo || 'N/A', 
+        front_photo: item.product?.front_photo || 'N/A',
         back_photo: item.product.back_photo,
         label_photo: item.product.label_photo,
         inside_photo: item.product.inside_photo,

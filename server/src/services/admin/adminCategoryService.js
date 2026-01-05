@@ -208,6 +208,8 @@ export const getProductsByCategoryService = async (path, options = {}) => {
                 "more_images",
                 "additional_info",
                 // "description",
+                "stock",
+                "stock_status",
                 "status",
                 "created_at",
                 "category_id",
@@ -239,6 +241,8 @@ export const getProductsByCategoryService = async (path, options = {}) => {
                 size_other: p.size_other,
                 brand: p.brand,
                 category_id: p.category_id,
+                stock: p.stock,
+                stock_status: p.stock_status,
             };
         });
 

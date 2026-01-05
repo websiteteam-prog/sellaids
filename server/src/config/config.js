@@ -38,7 +38,8 @@ const config = {
   },
   xpressbees: {
     baseUrl: process.env.XPRESSBEES_API_BASE_URL,
-    token: process.env.XPRESSBEES_TOKEN
+    email: process.env.XPRESSBEES_EMAIL,
+    password: process.env.XPRESSBEES_PASSWORD
   },
 };
 

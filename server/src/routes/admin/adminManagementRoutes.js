@@ -1,5 +1,5 @@
 import express from "express";
-import { getAdminDashboardController, getAllUsersController, getAllVendorsController, getVendorByIdController, updateVendorStatusController, getAllProductsController , getPaymentsController, getProductByIdController, updateProductStatusController, getAllOrders, getOrderDetails } from "../../controllers/admin/adminManagementController.js";
+import { getAdminDashboardController, getAllUsersController, getAllVendorsController, getVendorByIdController, updateVendorStatusController, getAllProductsController , getPaymentsController, getProductByIdController, updateProductStatusController, getAllOrders, getOrderDetails, getPaymentCommission } from "../../controllers/admin/adminManagementController.js";
 import { isAdminLoginIn } from "../../middlewares/authMiddlewares.js"
 
 const router = express.Router();
@@ -27,5 +27,8 @@ router.get("/order/:id", getOrderDetails);
 
 // payment management 
 router.get('/payment', getPaymentsController );
+
+// payment commission
+router.get("/payment-commission",getPaymentCommission);
 
 export default router;

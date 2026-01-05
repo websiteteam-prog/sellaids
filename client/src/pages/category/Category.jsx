@@ -79,14 +79,21 @@ const CategoryPage = () => {
   // Cart & Wishlist
   const addToCartDirectly = async (product) => {
     if (!isAuthenticated) return;
+
     try {
-      await axios.post(
+      const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/user/cart`,
         { product_id: product._id },
         { withCredentials: true }
       );
-      await fetchCart();
-      toast.success(`${product.product_name} added to cart!`);
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        navigate("/user/checkout");
+      } else {
+        toast.success(res.data.message);
+      }
+
     } catch (error) {
       if (error.response?.status === 401) {
         setPendingAdd({ product, from: location.pathname, type: "cart" });
@@ -96,6 +103,35 @@ const CategoryPage = () => {
       }
     }
   };
+
+
+  const addToWishlistDirectly = async (product) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+        { product_id: product._id },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        navigate("/user/wishlist");
+      } else {
+        toast.success(res.data.message);
+      }
+
+    } catch (error) {
+      if (error.response?.status === 401) {
+        setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+        navigate("/UserAuth/UserLogin");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
+    }
+  };
+
 
   const handleAddToCart = (product) => {
     if (isUserLoading) return toast.error("Please wait...");
@@ -109,11 +145,16 @@ const CategoryPage = () => {
   };
 
   const handleWishlist = (product) => {
-    if (isUserLoading || !isAuthenticated) {
-      toast.error("Please log in");
+    if (isUserLoading) return toast.error("Please wait...");
+
+    if (!isAuthenticated) {
+      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+      toast.error("Please log in to add to wishlist");
+      navigate("/UserAuth/UserLogin");
       return;
     }
-    toast.success("Added to wishlist!");
+
+    addToWishlistDirectly(product);
   };
 
   // Apply Filters
@@ -357,7 +398,7 @@ const CategoryPage = () => {
               let additionalInfo = {};
               try {
                 additionalInfo = JSON.parse(product?.product_additionalInfo || "{}");
-              } catch (err) {}
+              } catch (err) { }
 
               return (
                 <div key={product._id} className="group overflow-hidden border-gray-100 transition-all duration-300">
@@ -365,13 +406,44 @@ const CategoryPage = () => {
                     <img
                       src={`${process.env.REACT_APP_API_URL}/${product?.product_img}`}
                       alt={product.product_name}
-                      className="object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out group-hover:scale-105"
+                      onClick={() => handleNavigate(product._id)}
+                      className={`object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out
+                      ${product.stock === 0 ? "grayscale cursor-not-allowed" : "cursor-pointer group-hover:scale-105"}`}
                     />
-                    <div className="absolute inset-0 flex justify-center items-end gap-3 opacity-0 translate-y-5 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-in-out pb-4">
-                      <button onClick={() => handleWishlist(product)} className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition">
+
+                    {/* OUT OF STOCK overlay – only on image */}
+                    {product.stock === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center
+                    bg-black/60 rounded-t-xl">
+                        <span className="text-white text-xl font-bold tracking-widest
+                       border-2 border-white px-5 py-2 rounded-lg">
+                          OUT OF STOCK
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 flex justify-center items-end gap-3 
+                  opacity-0 translate-y-5 
+                  group-hover:opacity-100 group-hover:translate-y-0 
+                  transition-all duration-300 ease-in-out pb-4
+                  pointer-events-none">
+
+                      {/* Wishlist Button */}
+                      <button
+                        onClick={() => handleWishlist(product)}
+                        className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition
+                 pointer-events-auto"
+                      >
                         <FaHeart className="text-lg" />
                       </button>
-                      <button onClick={() => handleAddToCart(product)} className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition">
+
+                      {/* Cart Button */}
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition
+                 pointer-events-auto"
+                      >
                         <FaShoppingCart className="text-lg" />
                       </button>
                     </div>

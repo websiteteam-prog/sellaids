@@ -1,5 +1,6 @@
 import { productSchema, updateProductSchema } from "../../validations/productFormValidation.js";
 import { createProductService, fetchCategories, fetchProductTypesByCategory, getAllProductsService, getProductByIdService, getDashboardStatsService, getEarningsStatsService, updateProductService, processBulkProducts } from "../../services/product/productFormService.js";
+import { createProductService, fetchCategories, fetchProductTypesByCategory, getAllProductsService, getProductByIdService, getDashboardStatsService, getEarningsStatsService, updateProductService, processBulkProducts } from "../../services/product/productFormService.js";
 import logger from "../../config/logger.js";
 import { Product } from "../../models/productModel.js";
 
@@ -144,30 +145,30 @@ export const updateProductController = async (req, res) => {
   }
 };
 
-export const getCategories = async (req, res) => {
-  try {
-    const vendorId = req.session.vendor?.vendorId;
-    const isAdmin = !!req.session.admin?.adminId;
-    if (!vendorId && !isAdmin) {
-      return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
-    }
+  export const getCategories = async (req, res) => {
+    try {
+      const vendorId = req.session.vendor?.vendorId;
+      const isAdmin = !!req.session.admin?.adminId;
+      if (!vendorId && !isAdmin) {
+        return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
+      }
 
-    const { search = "" } = req.query;
-    const categories = await fetchCategories(search);
-    res.json({
-      success: true,
-      message: "Categories fetched successfully",
-      data: categories,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch categories",
-      error: error.message,
-    });
-  }
-};
+      const { search = "", group = "" } = req.query;
+      const categories = await fetchCategories(search, group);
+      res.json({
+        success: true,
+        message: "Categories fetched successfully",
+        data: categories,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch categories",
+        error: error.message,
+      });
+    }
+  };
 
 export const getProductTypes = async (req, res) => {
   try {

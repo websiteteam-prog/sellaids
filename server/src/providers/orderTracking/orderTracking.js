@@ -1,0 +1,165 @@
+import axios from 'axios';
+import config from '../../config/config.js';
+import logger from '../../config/logger.js';
+
+const getToken = async () => {
+    try {
+        const res = await axios.post(
+            `${config.xpressbees.baseUrl}/users/login`,
+            {
+                email: config.xpressbees.email,
+                password: config.xpressbees.password,
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        // ✅ TOKEN IS DIRECT STRING
+        const token = res.data?.data;
+
+        if (!token) {
+            logger.error("❌ Xpressbees token missing", res.data);
+            return null;
+        }
+
+        return token;
+    } catch (error) {
+        logger.error(
+            "❌ Xpressbees login failed:",
+            error.response?.data || error.message
+        );
+        return null;
+    }
+};
+
+export const createShipment = async (order) => {
+    const token = await getToken();
+    if (!token) throw new Error("XpressBees: Token generation failed");
+
+    const payload = {
+        // order_number: order.id,
+        order_number: `ORD-${order.id}`,
+        unique_order_number: "yes",
+        shipping_charges: 100,
+        payment_type: "prepaid",
+        order_amount: order.total_amount,
+        request_auto_pickup: "yes",
+
+        consignee: {
+            name: order.User.name,
+            address: order.User.address_line,
+            city: order.User.city,
+            state: order.User.state,
+            pincode: order.User.pincode,
+            phone: order.User.phone
+        },
+
+        pickup: {
+            warehouse_name: "Delhi Warehouse",
+            name: order.Vendor.business_name,
+            address: `${order.Vendor.house_no}, ${order.Vendor.street_name}`,
+            city: order.Vendor.city,
+            state: order.Vendor.state,
+            pincode: order.Vendor.pincode,
+            phone: order.Vendor.phone
+        },
+
+        order_items: [
+            {
+                name: order.product.product_type,
+                qty: String(order.quantity),
+                price: String(order.total_amount),
+                sku: order.product.sku,
+            },
+        ],
+
+        collectable_amount: 0   // COD nahi hai isliye 0
+    };
+
+    try {
+        console.log("E")
+        const response = await axios.post(
+            `${config.xpressbees.baseUrl}/shipments2`,
+            payload,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer Token ${token}`
+                }
+            }
+        );
+
+        console.log(response)
+        console.log("F")
+
+        if (response.data.status) {
+            const data = response.data.data;
+            console.log("Success! AWB:", data?.awb_number);
+            console.log("Label PDF:", data?.label_url);
+            console.log("Label PDF2:", data?.label);
+            console.log("Tracking Link:", data?.tracking_url);
+
+            await sendSMS(
+                order.User.phone,
+                `Hi ${order.User.name}, your order ${order.id} has been shipped and is on its way! Thank you for shopping with Stylekins!`
+            );
+            return { success: true, awb: data.awb_number, label: data.label };
+        } else {
+            console.error("Xpressbees Error:", response.data.message);
+            return { success: false, message: response.data.message };
+        }
+    } catch (error) {
+        console.log("Error:", error.response?.data || error.message);
+        return { success: false, message: error.response?.data?.message || "Network error" };
+    }
+}
+
+
+export const trackShipment = async (awbNumber) => {
+    const token = await getToken(); // Token har baar fresh lo
+    if (!token) throw new Error('Token failed');
+    if (!awbNumber) {
+        throw new Error("AWB number required for tracking");
+    }
+
+    const trackUrl = `${config.xpressbees.baseUrl}/shipments2/track/${awbNumber}`
+
+    try {
+        const response = await axios.get(trackUrl, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer Token ${token}`
+            }
+        });
+
+        if (response.data.status) {
+            const trackingData = response.data.data;
+            console.log("Tracking Success!");
+            console.log("Current Status:", trackingData.status);
+            console.log("AWB Number:", trackingData.awb_number);
+            console.log("History:", trackingData.history);
+            console.log("Full Data:", trackingData);
+
+            return {
+                success: true,
+                data: trackingData  // Poora tracking data return karo
+            };
+        } else {
+            console.error("Tracking Error:", response.data.message || "Unknown error");
+            return {
+                success: false,
+                message: response.data.message || "Tracking failed"
+            };
+        }
+
+    } catch (error) {
+        console.error("Tracking API Error:", error.response?.data || error.message);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Network or API error"
+        };
+    }
+};

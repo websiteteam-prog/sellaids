@@ -81,7 +81,7 @@ const Header = () => {
             </div>
             <div className="relative group">
               <Link
-                to={`/product-category/${womenCategories?.slug}`}
+                to={`/product-category/${menCategories?.slug}`}
                 className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
                 {menCategories?.name}
                 <ChevronDown size={16} />

@@ -52,6 +52,7 @@ function Bestsellers() {
           `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/admin/management/dashboard`
         );
         const topProducts = res.data?.data?.top_products || [];
+        console.log(res.data)
         setProducts(topProducts);
       } catch (error) {
         console.error("Error fetching bestsellers:", error);
@@ -93,20 +94,21 @@ function Bestsellers() {
     if (isUserLoading || !isAuthenticated) return;
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/user/cart`,
         { product_id: product.id },
         { withCredentials: true }
       );
 
-      setCartPopup({
-        name: product.name || "Product",
-        price: product.price,
-        img: product.img || PLACEHOLDER_DATA_URL,
-      });
-
       await fetchCart();
-      navigate("/user/checkout");
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        navigate("/user/checkout");
+      } else {
+        toast.success(response.data.message);
+      }
+
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to add to cart";
       toast.error(msg);
@@ -119,6 +121,7 @@ function Bestsellers() {
       }
     }
   };
+
 
   const handleAddToCart = (product) => {
     if (isUserLoading) {
@@ -140,13 +143,17 @@ function Bestsellers() {
     if (isUserLoading || !isAuthenticated) return;
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/user/wishlist`,
         { product_id: product.id },
         { withCredentials: true }
       );
-      toast.success(`${product.name || "Product"} added to wishlist!`);
-      navigate("/user/wishlist");
+      if (response.data.success) {
+        toast.success(response.data.message);
+        navigate("/user/wishlist");
+      } else {
+        toast.success(response.data.message);
+      }
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to add to wishlist";
       toast.error(msg);
@@ -247,11 +254,24 @@ function Bestsellers() {
                   : PLACEHOLDER_DATA_URL
               }
               alt={info.description || "Product"}
-              className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110"
-              onError={(e) =>
-                (e.target.src = PLACEHOLDER_DATA_URL)
-              }
+              className={`w-full h-80 object-cover transition-transform duration-700
+      ${product.stock === 0
+                  ? "grayscale cursor-not-allowed"
+                  : "group-hover:scale-105"
+                }`}
+              onError={(e) => (e.target.src = PLACEHOLDER_DATA_URL)}
             />
+
+            {/* OUT OF STOCK overlay – SAME as other cards */}
+            {product.stock === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center
+                    bg-black/60 rounded-t-xl">
+                <span className="text-white text-xl font-bold tracking-widest
+                       border-2 border-white px-5 py-2 rounded-lg">
+                  OUT OF STOCK
+                </span>
+              </div>
+            )}
 
             <div className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-lg p-3 flex flex-col gap-3 shadow-xl opacity-0 group-hover:opacity-100 translate-x-full group-hover:translate-x-0 transition-all duration-300 ease-in-out z-10">
               <button onClick={(e) => { e.stopPropagation(); handleWishlist(product); }} className="text-gray-600 hover:text-red-500 transition">
