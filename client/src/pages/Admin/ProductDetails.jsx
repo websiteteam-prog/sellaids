@@ -81,11 +81,36 @@ const ProductDetails = () => {
       </div>
     );
 
-  // Convert JSON string to array safely
-  const moreImages = product.more_images ? JSON.parse(product.more_images) : [];
-  const additionalInfo = product.additional_info
-    ? JSON.parse(product.additional_info)
-    : null;
+  // 🔹 MORE IMAGES (SAFE + OPTIONAL CHAINING)
+  let moreImages = [];
+
+  if (product?.more_images) {
+    if (Array.isArray(product?.more_images)) {
+      moreImages = product.more_images;
+    } else if (
+      typeof product?.more_images === "string" &&
+      product?.more_images?.startsWith("[")
+    ) {
+      moreImages = JSON.parse(product.more_images);
+    } else {
+      moreImages = [];
+    }
+  }
+
+  // 🔹 ADDITIONAL INFO (SAFE + OPTIONAL CHAINING)
+  let additionalInfo = null;
+
+  if (product?.additional_info) {
+    if (typeof product?.additional_info === "object") {
+      additionalInfo = product.additional_info;
+    } else if (
+      typeof product?.additional_info === "string" &&
+      product?.additional_info?.startsWith("{")
+    ) {
+      additionalInfo = JSON.parse(product.additional_info);
+    }
+  }
+
 
   const productConditionMap = {
     new: "New",
@@ -201,31 +226,11 @@ const ProductDetails = () => {
             <strong>Reason to Sell:</strong> {product.reason_to_sell}
           </p>
           <p>
-            {/* <strong>Additional Info:</strong> {product.additional_info}description  */}
-            <strong>Additional Info:</strong> {additionalInfo.description}
+            <strong>Additional Info:</strong> {additionalInfo?.description}
           </p>
           <p>
             <strong>Invoice:</strong> {product.invoice}
           </p>
-          {product.invoice_photo && (
-            <img
-              src={product.invoice_photo}
-              alt="Invoice"
-              className="w-40 h-40 object-cover rounded-lg border"
-            />
-          )}
-          {product.repair_photo && (
-            <div>
-              <p className="mt-2">
-                <strong>Repair Needed:</strong> {product.needs_repair}
-              </p>
-              <img
-                src={product.repair_photo}
-                alt="Repair"
-                className="w-40 h-40 object-cover rounded-lg border"
-              />
-            </div>
-          )}
           <p>
             <strong>Purchase Price:</strong> ₹{product.purchase_price}
           </p>

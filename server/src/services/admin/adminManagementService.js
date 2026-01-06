@@ -130,7 +130,7 @@ export const updateVendorStatusService = async (id, status) => {
   return vendor;
 };
 
-export const adminUpdateProductService  = async (productId, vendorId, data, images) => {
+export const adminUpdateProductService = async (productId, vendorId, data, images) => {
   const t = await sequelize.transaction();
   try {
     const product = await Product.findOne({
@@ -641,6 +641,31 @@ export const getPaymentCommissionService = async (vendorId) => {
         ),
         "totalFailedAmount",
       ],
+
+      // ✅ Operational Fees
+      [
+        fn(
+          "SUM",
+          literal(
+            `IFNULL(shipping_fee, 0) + IFNULL(platform_fee, 0)`
+          )
+        ),
+        "operationalFees",
+      ],
+
+      // ✅ Total Admin Revenue
+      [
+        fn(
+          "SUM",
+          literal(
+            `IFNULL(admin_commission, 0) 
+            + IFNULL(shipping_fee, 0) 
+            + IFNULL(platform_fee, 0)`
+          )
+        ),
+        "totalAdminRevenue",
+      ],
+
     ],
     raw: true,
   });

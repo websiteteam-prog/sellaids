@@ -20,6 +20,8 @@ const PaymentCommissionDashboard = () => {
         }
       );
 
+      console.log("Payment & Commission Data:", res.data);
+
       setData(res?.data?.data ?? null);
     } catch (err) {
       setError("Failed to load payment & commission data");
@@ -101,6 +103,14 @@ const PaymentCommissionDashboard = () => {
           label="Total Failed Amount"
           value={`₹${stats?.totalFailedAmount ?? 0}`}
           color="red"
+        />
+        <Stat
+          label="Total Admin Revenue"
+          value={`₹${stats?.totalAdminRevenue ?? 0}`}
+        />
+        <Stat
+          label="Operational Fees"
+          value={`₹${stats?.operationalFees ?? 0}`}
         />
       </div>
 

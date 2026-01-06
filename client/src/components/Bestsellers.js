@@ -18,6 +18,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
 import CartRightSlider from "./CartRightSlider";
+import { useMediaQuery } from "react-responsive";
 
 const PLACEHOLDER_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
@@ -40,6 +41,7 @@ function Bestsellers() {
   const [cartPopup, setCartPopup] = useState(null);
   const [isCartSliderOpen, setCartSliderOpen] = useState(false);
   const [sliderProduct, setSliderProduct] = useState(null);
+  const isMobile475 = useMediaQuery({ maxWidth: 475 });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -286,7 +288,8 @@ function Bestsellers() {
     return (
       <div className="px-3">
         <div className="group relative bg-white overflow-hidden transition-all duration-300 border border-gray-100 ">
-          <div className="relative overflow-hidden bg-gray-50">
+          <div className="relative overflow-hidden bg-gray-50 cursor-pointer"
+            onClick={() => navigate(`/product-details/${product.id}`)}>
             <img
               src={
                 product.img && product.img !== "null" && product.img.trim()
@@ -351,7 +354,7 @@ function Bestsellers() {
             Bestseller
           </h2>
 
-          {products.length <= 4 ? (
+          {/* {products.length <= 4 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -365,35 +368,34 @@ function Bestsellers() {
                 ))}
               </Slider>
             </div>
+          )} */}
+          {/* MOBILE (≤475px): Always Y-axis list */}
+          {isMobile475 ? (
+            <div className="grid grid-cols-1 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : products.length <= 4 ? (
+            /* DESKTOP/TABLET – Normal Grid */
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            /* DESKTOP/TABLET – Slider */
+            <div className="relative">
+              <Slider {...settings}>
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </Slider>
+            </div>
           )}
+
         </div>
       </div>
-
-      {/* Cart Popup */}
-      {/* {cartPopup && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-green-500 shadow-2xl p-4 flex items-center justify-between z-50 animate-slide-up max-w-7xl mx-auto rounded-t-xl">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative">
-              <img src={cartPopup.img} alt={cartPopup.name} className="w-16 h-16 object-cover rounded-lg border" />
-              <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">Check</div>
-            </div>
-            <div>
-              <p className="font-semibold text-sm line-clamp-1">{cartPopup.name}</p>
-              <p className="text-sm text-green-600 font-medium">
-                ₹{Number(cartPopup.price).toLocaleString("en-IN")} added to cart
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => { setCartPopup(null); navigate("/user/checkout"); }} className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition">
-              View Cart
-            </button>
-            <button onClick={() => setCartPopup(null)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
-              Continue
-            </button>
-          </div>
-        </div>
-      )} */}
 
       <style>{`
         @keyframes slide-up {

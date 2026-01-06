@@ -68,9 +68,20 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       totalAmount += sellingPrice * item.quantity;
     }
 
+    const COMMISSION = {
+      vendor: 70,
+      admin: 30,
+    };
+
     const SHIPPING_FEE = 0;
     const PLATFORM_FEE = 0;
     const finalAmount = totalAmount + SHIPPING_FEE + PLATFORM_FEE;
+
+    const vendorEarning = Number(((totalAmount * COMMISSION.vendor) / 100).toFixed(2));
+    const adminCommission = Number(
+      (totalAmount - vendorEarning + SHIPPING_FEE + PLATFORM_FEE).toFixed(2)
+    );
+
 
     if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
       await transaction.rollback();
@@ -112,7 +123,8 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
         amount: finalAmount,
         shipping_fee: SHIPPING_FEE,
         platform_fee: PLATFORM_FEE,
-        vendor_earning: totalAmount * 0.8,
+        vendor_earning: vendorEarning,
+        admin_commission: adminCommission,
       }, { transaction });
 
       orders = await Order.findAll({
@@ -161,7 +173,8 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
         amount: finalAmount,
         shipping_fee: SHIPPING_FEE,
         platform_fee: PLATFORM_FEE,
-        vendor_earning: totalAmount * 0.8,
+        vendor_earning: vendorEarning,
+        admin_commission: adminCommission,
         payment_status: "pending",
         payment_date: new Date(),
         payment_info: razorpayOrder,

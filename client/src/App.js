@@ -83,7 +83,6 @@ import AdminVendors from "./pages/Admin/Vendors";
 import AdminProducts from "./pages/Admin/Products";
 import AdminOrders from "./pages/Admin/Orders";
 import AdminPayments from "./pages/Admin/Payments";
-import AdminReviews from "./pages/Admin/Reviews"
 import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
 import AdminLogin from "./pages/Admin/AdminLogin";
@@ -201,8 +200,6 @@ const App = () => {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
           <Route path="payments" element={<AdminPayments />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          {/* <Route path="reports" element={<AdminReports />} /> */}
           <Route path="commission" element={<PaymentCommissionDashboard />} />
           <Route path="profile-settings" element={<Profilesetting />} />
           <Route path="security" element={<AdminSecurity />} />
