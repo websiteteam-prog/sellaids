@@ -27,6 +27,7 @@ const Header = () => {
     const fetchCategories = async () => {
       try {
         const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/category`, { withCredentials: true });
+        console.log(res.data);
         if (res.data.success && Array.isArray(res.data.data)) {
           const data = res.data.data;
           const women = data.find(c => c.slug === "women") || {};
@@ -80,7 +81,7 @@ const Header = () => {
             </div>
             <div className="relative group">
               <Link
-                to={`/product-category/${womenCategories?.slug}`}
+                to={`/product-category/${menCategories?.slug}`}
                 className="flex items-center gap-1 cursor-pointer hover:text-orange-500 text-base text-gray-700 font-medium">
                 {menCategories?.name}
                 <ChevronDown size={16} />
@@ -100,8 +101,6 @@ const Header = () => {
               SELL WITH US
             </Link>
           </nav>
-
-
 
           {/* Icons */}
           <div className="flex items-center gap-2 md:gap-6">
@@ -137,18 +136,33 @@ const Header = () => {
       <MobileMenuDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       {/* Empty Cart & Search Modals */}
-      {showEmptyCart && (
-        <div className янва="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-8 text-center max-w-sm w-full">
-            <ShoppingCart size={60} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Your cart is empty!</h3>
-            <button onClick={() => setShowEmptyCart(false)} className="mt-6 px-8 py-3 bg-orange-500 text-white rounded-lg font-bold">
-              Continue Shopping
-            </button>
+       {showEmptyCart && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center animate-fade-in">
+            <ShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Your cart is empty!</h3>
+            <p className="text-sm text-gray-600 mb-6">Looks like you haven’t added anything yet.</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowEmptyCart(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowEmptyCart(false);
+                  navigate("/shop");
+                }}
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition"
+              >
+                Continue Shopping
+              </button>
+            </div>
           </div>
         </div>
       )}
-
+      
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );

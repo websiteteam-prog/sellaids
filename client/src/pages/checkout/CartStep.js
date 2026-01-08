@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../../stores/useCartStore";
 import useWishlistStore from "../../stores/useWishlistStore";
@@ -9,9 +9,6 @@ import QuantitySelector from "../../pages/checkout/QuantitySelector";
 
 const STORAGE_KEY = "orderData";
 const IMG_BASE = process.env.REACT_APP_API_URL;
-const PLACEHOLDER_DATA_URL =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
-
 
 export default function CartStep({ onNext }) {
   const { cart, fetchCart, removeFromCart } = useCartStore();
@@ -22,6 +19,9 @@ export default function CartStep({ onNext }) {
   const [isEditing, setIsEditing] = useState(false);
   const [addr, setAddr] = useState({ line: "", city: "", pin: "" });
   const [originalAddr, setOriginalAddr] = useState("");
+
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const debounceRef = useRef(null);
 
   /* ---------- IMAGE SLIDER LOGIC ---------- */
   const [activeImages, setActiveImages] = useState({});
@@ -46,8 +46,45 @@ export default function CartStep({ onNext }) {
       product.wearing_photo,
       ...moreImages,
     ].filter(Boolean)
-    .map(path => `${IMG_BASE}/${path}`); 
+      .map(path => `${IMG_BASE}/${path}`);
   };
+
+  const handleAddressTyping = (value) => {
+    setAddr((prev) => ({ ...prev, line: value }));
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (value.length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${value}`
+        );
+        const data = await res.json();
+        setAddressSuggestions(data);
+      } catch {
+        setAddressSuggestions([]);
+      }
+    }, 400);
+  };
+
+  const selectAddressSuggestion = (item) => {
+    setAddr({
+      line: item.display_name,
+      city:
+        item.address.city ||
+        item.address.town ||
+        item.address.village ||
+        "",
+      pin: item.address.postcode || "",
+    });
+    setAddressSuggestions([]);
+  };
+
 
   const changeImage = (productId, offsetOrIndex) => {
     setActiveImages((prev) => {
@@ -59,10 +96,17 @@ export default function CartStep({ onNext }) {
       if (images.length === 0) return prev;
 
       let newIdx;
-      if (typeof offsetOrIndex === "number" && offsetOrIndex < 0) {
-        newIdx = (current + offsetOrIndex + images.length) % images.length;
+
+      if (typeof offsetOrIndex === "number") {
+        if (offsetOrIndex < 0) {
+          newIdx = (current + offsetOrIndex + images.length) % images.length;
+        } else if (offsetOrIndex === 1) {
+          newIdx = (current + 1) % images.length;
+        } else {
+          newIdx = offsetOrIndex;
+        }
       } else {
-        newIdx = (current + (typeof offsetOrIndex === "number" ? offsetOrIndex : 1)) % images.length;
+        newIdx = (current + 1) % images.length;
       }
 
       return { ...prev, [productId]: newIdx };
@@ -70,9 +114,10 @@ export default function CartStep({ onNext }) {
   };
 
   const handleImageError = (e) => {
-    e.target.src = PLACEHOLDER_DATA_URL;
+    e.target.src = "https://via.placeholder.com/96";
   };
 
+  // CLEAR OLD CHECKOUT DATA ON MOUNT
   useEffect(() => {
     sessionStorage.removeItem(STORAGE_KEY);
   }, []);
@@ -146,27 +191,21 @@ export default function CartStep({ onNext }) {
       (s, i) => s + i.product.price * i.quantity,
       0
     );
-    const discount = cart.reduce(
-      (s, i) =>
-        s + (i.product.original_price - i.product.price) * i.quantity,
-      0
-    );
-    const orderTotal = totalProductPrice - discount;
 
-    const SHIPPING_FEE = 100;
-    const PLATFORM_FEE = 50;
-    const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
+    const SHIPPING_FEE = 0;
+    const PLATFORM_FEE = 0;
+
+    const finalTotal = totalProductPrice + SHIPPING_FEE + PLATFORM_FEE;
 
     onNext({
       cartItems: cart,
       shippingAddress,
       total: totalProductPrice,
-      discount,
-      orderTotal,
       finalTotal,
       shippingFee: SHIPPING_FEE,
       platformFee: PLATFORM_FEE,
     });
+
   };
 
   if (loading) return <p className="text-center py-10">Loading…</p>;
@@ -175,25 +214,21 @@ export default function CartStep({ onNext }) {
     (s, i) => s + i.product.price * i.quantity,
     0
   );
-  const discount = cart.reduce(
-    (s, i) => s + (i.product.original_price - i.product.price) * i.quantity,
-    0
-  );
-  const orderTotal = totalProductPrice - discount;
-  const SHIPPING_FEE = 100;
-  const PLATFORM_FEE = 50;
+  const orderTotal = totalProductPrice;
+  const SHIPPING_FEE = 0;
+  const PLATFORM_FEE = 0;
   const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
 
   return (
-    <div className="space-y-6 ">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       <Toaster />
 
-      {/* ADDRESS CARD */}
-      <div className="bg-white rounded-lg shadow-sm border p-4 flex flex-col sm:flex-row items-start gap-4">
-        <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
+      {/* ADDRESS CARD - Responsive */}
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 flex flex-col sm:flex-row items-start gap-4">
+        <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mt-1 flex-shrink-0" />
         <div className="flex-1 w-full">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
-            <p className="font-semibold text-lg">Delivery Address</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-3">
+            <p className="font-semibold text-base sm:text-lg">Delivery Address</p>
             <button
               onClick={() => setIsEditing(true)}
               className="text-purple-600 text-sm underline hover:text-purple-700"
@@ -203,14 +238,30 @@ export default function CartStep({ onNext }) {
           </div>
 
           {isEditing ? (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  placeholder="Address line"
-                  value={addr.line}
-                  onChange={(e) => setAddr({ ...addr, line: e.target.value })}
-                  className="border rounded px-3 py-2 text-sm w-full"
-                />
+                <div className="relative">
+                  <input
+                    placeholder="Address line"
+                    value={addr.line}
+                    onChange={(e) => handleAddressTyping(e.target.value)}
+                    className="border rounded px-3 py-2 text-sm w-full"
+                  />
+
+                  {addressSuggestions.length > 0 && (
+                    <ul className="absolute z-20 bg-white border rounded mt-1 w-full max-h-48 overflow-auto shadow">
+                      {addressSuggestions.map((item) => (
+                        <li
+                          key={item.place_id}
+                          onClick={() => selectAddressSuggestion(item)}
+                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                        >
+                          {item.display_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <input
                   placeholder="City"
                   value={addr.city}
@@ -227,25 +278,25 @@ export default function CartStep({ onNext }) {
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={saveAddress}
-                  className="px-5 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700"
                 >
                   Save
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="px-5 py-2 border rounded text-sm hover:bg-gray-100"
+                  className="px-4 py-1.5 border rounded text-sm hover:bg-gray-100"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           ) : (
-            <p className="text-gray-700 text-base">{shippingAddress}</p>
+            <p className="text-gray-700 text-sm sm:text-base">{shippingAddress || "No address added yet"}</p>
           )}
         </div>
       </div>
 
-      {/* PRODUCT CARDS */}
+      {/* PRODUCT CARDS - Fully Responsive */}
       {cart.map((item) => {
         const product = item.product;
         const images = getProductImages(product);
@@ -254,78 +305,88 @@ export default function CartStep({ onNext }) {
         return (
           <div
             key={item.product_id}
-            className="bg-white rounded-lg shadow-sm border p-4 flex flex-col lg:flex-row gap-6 items-start"
+            className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 flex flex-col lg:flex-row gap-6 items-start"
           >
-            {/* ---- IMAGE SLIDER ---- */}
-            <div className="w-full lg:w-60 flex-shrink-0">
+            {/* IMAGE SLIDER - Responsive */}
+            <div className="w-full lg:w-48 xl:w-56 flex-shrink-0">
               <div className="relative">
-                <div className="flex justify-center mb-3">
+                {/* Main Image */}
+                <div className="aspect-square bg-gray-50 rounded-md overflow-hidden flex items-center justify-center">
                   <img
-                    src={`${process.env.REACT_APP_API_URL}/${images[activeIdx]}`}
+                    src={images[activeIdx] || "https://via.placeholder.com/96"}
                     alt={product?.name}
-                    className="w-full max-w-xs sm:max-w-sm h-auto max-h-64 object-contain rounded-md mx-auto"
+                    className="max-w-full max-h-full h-auto object-contain"
+                    onError={handleImageError}
                   />
                 </div>
 
+                {/* Navigation Arrows */}
                 {images.length > 1 && (
-                  <>
-                    <div className="flex justify-center gap-8 my-3">
-                      <button
-                        onClick={() => changeImage(item.product_id, -1)}
-                        className="text-gray-600 hover:text-gray-800"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => changeImage(item.product_id, 1)}
-                        className="text-gray-600 hover:text-gray-800"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 pointer-events-none">
+                    <button
+                      onClick={() => changeImage(item.product_id, -1)}
+                      className="pointer-events-auto bg-white/80 hover:bg-white p-1.5 rounded-full shadow-md"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => changeImage(item.product_id, 1)}
+                      className="pointer-events-auto bg-white/80 hover:bg-white p-1.5 rounded-full shadow-md"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
 
-                    <div className="flex overflow-x-auto space-x-2 pb-2 justify-center">
-                      {images.map((img, idx) => (
-                        <img
-                          key={idx}
-                          src={`${process.env.REACT_APP_API_URL}/${img}`}
-                          alt={`thumb ${idx + 1}`}
-                          className={`w-16 h-16 object-contain rounded-md cursor-pointer border-2 transition-all ${activeIdx === idx ? "border-purple-600" : "border-gray-300"
-                            }`}
-                          onClick={() => changeImage(item.product_id, idx)}
-                        />
-                      ))}
-                    </div>
-                  </>
+                {/* Thumbnails */}
+                {images.length > 1 && (
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 snap-x">
+                    {images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`thumb ${idx + 1}`}
+                        className={`w-12 h-12 sm:w-14 sm:h-14 object-cover rounded cursor-pointer flex-shrink-0 snap-center border-2 transition-all ${activeIdx === idx ? "border-purple-600" : "border-gray-200"
+                          }`}
+                        onClick={() => changeImage(item.product_id, idx)}
+                        onError={handleImageError}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* ---- PRODUCT DETAILS ---- */}
-            <div className="flex-1 space-y-3 w-full">
-              <p className="font-medium text-lg">{product?.name}</p>
+            {/* PRODUCT DETAILS */}
+            <div className="flex-1 space-y-3 min-w-0">
+              <p className="font-medium text-base sm:text-lg pr-2">{product?.name}</p>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="font-bold text-xl">₹{product?.price * item.quantity}</p>
-                {product?.original_price > product?.price && (
+              <div className="flex flex-wrap items-center gap-3 text-lg">
+                <p className="font-semibold">₹{product?.price * item.quantity}</p>
+                {/* {product?.original_price > product?.price && (
                   <>
                     <p className="text-sm text-gray-500 line-through">
                       ₹{product?.original_price * item.quantity}
                     </p>
-                    <p className="text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                      {Math.round(((product?.original_price - product?.price) / product?.original_price) * 100)}% Off
+                    <p className="text-sm text-green-600 font-medium">
+                      {Math.round(
+                        ((product?.original_price - product?.price) /
+                          product?.original_price) *
+                        100
+                      )}
+                      % Off
                     </p>
                   </>
-                )}
+                )} */}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                <span>Size: <strong>{item.size}</strong></span>
-                <span>•</span>
+              <p className="text-sm text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span>Size: {item.size}</span>
+                {/* <span className="hidden sm:inline">|</span>
                 <span className="flex items-center gap-2">
                   Qty:
                   <QuantitySelector
@@ -333,44 +394,23 @@ export default function CartStep({ onNext }) {
                     initialQty={item.quantity}
                     disabled={isEditing}
                   />
-                </span>
-              </div>
-
-              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                <Package className="w-3 h-3" />
-                All issue easy returns
+                </span> */}
               </p>
-              {/* <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                <Truck className="w-4 h-4" />
-                Estimated Delivery by Wed, 5th Nov
-              </p> */}
-              <div className="space-y-2 text-sm text-gray-600">
-                <p className="flex items-center gap-2">
-                  <Package className="w-4 h-4" />
-                  All issue easy returns
-                </p>
-                <p className="flex items-start gap-2">
-                  <Truck className="w-4 h-4" />
-                  Estimated Delivery by Wed, 5th Nov
-                </p>
-              </div>
             </div>
-
-            {/* ---- ACTIONS ---- */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm w-full lg:w-auto justify-between lg:justify-start">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 text-sm w-full lg:w-auto mt-4 lg:mt-0">
               <button
                 onClick={() => moveToWishlist(item.product_id)}
-                className="flex items-center gap-1 text-gray-700 hover:text-purple-600 font-medium"
+                className="flex items-center gap-1 text-gray-700 hover:text-purple-600 whitespace-nowrap"
               >
-                <Heart className="w-5 h-5" />
+                <Heart className="w-4 h-4" />
                 Move to Wishlist
               </button>
               <span className="hidden sm:block text-gray-400">|</span>
               <button
                 onClick={() => removeFromCart(item.product_id)}
-                className="flex items-center gap-1 text-gray-700 hover:text-red-600 font-medium"
+                className="flex items-center gap-1 text-gray-700 hover:text-red-600 whitespace-nowrap"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
                 Remove
               </button>
             </div>
@@ -379,27 +419,27 @@ export default function CartStep({ onNext }) {
       })}
 
       {/* PRICE SUMMARY */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="space-y-3 text-base">
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+        <div className="space-y-3 text-sm sm:text-base">
           <div className="flex justify-between">
             <span>Product Total</span>
-            <span className="font-medium">₹{totalProductPrice}</span>
+            <span>₹{totalProductPrice}</span>
           </div>
-          {discount > 0 && (
+          {/* {discount > 0 && (
             <div className="flex justify-between text-green-600">
               <span>Discounts Applied</span>
-              <span className="font-medium">- ₹{discount}</span>
+              <span>- ₹{discount}</span>
             </div>
-          )}
+          )} */}
           <div className="flex justify-between">
             <span>Shipping Fee</span>
-            <span className="text-green-600 font-medium">₹{SHIPPING_FEE}</span>
+            <span className="text-green-600">₹{SHIPPING_FEE}</span>
           </div>
           <div className="flex justify-between">
             <span>Platform Fee</span>
-            <span className="text-green-600 font-medium">₹{PLATFORM_FEE}</span>
+            <span className="text-green-600">₹{PLATFORM_FEE}</span>
           </div>
-          <div className="flex justify-between font-bold text-lg pt-4 border-t border-gray-300">
+          <div className="flex justify-between font-bold text-base sm:text-lg mt-4 pt-4 border-t border-gray-300">
             <span>Final Total</span>
             <span className="text-purple-600">₹{finalTotal}</span>
           </div>
@@ -411,7 +451,7 @@ export default function CartStep({ onNext }) {
         <button
           onClick={handleContinue}
           disabled={isEditing}
-          className="w-full sm:w-auto bg-purple-600 text-white px-8 py-3 rounded-lg font-medium text-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
         >
           Continue
         </button>

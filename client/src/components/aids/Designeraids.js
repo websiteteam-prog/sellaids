@@ -1,6 +1,6 @@
-// components/Fashionaids.js
+// components/Designeraids.js
 
-import React from 'react';
+import React, { useEffect } from 'react';   // <-- useEffect added
 import { Link } from 'react-router-dom';
 import { FaClock, FaMoneyBillWave, FaLeaf } from 'react-icons/fa';
 import {
@@ -22,30 +22,29 @@ import sellBanner1 from '../../assets/images/sellBanner1.webp';
 const categories = [
   {
     title: 'INDIAN-EDIT',
-    image:  IndianEdit,
-    link: '/women-apparel',
+    image: IndianEdit,
+    link: 'https://sellaids.com/product-category/women/designer-aid/indian-edit',
   },
   {
     title: 'BOUTIQUE FIT',
     image: BoutiqueFit,
-    link: '/women-bags',
+    link: 'https://sellaids.com/product-category/women/designer-aid/boutique-fit',
   },
   {
     title: 'SAREE',
     image: Saree,
-    link: '/men-apparel',
+    link: 'https://sellaids.com/product-category/women/designer-aid/sarees',
   },
   {
     title: 'BESPOKE STUDIO',
     image: BespokeStudio,
-    link: '/category/men-shoes',
+    link: 'https://sellaids.com/product-category/men/designer-aid-men/bespoke-studio',
   },
   {
     title: 'ETHNIC-ACCESSORIES',
     image: EthnicAccessories,
-    link: '/women-shoes',
+    link: 'https://sellaids.com/product-category/women/designer-aid/ethnic-accessories',
   },
-  
 ];
 
 const whyChoose = [
@@ -93,16 +92,19 @@ const howItWorks = [
   },
 ];
 
-const Fashionaids = () => {
+const Designeraids = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       {/* FASHION AID COLLECTION SECTION */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 mt-10 sm:mt-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 mt-10 sm:mt-4">
         {/* Heading */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-heading text-orange-600 leading-tight mb-6 md:mb-4">
-           Designer Aid Collection
-
+            Designer Aid Collection
           </h1>
           <p className="text-xl text-gray-800 font-serif">
             Where Affordability Meets Elegance!
@@ -168,22 +170,21 @@ const Fashionaids = () => {
           backgroundImage: `url(${sellBanner1})`,
         }}
       >
-        {/* Optional dark overlay */}
         <div className="absolute inset-0 bg-black opacity-40"></div>
 
-        {/* Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-left text-white">
           <h4 className="uppercase text-orange-400 tracking-widest mb-2 font-semibold text-sm sm:text-base">
-           Selling Your most loved Designer items
+            Selling Your most loved Designer items
           </h4>
           <h2 className="text-3xl sm:text-5xl font-heading mb-6 leading-tight">
-           A hassle -free process to maintain the charm and value of designer items.
+            A hassle -free process to maintain the charm and value of designer items.
           </h2>
           <p className="max-w-2xl text-sm sm:text-base mb-8">
-            Our team will assess your items and offer you the best market value, giving you the chance to refresh your collection or earn from pieces you no longer wear.
+            Our team will assess your items and offer you the best market value,
+            giving you the chance to refresh your collection or earn from pieces you no longer wear.
           </p>
           <Link
-            to="/sell-now"
+            to="/vendor/login"
             className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 font-semibold text-sm shadow transition"
           >
             Sell Now
@@ -198,7 +199,7 @@ const Fashionaids = () => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-center max-w-7xl mx-auto">
           {howItWorks.map((step, index) => (
-            <div key={index} className="">
+            <div key={index}>
               {step.icon}
               <h3 className="font-semibold text-gray-900 mb-2">{step.title}</h3>
               <p className="text-gray-700 text-sm font-body">{step.description}</p>
@@ -210,4 +211,4 @@ const Fashionaids = () => {
   );
 };
 
-export default Fashionaids;
+export default Designeraids;

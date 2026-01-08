@@ -1,6 +1,6 @@
 import React from 'react';
 import bannerImage from '../../assets/images/sell-banner.webp';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 
 const CallToActionSection = () => {
     const navigate = useNavigate();

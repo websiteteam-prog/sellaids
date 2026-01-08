@@ -132,6 +132,10 @@ function Register() {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 )}
+                <p className="text-xs text-gray-500 mt-1">
+ Include uppercase, lowercase, number & special character
+
+  </p>
               </div>
             </div>
 

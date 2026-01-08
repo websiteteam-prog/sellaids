@@ -141,12 +141,17 @@ export default function Cart() {
             {cart.map((item) => {
               const images = getProductImages(item.product);
               const activeIdx = activeImages[item.product_id] || 0;
+              const activeImagePath = images[activeIdx];
 
               return (
                 <div key={item.product_id} className="bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition">
                   <div className="relative mb-4">
                     <img
-                      src={images[activeIdx] || "https://placehold.co/150x150"}
+                     src={
+                        activeImagePath 
+                          ? `${process.env.REACT_APP_API_URL}/${activeImagePath}`
+                          : "https://placehold.co/150x150"
+                      }
                       alt={item.product.name}
                       className="w-full h-48 object-contain rounded-md"
                     />

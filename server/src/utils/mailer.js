@@ -2,20 +2,26 @@
 import nodemailer from "nodemailer";
 import config from "../config/config.js";
 import logger from "../config/logger.js";
+import path from "path";
 
 // Create transporter
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtpout.secureserver.net", // c pannel
   port: 465,
   secure: true,
+  //   requireTLS: true,
   auth: {
     user: config.email.user,
     pass: config.email.pass,
   },
+  debug: true,
   tls: {
     rejectUnauthorized: false
   }
 });
+console.log("SMTP USER =", config.email.user);
+console.log("SMTP PASS LENGTH =", config.email.pass ? config.email.pass.length : "NO PASS");
+
 
 /**
  * Sends an email with the given parameters
@@ -27,7 +33,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to, subject, text, html = null) => {
   try {
     const mailOptions = {
-      from: `"MyShop Support" <${config.email.user}>`,
+      from: `Sellaids Support <${config.email.user}>`,
       to,
       subject,
       text,
@@ -49,7 +55,7 @@ export const sendEmail = async (to, subject, text, html = null) => {
  * @param {string} [footer] - Optional footer text
  * @returns {string} - HTML email template
  */
-export const generateEmailTemplate = (header, content, footer = "Thank you for choosing MyShop!") => {
+export const generateEmailTemplate = (header, content, footer = "Thank you for choosing Sellaids!") => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -80,4 +86,39 @@ export const generateEmailTemplate = (header, content, footer = "Thank you for c
     </body>
     </html>
   `;
+};
+
+export const sendInvoiceEmail = async (to, order, invoicePath) => {
+  try {
+    const html = generateEmailTemplate(
+      "Your Order Invoice",
+      `
+        <p>Hello <b>${order.customer_name}</b>,</p>
+        <p>Thank you for your order. Please find your invoice attached.</p>
+        <p><b>Order ID:</b> ${order.id}</p>
+        <p><b>Total Amount:</b> ₹${order.total}</p>
+        <p>If you have any questions, feel free to contact us.</p>
+      `
+    );
+
+    await transporter.sendMail({
+      from: `Sellaids Support <${config.email.user}>`,
+      to,
+      subject: "Your Sellaids Invoice",
+      text: `Hello ${order.customer_name}, your invoice is attached.`,
+      html,
+      attachments: [
+        {
+          filename: path.basename(invoicePath),
+          path: invoicePath,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    logger.info(`Invoice email sent to ${to}`);
+  } catch (err) {
+    logger.error(`Invoice email failed for ${to}: ${err.message}`);
+    throw err;
+  }
 };

@@ -1,5 +1,5 @@
 import { productSchema, updateProductSchema } from "../../validations/productFormValidation.js";
-import { createProductService, fetchCategories, fetchProductTypesByCategory, getAllProductsService, getProductByIdService, getDashboardStatsService, getEarningsStatsService, updateProductService } from "../../services/product/productFormService.js";
+import { createProductService, fetchCategories, fetchProductTypesByCategory, getAllProductsService, getProductByIdService, getDashboardStatsService, getEarningsStatsService, updateProductService, processBulkProducts, getAllProductsPublicService } from "../../services/product/productFormService.js";
 import logger from "../../config/logger.js";
 import { Product } from "../../models/productModel.js";
 
@@ -46,9 +46,10 @@ export const addProductController = async (req, res) => {
 export const updateProductController = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
+    const adminId = req.session.admin?.adminId;
     const { id } = req.params;
 
-    if (!vendorId) {
+    if (!vendorId && !adminId) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized: Vendor session missing",
@@ -56,9 +57,17 @@ export const updateProductController = async (req, res) => {
     }
 
     // Check if product exists and belongs to this vendor
-    const product = await Product.findOne({
-      where: { id, vendor_id: vendorId, is_active: true },
-    });
+    let product;
+
+    if (adminId) {
+      product = await Product.findOne({
+        where: { id, is_active: true },
+      });
+    } else {
+      product = await Product.findOne({
+        where: { id, vendor_id: vendorId, is_active: true },
+      });
+    }
 
     if (!product) {
       return res.status(404).json({
@@ -117,9 +126,9 @@ export const updateProductController = async (req, res) => {
           ? req.files.more_images.map((f) => `uploads/${f.filename}`)
           : product.more_images || [],
     };
-
+    const isAdmin = Boolean(adminId);
     // Call service to update
-    const updatedProduct = await updateProductService(id, vendorId, req.body, images);
+    const updatedProduct = await updateProductService(id, vendorId, req.body, images, isAdmin);
 
     return res.status(200).json({
       success: true,
@@ -147,13 +156,13 @@ export const updateProductController = async (req, res) => {
 export const getCategories = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
-    const isAdmin = !!req.session.admin?.adminId;
-    if (!vendorId && !isAdmin) {
+    const adminId = req.session.admin?.adminId;
+    if (!vendorId && !adminId) {
       return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
     }
 
-    const { search = "" } = req.query;
-    const categories = await fetchCategories(search);
+    const { search = "", group = "" } = req.query;
+    const categories = await fetchCategories(search, group);
     res.json({
       success: true,
       message: "Categories fetched successfully",
@@ -172,8 +181,8 @@ export const getCategories = async (req, res) => {
 export const getProductTypes = async (req, res) => {
   try {
     const vendorId = req.session.vendor?.vendorId;
-    const isAdmin = !!req.session.admin?.adminId;
-    if (!vendorId && !isAdmin) {
+    const adminId = req.session.admin?.adminId;
+    if (!vendorId && !adminId) {
       return res.status(401).json({ success: false, message: "Unauthorized: Valid session required" });
     }
 
@@ -228,6 +237,25 @@ export const getAllProductsController = async (req, res) => {
   }
 };
 
+export const getAllProductsPublicController = async (req, res) => {
+  try {
+    const products = await getAllProductsPublicService();
+
+    res.status(200).json({
+      success: true,
+      message: "All products fetched successfully",
+      total: products.length,
+      products
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
+      error: err.message,
+    });
+  }
+};
+
 export const getProductByIdController = async (req, res) => {
   try {
     // const vendorId = req.session.vendor?.vendorId;
@@ -253,7 +281,7 @@ export const getProductByIdController = async (req, res) => {
       success: true,
       message: "Product details fetched successfully",
       product,
-      relatedProducts: related,           
+      relatedProducts: related,
     });
   } catch (err) {
     console.error("Error fetching product:", err);
@@ -292,5 +320,22 @@ export const getEarningsController = async (req, res) => {
   } catch (error) {
     logger.error(error.message);
     res.status(500).json({ success: false, message: "Something went wrong", error: error.message });
+  }
+};
+
+export const bulkUploadProducts = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Excel file is required" });
+    }
+
+    const report = await processBulkProducts(req.file.path);
+
+    return res.status(200).json({
+      message: "Bulk upload completed",
+      ...report,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
   }
 };

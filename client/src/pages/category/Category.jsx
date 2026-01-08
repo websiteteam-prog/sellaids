@@ -7,6 +7,7 @@ import { FaHeart, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
 import useCartStore from "../../stores/useCartStore";
 import { useUserStore } from "../../stores/useUserStore";
 import { useCartActions } from "../../stores/useCartActions";
+import CartRightSlider from "../../components/CartRightSlider";
 
 const CategoryPage = () => {
   const { "*": slugPath } = useParams();
@@ -14,6 +15,11 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(12);
   const loaderRef = useRef(null);
+
+
+  const [isCartSliderOpen, setCartSliderOpen] = useState(false);
+  const [sliderProduct, setSliderProduct] = useState(null);
+
 
   // Final applied filters (products ko filter karne ke liye)
   const [appliedCondition, setAppliedCondition] = useState([]);
@@ -34,7 +40,7 @@ const CategoryPage = () => {
 
   const { fetchCart } = useCartStore();
   const { isAuthenticated, isUserLoading } = useUserStore();
-  const { setPendingAdd } = useCartActions();
+  const { pendingAdd, setPendingAdd } = useCartActions();
 
   const handleNavigate = (id) => navigate(`/product-details/${id}`);
 
@@ -46,6 +52,18 @@ const CategoryPage = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      pendingAdd?.type === "cart" &&
+      pendingAdd.product
+    ) {
+      addToCartDirectly(pendingAdd.product);
+      setPendingAdd(null);
+    }
+  }, [isAuthenticated, pendingAdd]);
+
 
   // Fetch Data
   useEffect(() => {
@@ -79,14 +97,27 @@ const CategoryPage = () => {
   // Cart & Wishlist
   const addToCartDirectly = async (product) => {
     if (!isAuthenticated) return;
+
     try {
-      await axios.post(
+      const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/user/cart`,
         { product_id: product._id },
         { withCredentials: true }
       );
-      await fetchCart();
-      toast.success(`${product.product_name} added to cart!`);
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        console.log("Adding to cart slider2", res.data.data);
+        // navigate("/user/checkout");
+        setSliderProduct({
+          product_id: res.data.data.product_id,
+          user_id: res.data.data.user_id,
+        });
+        setCartSliderOpen(true);
+      } else {
+        toast.success(res.data.message);
+      }
+
     } catch (error) {
       if (error.response?.status === 401) {
         setPendingAdd({ product, from: location.pathname, type: "cart" });
@@ -97,23 +128,59 @@ const CategoryPage = () => {
     }
   };
 
+
+  const addToWishlistDirectly = async (product) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+        { product_id: product._id },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        navigate("/user/wishlist");
+      } else {
+        toast.success(res.data.message);
+      }
+
+    } catch (error) {
+      if (error.response?.status === 401) {
+        setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+        navigate("/UserAuth/UserLogin");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
+    }
+  };
+
+
   const handleAddToCart = (product) => {
     if (isUserLoading) return toast.error("Please wait...");
     if (!isAuthenticated) {
       setPendingAdd({ product, from: location.pathname, type: "cart" });
       toast.error("Please log in to add to cart");
-      navigate("/UserAuth/UserLogin");
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname }
+      });
       return;
     }
     addToCartDirectly(product);
   };
 
   const handleWishlist = (product) => {
-    if (isUserLoading || !isAuthenticated) {
-      toast.error("Please log in");
+    if (isUserLoading) return toast.error("Please wait...");
+
+    if (!isAuthenticated) {
+      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+      toast.error("Please log in to add to wishlist");
+      navigate("/UserAuth/UserLogin");
       return;
     }
-    toast.success("Added to wishlist!");
+
+    addToWishlistDirectly(product);
   };
 
   // Apply Filters
@@ -357,7 +424,7 @@ const CategoryPage = () => {
               let additionalInfo = {};
               try {
                 additionalInfo = JSON.parse(product?.product_additionalInfo || "{}");
-              } catch (err) {}
+              } catch (err) { }
 
               return (
                 <div key={product._id} className="group overflow-hidden border-gray-100 transition-all duration-300">
@@ -365,13 +432,44 @@ const CategoryPage = () => {
                     <img
                       src={`${process.env.REACT_APP_API_URL}/${product?.product_img}`}
                       alt={product.product_name}
-                      className="object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out group-hover:scale-105"
+                      onClick={() => handleNavigate(product._id)}
+                      className={`object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out
+                      ${product.stock === 0 ? "grayscale cursor-not-allowed" : "cursor-pointer group-hover:scale-105"}`}
                     />
-                    <div className="absolute inset-0 flex justify-center items-end gap-3 opacity-0 translate-y-5 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-in-out pb-4">
-                      <button onClick={() => handleWishlist(product)} className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition">
+
+                    {/* OUT OF STOCK overlay – only on image */}
+                    {product.stock === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center
+                    bg-black/60 rounded-t-xl">
+                        <span className="text-white text-xl font-bold tracking-widest
+                       border-2 border-white px-5 py-2 rounded-lg">
+                          OUT OF STOCK
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 flex justify-center items-end gap-3 
+                  opacity-0 translate-y-5 
+                  group-hover:opacity-100 group-hover:translate-y-0 
+                  transition-all duration-300 ease-in-out pb-4
+                  pointer-events-none">
+
+                      {/* Wishlist Button */}
+                      <button
+                        onClick={() => handleWishlist(product)}
+                        className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition
+                 pointer-events-auto"
+                      >
                         <FaHeart className="text-lg" />
                       </button>
-                      <button onClick={() => handleAddToCart(product)} className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition">
+
+                      {/* Cart Button */}
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="bg-black p-3 rounded-md text-white hover:bg-orange-500 transition
+                 pointer-events-auto"
+                      >
                         <FaShoppingCart className="text-lg" />
                       </button>
                     </div>
@@ -403,6 +501,17 @@ const CategoryPage = () => {
           )}
         </main>
       </div>
+      <CartRightSlider
+        open={isCartSliderOpen}
+        product={sliderProduct}
+        onClose={() => setCartSliderOpen(false)}
+        onRemove={() => {
+          setCartSliderOpen(false);
+          toast.success("Item removed");
+        }}
+        onContinue={() => setCartSliderOpen(false)}
+      />
+
     </>
   );
 };

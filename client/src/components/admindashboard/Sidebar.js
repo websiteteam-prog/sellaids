@@ -8,7 +8,8 @@ import {
   FaShoppingCart,
   FaMoneyCheckAlt,
   FaUserCircle,
-  FaCommentDots 
+  FaCommentDots, 
+  FaChartBar
 } from "react-icons/fa";
 
 const menuItems = [
@@ -18,7 +19,8 @@ const menuItems = [
   { label: "Products Management", path: "/admin/products", icon: <FaBoxOpen /> },
   { label: "Orders Management", path: "/admin/orders", icon: <FaShoppingCart /> },
   { label: "Payments", path: "/admin/payments", icon: <FaMoneyCheckAlt /> },
-  { label: "Reviews", path: "/admin/reviews", icon: <FaCommentDots  /> },
+  // { label: "Reviews", path: "/admin/reviews", icon: <FaCommentDots  /> },
+  { label: "Payment & Commission", path: "/admin/commission", icon: <FaChartBar /> },
   // { label: "Reports & Analytics", path: "/admin/reports", icon: <FaChartBar /> },
 ];
 

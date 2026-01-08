@@ -44,6 +44,15 @@ export const Order = sequelize.define(
       allowNull: false,
       defaultValue: 1,
     },
+    invoice_number: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+
+    invoice_pdf_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
     total_amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
@@ -87,6 +96,6 @@ export const Order = sequelize.define(
 );
 
 // Associations
-Order.belongsTo(User, { foreignKey: "user_id"});
+Order.belongsTo(User, { foreignKey: "user_id" });
 Order.belongsTo(Product, { foreignKey: "product_id", as: "product" });
-Order.belongsTo(Vendor, { foreignKey: "vendor_id"});
+Order.belongsTo(Vendor, { foreignKey: "vendor_id" });

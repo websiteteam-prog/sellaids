@@ -1,5 +1,5 @@
 // src/components/aids/Kidsaids.js
-import React from 'react';
+import React, { useEffect } from 'react';   // <-- useEffect added
 import { Link } from 'react-router-dom';
 import { FaClock, FaMoneyBillWave, FaLeaf } from 'react-icons/fa';
 import {
@@ -19,17 +19,17 @@ const categories = [
   {
     title: 'BOYS',
     image: Boys,
-    link: '/women-apparel',
+    link: 'https://sellaids.com/product-category/kids/boys',
   },
   {
     title: 'GIRLS',
     image: Girls,
-    link: '/women-bags',
+    link: 'https://sellaids.com/product-category/kids/girls',
   },
   {
     title: 'BABY GEAR',
     image: BabyGear,
-    link: '/men-apparel',
+    link: 'https://sellaids.com/product-category/kids/baby-gear',
   },
 ];
 
@@ -47,7 +47,6 @@ const whyChoose = [
       'Ensuring high standards of safety, durability, and cleanliness with each product.',
   },
   {
-
     icon: <FaLeaf className="text-4xl text-orange-500 mb-4 mx-auto" />,
     title: 'Sustainable',
     description:
@@ -83,6 +82,12 @@ const howItWorks = [
 ];
 
 const Kidsaids = () => {
+
+  // ⭐⭐⭐ Scroll to top added
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       {/* Heading */}
@@ -122,7 +127,10 @@ const Kidsaids = () => {
       </section>
 
       {/* Why Choose */}
-      <section className=" py-16 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#E9E9E966' }}>
+      <section
+        className=" py-16 px-4 sm:px-6 lg:px-8"
+        style={{ backgroundColor: '#E9E9E966' }}
+      >
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-heading text-orange-500 mb-2">
             Why Choose Sellaids?
@@ -135,7 +143,9 @@ const Kidsaids = () => {
             {whyChoose.map((item, index) => (
               <div key={index} className="text-center">
                 {item.icon}
-                <h3 className="text-orange-500 font-semibold mb-2">{item.title}</h3>
+                <h3 className="text-orange-500 font-semibold mb-2">
+                  {item.title}
+                </h3>
                 <p className="text-gray-700 ">{item.description}</p>
               </div>
             ))}
@@ -163,7 +173,7 @@ const Kidsaids = () => {
             We’ll assess your items and offer the best value so you can refresh or earn from pieces you no longer need.
           </p>
           <Link
-            to="/sell-now"
+            to="/vendor/login"
             className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 font-semibold text-sm shadow transition"
           >
             Sell Now
@@ -173,7 +183,9 @@ const Kidsaids = () => {
 
       {/* How it works */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        <h2 className="text-4xl font-heading text-orange-500 text-center mb-10">HOW IT WORKS?</h2>
+        <h2 className="text-4xl font-heading text-orange-500 text-center mb-10">
+          HOW IT WORKS?
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-center max-w-7xl mx-auto">
           {howItWorks.map((step, index) => (
             <div key={index}>
@@ -186,7 +198,6 @@ const Kidsaids = () => {
       </section>
     </>
   );
-
 };
 
 export default Kidsaids;

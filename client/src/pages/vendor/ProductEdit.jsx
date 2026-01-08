@@ -1,74 +1,113 @@
 // src/pages/vendor/ProductEdit.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-const FormField = ({ field, value, onChange, previewUrl }) => {
+const PRODUCT_CONDITION_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "almost_new", label: "Almost New" },
+  { value: "good", label: "Good" },
+  { value: "hardly_ever_used", label: "Hardly Ever Used" },
+  { value: "satisfactory", label: "Satisfactory" },
+];
+
+// REUSABLE FormField — EXACT SAME AS AddProductForm.jsx
+const FormField = ({ field, value, onChange, error, disabled, previewUrl }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [filteredOptions, setFilteredOptions] = useState(field.options || []);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (searchValue && Array.isArray(field.options)) {
+      const filtered = field.options.filter((opt) =>
+        opt.name
+          ? opt.name.toLowerCase().includes(searchValue.toLowerCase())
+          : opt.toString().toLowerCase().includes(searchValue.toLowerCase())
+      );
+      setFilteredOptions(filtered);
+    } else {
+      setFilteredOptions(field.options || []);
+    }
+  }, [searchValue, field.options]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (selectedValue) => {
+    let finalValue = selectedValue;
+
+    if (field.name === "productCategory") {
+      finalValue = selectedValue.name || selectedValue;
+    } else if (field.name === "product_condition") {
+      finalValue = selectedValue;
+    }
+
+    onChange({
+      target: { name: field.name, value: finalValue },
+    });
+    setSearchValue("");
+    setIsOpen(false);
+  };
+
+  const handleToggle = () => setIsOpen(!isOpen);
 
   if (field.type === "select") {
-    const options = field.options || [];
-    const filtered = searchValue
-      ? options.filter((opt) =>
-          (opt.name || opt)
-            .toString()
-            .toLowerCase()
-            .includes(searchValue.toLowerCase())
-        )
-      : options;
-
     return (
-      <div className="flex flex-col">
-        <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
+      <div className="flex flex-col" ref={wrapperRef}>
+        <label className="text-gray-700 font-medium mb-1" data-field={field.name}>
           {field.label}
         </label>
         <div className="relative">
           <div
-            className={`border rounded-lg px-4 py-3 cursor-pointer bg-white text-sm md:text-base transition-all ${
-              field.disabled ? "bg-gray-50 cursor-not-allowed" : "hover:border-orange-400"
-            }`}
-            onClick={() => !field.disabled && setIsOpen(!isOpen)}
+            className={`border rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            onClick={disabled ? null : handleToggle}
           >
-            {value
-              ? options.find((o) => (o.id || o) == value)?.name || value
-              : `Select ${field.label}`}
+            {field.name === "product_condition"
+              ? PRODUCT_CONDITION_OPTIONS.find((x) => x.value === value)?.label || "Select Condition"
+              : field.name === "productCategory"
+                ? value || "Select Category"
+                : value || `Select ${field.label}`}
           </div>
-
-          {isOpen && !field.disabled && (
-            <div className="absolute z-50 w-full bg-white border mt-1 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+          {isOpen && !disabled && (
+            <div className="absolute z-50 w-full bg-white border rounded-b mt-1 max-h-40 overflow-y-auto shadow-lg">
               <input
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search..."
-                className="w-full px-4 py-2 border-b focus:outline-none text-sm sticky top-0 bg-white"
+                placeholder={`Search ${field.label}...`}
+                className="border-b px-2 py-1 w-full focus:outline-none sticky top-0 bg-white"
                 onClick={(e) => e.stopPropagation()}
               />
-              {filtered.map((opt, i) => (
-                <div
-                  key={i}
-                  onClick={() => {
-                    onChange({
-                      target: {
-                        name: field.name,
-                        value: opt.id || opt.name || opt,
-                      },
-                    });
-                    setIsOpen(false);
-                    setSearchValue("");
-                  }}
-                  className="px-4 py-2.5 hover:bg-orange-50 cursor-pointer text-sm"
-                >
-                  {opt.name || opt}
-                </div>
-              ))}
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSelect(opt.name ? opt : opt)}
+                    className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-sm"
+                  >
+                    {field.name === "product_condition"
+                      ? PRODUCT_CONDITION_OPTIONS.find((x) => x.value === (opt.name || opt))?.label || opt
+                      : opt.name || opt}
+                  </div>
+                ))
+              ) : (
+                <div className="px-2 py-1 text-gray-500">No options found</div>
+              )}
             </div>
           )}
         </div>
+        {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
       </div>
     );
   }
@@ -76,9 +115,7 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
   if (field.type === "file") {
     return (
       <div className="flex flex-col space-y-4">
-        <label className="text-gray-700 font-medium text-sm md:text-base">
-          {field.label}
-        </label>
+        <label className="text-gray-700 font-medium text-sm md:text-base">{field.label}</label>
         {previewUrl && (
           <div className="mx-auto w-full max-w-xs">
             <img
@@ -96,7 +133,9 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
           multiple={field.multiple}
           accept="image/*"
           className="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-7 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 cursor-pointer"
+          disabled={disabled}
         />
+        {error && <span className="text-red-500 text-xs">{error}</span>}
       </div>
     );
   }
@@ -104,9 +143,7 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
   if (field.type === "textarea") {
     return (
       <div className="flex flex-col">
-        <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-          {field.label}
-        </label>
+        <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">{field.label}</label>
         <textarea
           name={field.name}
           value={value || ""}
@@ -120,16 +157,16 @@ const FormField = ({ field, value, onChange, previewUrl }) => {
 
   return (
     <div className="flex flex-col">
-      <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-        {field.label}
-      </label>
+      <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">{field.label}</label>
       <input
         type={field.type || "text"}
         name={field.name}
         value={value || ""}
         onChange={onChange}
         className="border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+        disabled={disabled}
       />
+      {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
     </div>
   );
 };
@@ -142,18 +179,70 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   const [categories, setCategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [imagePreviews, setImagePreviews] = useState({});
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
   const handleUnauthorized = () => {
     toast.error("Session expired. Please login again.");
     navigate("/login");
   };
 
+  // FETCH CATEGORIES on product_group change
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!formData.product_group) {
+        setCategories([]);
+        return;
+      }
+      setIsLoadingCategories(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("group", formData.product_group);
+        const res = await axios.get(
+          `${API_URL}/api/product/categories-list?${params.toString()}`,
+          { withCredentials: true }
+        );
+        if (res.data.success) {
+          setCategories(res.data.data || []);
+        }
+      } catch (err) {
+        if (err.response?.status === 401) handleUnauthorized();
+        else toast.error("Failed to load categories");
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, [formData.product_group]);
+
+  // FETCH TYPES on category_id change
+  useEffect(() => {
+    const fetchTypes = async () => {
+      if (!formData.category_id) {
+        setTypes([]);
+        return;
+      }
+      try {
+        const res = await axios.get(`${API_URL}/api/product?category_id=${formData.category_id}`, {
+          withCredentials: true,
+        });
+        if (res.data.success) {
+          setTypes(res.data.data.map((t) => t.name || t.type_name || ""));
+        }
+      } catch (err) {
+        if (err.response?.status === 401) handleUnauthorized();
+      }
+    };
+    fetchTypes();
+  }, [formData.category_id]);
+
+  // Initialize form data
   useEffect(() => {
     if (!product) return;
 
-    setFormData({
-      category_id: product.category_id || product.category?.id || "",
+    const initialData = {
       product_group: product.product_group || "",
+      productCategory: product.category?.name || "",
+      category_id: product.category_id || product.category?.id || "",
       product_type: product.product_type || "",
       product_condition: product.product_condition || "",
       fit: product.fit || "",
@@ -174,7 +263,6 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       purchase_place: product.purchase_place || "",
       product_link: product.product_link || "",
       additional_info: product.additional_info || "",
-
       front_photo: null,
       back_photo: null,
       label_photo: null,
@@ -184,7 +272,8 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       invoice_photo: null,
       repair_photo: null,
       more_images: [],
-    });
+    };
+    setFormData(initialData);
 
     const previews = {};
     const keys = [
@@ -208,39 +297,6 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
     setImagePreviews(previews);
   }, [product]);
 
-  useEffect(() => {
-    axios
-      .get(`${API_URL}/api/product/categories-list`, { withCredentials: true })
-      .then((res) => {
-        if (res.data.success) setCategories(res.data.data || []);
-      })
-      .catch((err) => {
-        if (err.response?.status === 401) handleUnauthorized();
-      });
-  }, []);
-
-  useEffect(() => {
-    if (formData.category_id) {
-      axios
-        .get(`${API_URL}/api/product?category_id=${formData.category_id}`, {
-          withCredentials: true,
-        })
-        .then((res) => {
-          if (res.data.success) {
-            setTypes(
-              res.data.data.map((t) => ({
-                id: t.id,
-                name: t.name || t.type_name,
-              }))
-            );
-          }
-        })
-        .catch((err) => {
-          if (err.response?.status === 401) handleUnauthorized();
-        });
-    }
-  }, [formData.category_id]);
-
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
 
@@ -258,13 +314,14 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
           [name]: URL.createObjectURL(file),
         }));
       }
-    } else if (name === "category_id") {
+    } else if (name === "productCategory") {
+      const selectedCategory = categories.find((c) => c.name === value);
       setFormData((prev) => ({
         ...prev,
-        category_id: value,
+        productCategory: value,
+        category_id: selectedCategory ? selectedCategory.id : "",
         product_type: "",
       }));
-      setTypes([]);
     } else if (name === "size") {
       setFormData((prev) => ({
         ...prev,
@@ -281,20 +338,49 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
 
     Object.keys(formData).forEach((key) => {
       const value = formData[key];
-      if (!value) return;
+
+      // Allow empty strings; skip only null/undefined
+      if (value === null || value === undefined) return;
 
       if (key === "more_images" && Array.isArray(value)) {
         value.forEach((file) => data.append("more_images", file));
-      } else if (value instanceof File) {
+      }
+      else if (value instanceof File) {
         data.append(key, value);
-      } else if (key === "size" && value === "Other") {
+      }
+      else if (key === "size" && value === "Other") {
         data.append("size", "Other");
         if (formData.other_size) data.append("size_other", formData.other_size);
-      } else if (key !== "other_size") {
+      }
+      else if (key !== "other_size" && key !== "productCategory") {
         data.append(key, value);
       }
     });
 
+
+    // try {
+    //   setIsSubmitting(true);
+    //   await axios.put(
+    //     `${API_URL}/api/product/${product.id || product._id}`,
+    //     data,
+    //     {
+    //       method: "PUT",
+    //       headers: { "Content-Type": "multipart/form-data" },
+    //       withCredentials: true,
+    //     }
+    //   );
+    //   toast.success("Product updated successfully!");
+    //   onUpdateSuccess?.();
+    //   onClose();
+    // } catch (err) {
+    //   if (err.response?.status === 401) {
+    //     handleUnauthorized();
+    //   } else {
+    //     toast.error(err.response?.data?.message || "Update failed");
+    //   }
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
     try {
       setIsSubmitting(true);
       await axios.put(
@@ -313,11 +399,20 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       if (err.response?.status === 401) {
         handleUnauthorized();
       } else {
-        toast.error(err.response?.data?.message || "Update failed");
+        // Check if backend sent an array of validation errors
+        const errors = err.response?.data?.errors;
+        if (errors && Array.isArray(errors) && errors.length > 0) {
+          // Show all errors in the toast (can also join them into a single string)
+          errors.forEach((error) => toast.error(error));
+        } else {
+          // Show single error message if no array exists
+          toast.error(err.response?.data?.message || "Update failed");
+        }
       }
     } finally {
       setIsSubmitting(false);
     }
+
   };
 
   const steps = ["Product", "Condition", "Images", "Price & Details"];
@@ -341,14 +436,12 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
           {steps.map((s, i) => (
             <div
               key={i}
-              className={`flex items-center gap-3 ${
-                step === i + 1 ? "text-orange-600" : "text-gray-500"
-              }`}
+              className={`flex items-center gap-3 ${step === i + 1 ? "text-orange-600" : "text-gray-500"
+                }`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                  step === i + 1 ? "bg-orange-600" : "bg-gray-400"
-                }`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${step === i + 1 ? "bg-orange-600" : "bg-gray-400"
+                  }`}
               >
                 {i + 1}
               </div>
@@ -370,9 +463,10 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 onChange={handleChange}
               />
               <FormField
-                field={{ name: "category_id", label: "Category *", type: "select", options: categories }}
-                value={formData.category_id}
+                field={{ name: "productCategory", label: "Category *", type: "select", options: isLoadingCategories ? [{ name: "Loading..." }] : categories }}
+                value={formData.productCategory}
                 onChange={handleChange}
+                disabled={!formData.product_group || isLoadingCategories}
               />
               <FormField
                 field={{ name: "product_type", label: "Type *", type: "select", options: types }}
@@ -385,19 +479,13 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                   name: "product_condition",
                   label: "Condition *",
                   type: "select",
-                  options: [
-                    "new",
-                    "almost_new",
-                    "hardly_ever_used",
-                    "good",
-                    "satisfactory",
-                  ],
+                  options: PRODUCT_CONDITION_OPTIONS.map((x) => x.value),
                 }}
                 value={formData.product_condition}
                 onChange={handleChange}
               />
               <FormField
-                field={{ name: "fit", label: "Fit", type: "select", options: ["Slim", "Regular", "Loose", "Oversized", "Other"] }}
+                field={{ name: "fit", label: "Fit (Only for men apparel)", type: "select", options: ["Slim", "Regular", "Loose", "Oversized", "Other"] }}
                 value={formData.fit}
                 onChange={handleChange}
               />
@@ -417,7 +505,7 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 onChange={handleChange}
               />
               <FormField
-                field={{ name: "model_name", label: "Model Name *", type: "text" }}
+                field={{ name: "model_name", label: "Model Name ", type: "text" }}
                 value={formData.model_name}
                 onChange={handleChange}
               />

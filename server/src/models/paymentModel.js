@@ -41,6 +41,11 @@ export const Payment = sequelize.define(
     razorpay_signature: { type: DataTypes.STRING(200), allowNull: true },
     transaction_id: { type: DataTypes.STRING(100), allowNull: true },
     amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+    admin_commission: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
     vendor_earning: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     platform_fee: { type: DataTypes.DECIMAL(10, 2), defaultValue: 50.0 },
     shipping_fee: {

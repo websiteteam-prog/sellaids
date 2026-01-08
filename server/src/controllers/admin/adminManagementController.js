@@ -1,6 +1,7 @@
-import { getAdminDashboardService, getAllUsers, getPaymentsWithFiltersService, getAllProductsService, getProductByIdService, updateProductStatusService, getVendorByIdService, updateVendorStatusService, getAllVendorsService, getAllOrdersService, getOrderDetailsService } from "../../services/admin/adminManagementService.js";
+import { getAdminDashboardService, getAllUsers, getPaymentsWithFiltersService, getAllProductsService, getProductByIdService, updateProductStatusService, getVendorByIdService, updateVendorStatusService, getAllVendorsService, getAllOrdersService, getOrderDetailsService, getPaymentCommissionService, adminUpdateProductService } from "../../services/admin/adminManagementService.js";
 import { successResponse, errorResponse } from "../../utils/helpers.js";
 import logger from "../../config/logger.js";
+import { Product } from "../../models/productModel.js";
 
 // admin dashboard Management
 export const getAdminDashboardController = async (req, res) => {
@@ -96,6 +97,96 @@ export const updateVendorStatusController = async (req, res) => {
     return errorResponse(res, 500, error.message || "Error updating vendor status");
   }
 };
+
+export const adminUpdateProductController = async (req, res) => {
+  try {
+    const { id } = req.params; // productId
+
+    // 🔍 Find product (admin can edit any vendor product)
+    const product = await Product.findOne({
+      where: { id, is_active: true },
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const vendorId = product.vendor_id; // 🔥 key difference
+
+    // ================= IMAGES (same logic) =================
+    const images = {
+      front_photo: req.files?.front_photo?.[0]
+        ? `uploads/${req.files.front_photo[0].filename}`
+        : product.front_photo,
+
+      back_photo: req.files?.back_photo?.[0]
+        ? `uploads/${req.files.back_photo[0].filename}`
+        : product.back_photo,
+
+      label_photo: req.files?.label_photo?.[0]
+        ? `uploads/${req.files.label_photo[0].filename}`
+        : product.label_photo,
+
+      inside_photo: req.files?.inside_photo?.[0]
+        ? `uploads/${req.files.inside_photo[0].filename}`
+        : product.inside_photo,
+
+      button_photo: req.files?.button_photo?.[0]
+        ? `uploads/${req.files.button_photo[0].filename}`
+        : product.button_photo,
+
+      wearing_photo: req.files?.wearing_photo?.[0]
+        ? `uploads/${req.files.wearing_photo[0].filename}`
+        : product.wearing_photo,
+
+      invoice_photo: req.files?.invoice_photo?.[0]
+        ? `uploads/${req.files.invoice_photo[0].filename}`
+        : product.invoice_photo,
+
+      repair_photo: req.files?.repair_photo?.[0]
+        ? `uploads/${req.files.repair_photo[0].filename}`
+        : product.repair_photo,
+
+      more_images:
+        req.files?.more_images?.length > 0
+          ? req.files.more_images.map((f) => `uploads/${f.filename}`)
+          : product.more_images || [],
+    };
+
+    // ================= UPDATE =================
+    const updatedProduct = await adminUpdateProductService(
+      id,
+      vendorId,
+      req.body,
+      images
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully by admin",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: error.errors,
+      });
+    }
+
+    console.error("Admin Update Product Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update product",
+      error: error.message,
+    });
+  }
+};
+
 
 // product management Controller
 export const getAllProductsController = async (req, res) => {
@@ -212,5 +303,29 @@ export const getPaymentsController = async (req, res) => {
   } catch (err) {
     logger.error("Error fetching payments:", err.message);
     return errorResponse(res, 500, err);
+  }
+};
+
+export const getPaymentCommission = async (req, res) => {
+  try {
+    const vendorId = req.query.vendorId || "all";
+
+    const result = await getPaymentCommissionService(vendorId);
+
+    logger.info("Fetched payment commission data");
+
+    return successResponse(
+      res,
+      200,
+      "Payment commission fetched successfully",
+      result
+    );
+  } catch (error) {
+    logger.error(
+      "Error fetching payment commission:",
+      error.message
+    );
+
+    return errorResponse(res, 500, error);
   }
 };

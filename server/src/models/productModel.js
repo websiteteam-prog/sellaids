@@ -96,7 +96,15 @@ export const Product = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    stock_status: {
+      type: DataTypes.ENUM("in_stock", "out_of_stock"),
+      defaultValue: "in_stock",
+    },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

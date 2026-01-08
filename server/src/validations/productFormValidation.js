@@ -23,7 +23,7 @@ export const productSchema = yup.object().shape({
   fit: yup
     .string()
     .oneOf(["Slim", "Regular", "Loose", "Oversized", "Tailored", "Other"])
-    .required(),
+    .nullable(),
   size: yup
   .string()
   .oneOf([
@@ -43,22 +43,11 @@ size_other: yup
     then: (schema) => schema.required("Custom size is required when size is Other"),
     otherwise: (schema) => schema.nullable().strip(), 
   }),
-  product_color: yup.string().required("Product color is required"),
+  product_color: yup.string().nullable(),
   brand: yup.string().required("Brand is required"),
   model_name: yup
     .string()
-    .required("Model name is required")
-    .test(
-      "unique-product",
-      "Product with this brand and model already exists",
-      async function (value) {
-        const vendorId = this.options.context.vendorId;
-        const existing = await Product.findOne({
-          where: { vendor_id: vendorId, model_name: value, brand: this.parent.brand, is_active: true },
-        });
-        return !existing;
-      }
-    ),
+    .nullable(),
   invoice: yup.string().oneOf(["Yes", "No"]).required(),
   needs_repair: yup.string().oneOf(["Yes", "No"]).required(),
   original_box: yup.string().oneOf(["Yes", "No"]).required(),
@@ -69,7 +58,7 @@ size_other: yup
   purchase_year: yup.number().required("Purchase year is required"),
   purchase_place: yup.string().required("Purchase place is required"),
   additional_items: yup.string().nullable(),
-  product_link: yup.string().url().required(),
+  product_link: yup.string().url().nullable(),
   additional_info: yup.string().nullable(),
 });
 
@@ -136,17 +125,7 @@ export const updateProductSchema = yup.object().shape({
   model_name: yup
     .string()
     .trim()
-    .nullable()
-    .test(
-      "unique-brand-model",
-      "You already have another product with this brand and model name",
-      async function (value) {
-        if (!value) return true;
-        const { productId, vendorId } = this.options.context || {};
-        if (!vendorId || !productId) return true;
-        return await uniqueBrandModelForUpdate(value, this.parent.brand, productId, vendorId);
-      }
-    ),
+    .nullable(),
 
   invoice: yup.string().oneOf(["Yes", "No", null]).nullable(),
   needs_repair: yup.string().oneOf(["Yes", "No", null]).nullable(),

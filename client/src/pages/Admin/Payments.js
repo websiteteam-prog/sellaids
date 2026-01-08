@@ -89,7 +89,7 @@ const Payments = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Payments & Transactions</h2>
         <button
@@ -166,12 +166,12 @@ const Payments = () => {
                 <th className="px-4 py-3 border">SR.</th>
                 <th className="p-3 border">Payment ID</th>
                 <th className="p-3 border">Order ID</th>
-                <th className="p-3 border">Vendor ID</th>
+                {/* <th className="p-3 border">Vendor ID</th> */}
                 <th className="p-3 border">Amount</th>
                 <th className="p-3 border">Commission</th>
                 <th className="p-3 border">Vendor Payout</th>
                 <th className="p-3 border">Status</th>
-                <th className="p-3 border">Method</th>
+                {/* <th className="p-3 border">Method</th> */}
                 <th className="p-3 border">Transaction ID</th>
                 <th className="p-3 border">Payment Date</th>
                 <th className="p-3 border text-center">Action</th>
@@ -185,7 +185,7 @@ const Payments = () => {
                   </td>
                   <td className="p-3 border text-blue-600">{p.id}</td>
                   <td className="p-3 border">{p.order_id}</td>
-                  <td className="p-3 border">{p.vendor_id}</td>
+                  {/* <td className="p-3 border">{p.vendor_id}</td> */}
                   <td className="p-3 border font-bold">{p.amount}</td>
                   <td className="p-3 border text-green-600">{p.platform_fee}</td>
                   <td className="p-3 border text-blue-600">
@@ -207,8 +207,10 @@ const Payments = () => {
                       {p.payment_status}
                     </span>
                   </td>
-                  <td className="p-3 border">{p.payment_method}</td>
-                  <td className="p-3 border">{p.transaction_id}</td>
+                  {/* <td className="p-3 border">{p.payment_method}</td> */}
+                  <td className="p-3 border break-all whitespace-normal max-w-[160px]">
+                    {p.transaction_id}
+                  </td>
                   <td className="p-3 border">
                     {p.payment_date
                       ? new Date(p.payment_date).toISOString().split("T")[0]
@@ -342,7 +344,7 @@ const Payments = () => {
 
       {/* Payment Modal */}
       {selectedPayment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div className="fixed -inset-6 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 relative">
             <button
               className="absolute top-2 right-2 text-gray-500 text-xl"
