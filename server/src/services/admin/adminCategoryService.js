@@ -207,7 +207,7 @@ export const getProductsByCategoryService = async (path, options = {}) => {
                 "back_photo",
                 "more_images",
                 "additional_info",
-                // "description",
+                "model_name",
                 "stock",
                 "stock_status",
                 "status",
@@ -231,7 +231,7 @@ export const getProductsByCategoryService = async (path, options = {}) => {
             return {
                 _id: p.id,
                 sku: p.sku,
-                product_name: p.product_type,
+                product_name: p.model_name,
                 product_img: product_img,
                 product_group: p.product_group,
                 product_additionalInfo: p.additional_info || p.description || "",

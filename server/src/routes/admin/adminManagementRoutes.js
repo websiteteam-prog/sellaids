@@ -1,6 +1,5 @@
 import express from "express";
 import { getAdminDashboardController, getAllUsersController, getAllVendorsController, getVendorByIdController, updateVendorStatusController, getAllProductsController , getPaymentsController, getProductByIdController, updateProductStatusController, getAllOrders, getOrderDetails, getPaymentCommission, adminUpdateProductController } from "../../controllers/admin/adminManagementController.js";
-import { isAdminLoginIn } from "../../middlewares/authMiddlewares.js"
 import { uploadFields } from "../product/productFormRoutes.js";
 
 const router = express.Router();

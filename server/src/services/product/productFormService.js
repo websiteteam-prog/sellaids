@@ -387,6 +387,7 @@ export const getAllProductsPublicService = async () => {
         "size",
         "size_other",
         "brand",
+        "model_name",
         "selling_price",
         "front_photo",
         "more_images",
@@ -415,7 +416,7 @@ export const getAllProductsPublicService = async () => {
       return {
         _id: p.id,
         sku: p.sku,
-        product_name: p.product_type,
+        product_name: p.model_name,
         product_group: p.product_group,
         product_img,
         product_additionalInfo: p.additional_info || "",

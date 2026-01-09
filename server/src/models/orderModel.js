@@ -39,6 +39,10 @@ export const Order = sequelize.define(
       },
       onDelete: "CASCADE",
     },
+    shipment_id: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,

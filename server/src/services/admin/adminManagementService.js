@@ -282,7 +282,7 @@ export const getAllProductsService = async ({ search, status, page, limit }) => 
     offset,
     limit,
     order: [["created_at", "DESC"]],
-    attributes: ["id", "sku", "product_type", "brand", "selling_price", "status"],
+    // attributes: ["id", "sku", "product_type", "brand", "selling_price", "status"],
   });
 
   return { total: count, products: rows };

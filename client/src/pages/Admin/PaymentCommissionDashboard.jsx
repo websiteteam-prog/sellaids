@@ -20,8 +20,6 @@ const PaymentCommissionDashboard = () => {
         }
       );
 
-      console.log("Payment & Commission Data:", res.data);
-
       setData(res?.data?.data ?? null);
     } catch (err) {
       setError("Failed to load payment & commission data");

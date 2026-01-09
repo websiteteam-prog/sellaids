@@ -1,6 +1,7 @@
 import axios from 'axios';
 import config from '../../config/config.js';
 import logger from '../../config/logger.js';
+import { Order } from "../../models/orderModel.js"
 
 const getToken = async () => {
     try {
@@ -164,6 +165,22 @@ export const trackShipment = async (awbNumber) => {
     }
 };
 
+export const mapShiprocketStatusToOrderStatus = (shiprocketStatus) => {
+    if (!shiprocketStatus) return "pending";
+
+    const status = shiprocketStatus.toUpperCase();
+
+    if (status.includes("PICKED")) return "shipped";
+    if (status.includes("IN TRANSIT")) return "shipped";
+    if (status.includes("OUT FOR DELIVERY")) return "shipped";
+    if (status.includes("DELIVERED")) return "delivered";
+    if (status.includes("CANCEL")) return "cancelled";
+    if (status.includes("MANIFEST")) return "confirmed";
+
+    return "pending";
+};
+
+
 export const generateShiprocketToken = async () => {
     try {
         const response = await axios.post(
@@ -179,16 +196,125 @@ export const generateShiprocketToken = async () => {
             }
         );
 
-        console.log("Shiprocket Auth Response:", response.data.token);
+        // console.log("Shiprocket Auth Response:", response.data.token);
 
         if (!response.data?.token) {
-          throw new Error("Shiprocket token missing");
+            throw new Error("Shiprocket token missing");
         }
 
         return response.data.token;
 
     } catch (error) {
         console.error("Shiprocket Auth Error:", error.message);
+        throw error; // calling code ko pata chale
+    }
+};
+
+
+export const createShiprocketOrder = async (fullOrder) => {
+    try {
+
+        const payload = {
+            order_id: fullOrder.id,
+            order_date: new Date(fullOrder.created_at).toDateString(),
+            pickup_location: "warehouse",
+
+            billing_customer_name: fullOrder.User.name,
+            billing_last_name: "Naruto",
+            billing_address: fullOrder.User.address_line,
+            billing_city: fullOrder.User.city,
+            billing_pincode: fullOrder.User.pincode,
+            billing_state: fullOrder.User.state,
+            billing_country: "India",
+            billing_email: fullOrder.User.email,
+            billing_phone: fullOrder.User.phone,
+
+            shipping_is_billing: true,              // Shipping address same as billing
+
+            order_items: [
+                {
+                    name: fullOrder.product.product_type,
+                    sku: fullOrder.product.sku,
+                    units: fullOrder.quantity,
+                    selling_price: fullOrder.product.selling_price
+                }
+            ],
+
+            payment_method: "Prepaid",
+            sub_total: fullOrder.total_amount,
+
+            length: 10,                               // > 0.5 cm
+            breadth: 15,                              // > 0.5 cm
+            height: 20,                               // > 0.5 cm
+            weight: 2.5                               // > 0 kg
+        };
+
+        const token = await generateShiprocketToken();
+
+        const response = await axios.post(
+            `${config.shiprocket.baseUrl}/orders/create/adhoc`,
+            payload,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        console.log("Shiprocket Order Create Response:", response);
+
+        const shipmentId = response.data?.shipment_id;
+
+        if (!shipmentId) {
+            throw new Error("shipment_id not received from Shiprocket");
+        }
+
+        // DB UPDATE 
+        await Order.update(
+            { shipment_id: shipmentId },
+            { where: { id: fullOrder.id } }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error(
+            "Shiprocket Order Create Error:",
+            error?.response?.data || error.message
+        );
+        throw error; // calling code ko pata chale
+    }
+};
+
+export const trackShiprocketShipment = async (shipmentId) => {
+    try {
+
+        if (!shipmentId) {
+            throw new Error("shipmentId is required for tracking");
+        }
+
+        //  Generate token
+        const token = await generateShiprocketToken();
+
+        //  Call Shiprocket Tracking API
+        const response = await axios.get(
+            `${config.shiprocket.baseUrl}/courier/track/shipment/${shipmentId}`,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        console.log("Shiprocket Tracking Response:", response.data);
+
+        return response.data;
+    } catch (error) {
+        console.error(
+            "Shiprocket Tracking Error:",
+            error?.response?.data || error.message
+        );
         throw error; // calling code ko pata chale
     }
 };

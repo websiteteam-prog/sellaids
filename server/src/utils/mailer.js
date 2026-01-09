@@ -5,19 +5,28 @@ import logger from "../config/logger.js";
 import path from "path";
 
 // Create transporter
-const transporter = nodemailer.createTransport({
-  host: "smtpout.secureserver.net", // c pannel
-  port: 465,
-  secure: true,
-  //   requireTLS: true,
+// const transporter = nodemailer.createTransport({
+//   host: "smtpout.secureserver.net", // c pannel
+//   port: 465,
+//   secure: true,
+//   //   requireTLS: true,
+//   auth: {
+//     user: config.email.user,
+//     pass: config.email.pass,
+//   },
+//   debug: true,
+//   tls: {
+//     rejectUnauthorized: false
+//   }
+// });
+export const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // TLS
   auth: {
     user: config.email.user,
     pass: config.email.pass,
   },
-  debug: true,
-  tls: {
-    rejectUnauthorized: false
-  }
 });
 console.log("SMTP USER =", config.email.user);
 console.log("SMTP PASS LENGTH =", config.email.pass ? config.email.pass.length : "NO PASS");
@@ -93,10 +102,10 @@ export const sendInvoiceEmail = async (to, order, invoicePath) => {
     const html = generateEmailTemplate(
       "Your Order Invoice",
       `
-        <p>Hello <b>${order.customer_name}</b>,</p>
+        <p>Hello <b>${order.customerName}</b>,</p>
         <p>Thank you for your order. Please find your invoice attached.</p>
-        <p><b>Order ID:</b> ${order.id}</p>
-        <p><b>Total Amount:</b> ₹${order.total}</p>
+        <p><b>Order ID:</b> ORD-${order.id}</p>
+        <p><b>Total Amount:</b> ₹${Number(order.subtotal) + 150}</p>
         <p>If you have any questions, feel free to contact us.</p>
       `
     );

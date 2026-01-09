@@ -10,7 +10,7 @@ import { sequelize } from "../../config/db.js";
 import { Vendor } from "../../models/vendorModel.js";
 import { sendSMS } from "../../providers/sms/smsAlert.js"
 import { generateInvoicePDF } from "../../utils/generateInvoice.js";
-import { createShipment } from "../../providers/orderTracking/orderTracking.js";
+import { createShipment, createShiprocketOrder } from "../../providers/orderTracking/orderTracking.js";
 import { sendInvoiceEmail } from "../../utils/mailer.js"
 // import { createShipmentService } from "../xpressbees/xpressbeesService.js"
 
@@ -73,8 +73,8 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       admin: 30,
     };
 
-    const SHIPPING_FEE = 0;
-    const PLATFORM_FEE = 0;
+    const SHIPPING_FEE = 100;
+    const PLATFORM_FEE = 50;
     const finalAmount = totalAmount + SHIPPING_FEE + PLATFORM_FEE;
 
     const vendorEarning = Number(((totalAmount * COMMISSION.vendor) / 100).toFixed(2));
@@ -321,19 +321,15 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
             invoiceNumber: invoiceNumber,
             orderNumber: fullOrder.id,
             orderDate: new Date(fullOrder.created_at).toDateString(),
-            paymentMethod: "Paid Online",
 
             customerName: fullOrder.User.name,
             customerEmail: fullOrder.User.email,
             customerPhone: fullOrder.User.phone,
-            customerAddress: fullOrder.User.address || "",
-            customerCity: fullOrder.User.city || "",
+            customerAddress: fullOrder.User.address_line,
+            customerCity: fullOrder.User.city,
+            customerPincode: fullOrder.User.pincode,
+            customerState: fullOrder.User.state,
             customerCountry: "India",
-
-            shipName: fullOrder.User.name,
-            shipAddress: fullOrder.User.address || "",
-            shipCity: fullOrder.User.city || "",
-            shipCountry: "India",
 
             items: [
               {
@@ -345,12 +341,12 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
             ],
 
             subtotal: fullOrder.total_amount,
-            shipping_fee: 0,
-            platform_fee: 0,
-            total: fullOrder.total_amount,
+            shipping_fee: 100,
+            platform_fee: 50,
           };
 
 
+          // console.log("invoiceData" ,invoiceData)
           // 🔹 Generate invoice PDF
           const invoicePath = await generateInvoicePDF(invoiceData);
 
@@ -363,7 +359,7 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
           // 🔹 Send invoice email
           await sendInvoiceEmail(
             fullOrder.User.email,
-            invoiceNumber,
+            invoiceData,
             process.cwd() + "/src/public" + invoicePath
           );
 
@@ -397,19 +393,11 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
         }
 
         // Optional: create shipment, but do not affect DB transaction or throw to outer scope
-        /*
         try {
-          await createShipmentService(order);
-          logger.info(`Xpressbees shipment created for order ${order.id}`);
+          const createShipment = await createShiprocketOrder(fullOrder);
+          logger.info(`Shiprocket shipment created for order ${createShipment.shipment_id}`);
         } catch (xbError) {
-          logger.error(`Failed to create Xpressbees shipment for order ${order.id}:`, xbError);
-        }
-        */
-        try {
-          await createShipment(fullOrder);
-          logger.info(`Xpressbees shipment created for order ${order.id}`);
-        } catch (xbError) {
-          logger.error(`Failed to create Xpressbees shipment for order ${order.id}:`, xbError);
+          logger.error(`Failed to create Shiprocket shipment for order ${order.id}:`, xbError);
         }
       }
     }

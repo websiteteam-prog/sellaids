@@ -239,6 +239,22 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   useEffect(() => {
     if (!product) return;
 
+    let parsedAdditional = {
+      title: "",
+      fabric: "",
+      model_size: "",
+      info: "",
+      description: "",
+    };
+
+    try {
+      parsedAdditional = product.additional_info
+        ? JSON.parse(product.additional_info)
+        : parsedAdditional;
+    } catch (e) {
+      console.error("Invalid additional_info JSON");
+    }
+
     const initialData = {
       product_group: product.product_group || "",
       productCategory: product.category?.name || "",
@@ -262,7 +278,7 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       purchase_year: product.purchase_year || "",
       purchase_place: product.purchase_place || "",
       product_link: product.product_link || "",
-      additional_info: product.additional_info || "",
+      additional_info: parsedAdditional,
       front_photo: null,
       back_photo: null,
       label_photo: null,
@@ -351,6 +367,9 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       else if (key === "size" && value === "Other") {
         data.append("size", "Other");
         if (formData.other_size) data.append("size_other", formData.other_size);
+      }
+      else if (key === "additional_info") {
+        data.append("additional_info", JSON.stringify(value));
       }
       else if (key !== "other_size" && key !== "productCategory") {
         data.append(key, value);
@@ -509,6 +528,64 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 value={formData.model_name}
                 onChange={handleChange}
               />
+              {/* Title */}
+              <div className="flex flex-col mb-4">
+                <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
+                  Title
+                </label>
+
+                <input
+                  type="text"
+                  className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  value={formData.additional_info?.title || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      additional_info: {
+                        ...prev.additional_info,
+                        title: e.target.value,
+                      },
+                    }))
+                  }
+                />
+              </div>
+
+              {/* Fabric */}
+              <div className="flex flex-col mb-4">
+                <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
+                  Fabric
+                </label>
+                <input
+                  type="text"
+                  className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  value={formData.additional_info?.fabric || ""}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      additional_info: { ...p.additional_info, fabric: e.target.value },
+                    }))
+                  }
+                />
+              </div>
+
+              {/* Model Size */}
+              <div className="flex flex-col mb-4">
+                <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
+                  Model Size
+                </label>
+                <input
+                  type="text"
+                  className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  value={formData.additional_info?.model_size || ""}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      additional_info: { ...p.additional_info, model_size: e.target.value },
+                    }))
+                  }
+                />
+              </div>
+
               {formData.size === "Other" && (
                 <div className="sm:col-span-2">
                   <FormField
@@ -637,11 +714,46 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 onChange={handleChange}
               />
               <div className="sm:col-span-2">
-                <FormField
-                  field={{ name: "additional_info", label: "Additional Info", type: "textarea" }}
-                  value={formData.additional_info}
-                  onChange={handleChange}
-                />
+                <div className="sm:col-span-2">
+
+                  {/* Description */}
+                  <div className="flex flex-col mb-4">
+                    <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
+                      Product Description
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                      value={formData.additional_info?.description || ""}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          additional_info: { ...p.additional_info, description: e.target.value },
+                        }))
+                      }
+                    />
+                  </div>
+
+                  {/* Additional Info */}
+                  <div className="flex flex-col mb-4">
+                    <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
+                      Additional Info
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                      value={formData.additional_info?.info || ""}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          additional_info: { ...p.additional_info, info: e.target.value },
+                        }))
+                      }
+                    />
+                  </div>
+
+                </div>
+
               </div>
             </div>
           )}

@@ -24,7 +24,7 @@ router.get("/categories-list", getCategories);
 router.get("/", getProductTypes);
 
 // Update Form APIs for Vendor
-router.put("/:id", isVendorLoginIn, uploadFields, updateProductController);
+router.put("/:id", isVendorOrAdminLoggedIn, uploadFields, updateProductController);
 
 // For Fetch Products Apis for vendors
 router.get("/products-list", isVendorOrAdminLoggedIn, getAllProductsController);
@@ -38,6 +38,5 @@ router.get("/dashboard", isVendorLoginIn, getDashboardController);
 router.get("/earnings", getEarningsController);
 
 router.post("/bulk-upload", uploadExcel, bulkUploadProducts);
-
 
 export default router;

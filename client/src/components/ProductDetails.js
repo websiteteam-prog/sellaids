@@ -148,14 +148,18 @@ const ProductDetails = () => {
           condition: conditionMap[raw.product_condition] || "Not specified",
           rating: 0,
           review_count: 0,
+          brand: raw.brand,
         };
 
-        if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
-        if (raw.back_photo) mappedProduct.images.push(raw.back_photo);
-        if (raw.label_photo) mappedProduct.images.push(raw.label_photo);
-        if (raw.inside_photo) mappedProduct.images.push(raw.inside_photo);
-        if (raw.wearing_photo) mappedProduct.images.push(raw.wearing_photo);
-        if (raw.more_images) mappedProduct.images.push(raw.more_images);
+        mappedProduct.images = [
+          raw.front_photo,
+          raw.back_photo,
+          raw.label_photo,
+          raw.inside_photo,
+          raw.wearing_photo,
+          raw.more_images,
+        ].filter((img) => img && img !== "null" && img !== "undefined");
+
         // if (raw.more_images) {
         //   try {
         //     const extra = JSON.parse(raw.more_images);
@@ -417,12 +421,20 @@ const ProductDetails = () => {
           {/* Images */}
           <div className="relative">
             <div className="bg-gray-10 overflow-hidden aspect-square">
-              <img
+              {product.images.length > 0 && (
+                <img
+                  src={`${process.env.REACT_APP_API_URL}/${product.images[mainImgIdx]}`}
+                  alt={product.name}
+                  className={`w-full h-full object-cover transition-all duration-300
+                ${product.stock === 0 ? "grayscale cursor-not-allowed" : ""}`}
+                />
+              )}
+              {/* <img
                 src={`${process.env.REACT_APP_API_URL}/${product.images[mainImgIdx]}`}
                 alt={product.name}
                 className={`w-full h-full object-cover transition-all duration-300
                 ${product.stock === 0 ? "grayscale cursor-not-allowed" : ""}`}
-              />
+              /> */}
               {/* {console.log(product.stock)}
               {console.log(product.id)}
               {console.log(product.stock_status)} */}
@@ -488,10 +500,10 @@ const ProductDetails = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
               <p className="text-sm text-gray-500 mt-1">SKU: {product.sku}</p>
 
-              <div className="flex items-center gap-3 mt-3">
+              {/* <div className="flex items-center gap-3 mt-3">
                 {renderStars(product.rating)}
                 <span className="text-sm text-gray-600">({product.review_count} reviews)</span>
-              </div>
+              </div> */}
 
               <div className="mt-4 flex items-baseline gap-3">
                 <span className="text-3xl font-bold text-orange-600">₹{product.price.toLocaleString()}</span>
@@ -507,6 +519,7 @@ const ProductDetails = () => {
 
               {(product.model || product.fabric) && (
                 <div className="mt-4 space-y-1 text-gray-700">
+                  {product.brand && <p><strong>Brand:</strong> {product.brand}</p>}
                   {product.model && <p><strong>Model Size:</strong> {product.model}</p>}
                   {product.fabric && <p><strong>Fabric:</strong> {product.fabric}</p>}
                 </div>
@@ -546,7 +559,7 @@ const ProductDetails = () => {
         </div>
 
         {/* Reviews Section */}
-        <section className="mt-12 bg-white p-6 shadow-sm">
+        {/* <section className="mt-12 bg-white p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h2 className="text-2xl font-bold">Customer Reviews</h2>
             {isAuthenticated ? (
@@ -620,7 +633,7 @@ const ProductDetails = () => {
               ))}
             </div>
           )}
-        </section>
+        </section> */}
 
         {relatedProducts.length > 0 && (
           <section className="mt-12">
@@ -643,7 +656,6 @@ const ProductDetails = () => {
                   </div>
                   <div className="p-4">
                     <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{p.name}</h3>
-                    <div className="flex items-center gap-1 mt-2">{renderStars(p.rating)}</div>
                     <p className="text-lg font-bold text-orange-600 mt-3">₹{p.price.toLocaleString()}</p>
                   </div>
                 </div>

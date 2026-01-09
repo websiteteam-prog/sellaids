@@ -57,9 +57,17 @@ export const updateProductController = async (req, res) => {
     }
 
     // Check if product exists and belongs to this vendor
-    const product = await Product.findOne({
-      where: { id, vendor_id: vendorId, is_active: true },
-    });
+    let product;
+
+    if (adminId) {
+      product = await Product.findOne({
+        where: { id, is_active: true },
+      });
+    } else {
+      product = await Product.findOne({
+        where: { id, vendor_id: vendorId, is_active: true },
+      });
+    }
 
     if (!product) {
       return res.status(404).json({
@@ -118,9 +126,9 @@ export const updateProductController = async (req, res) => {
           ? req.files.more_images.map((f) => `uploads/${f.filename}`)
           : product.more_images || [],
     };
-
+    const isAdmin = Boolean(adminId);
     // Call service to update
-    const updatedProduct = await updateProductService(id, vendorId, req.body, images);
+    const updatedProduct = await updateProductService(id, vendorId, req.body, images, isAdmin);
 
     return res.status(200).json({
       success: true,

@@ -44,7 +44,8 @@ const config = {
   shiprocket: {
     baseUrl: process.env.SHIPROCKET_BASE_URL,
     email: process.env.SHIPROCKET_EMAIL,
-    password: process.env.SHIPROCKET_PASSWORD
+    password: process.env.SHIPROCKET_PASSWORD,
+    webhookSecret: process.env.SHIPROCKET_WEBHOOK_SECRET
   },
 };
 

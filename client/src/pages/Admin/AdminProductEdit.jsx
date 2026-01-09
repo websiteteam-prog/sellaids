@@ -59,13 +59,12 @@ const FormField = ({ field, value, onChange, disabled, previewUrl }) => {
         <label className="font-medium mb-1">{field.label}</label>
         <div
           onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={`border rounded px-3 py-2 cursor-pointer ${
-            disabled ? "bg-gray-100" : ""
-          }`}
+          className={`border rounded px-3 py-2 cursor-pointer ${disabled ? "bg-gray-100" : ""
+            }`}
         >
           {field.name === "product_condition"
             ? PRODUCT_CONDITION_OPTIONS.find((x) => x.value === value)?.label ||
-              "Select Condition"
+            "Select Condition"
             : value || `Search ${field.label}`}
         </div>
 
@@ -184,6 +183,22 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   useEffect(() => {
     if (!product) return;
 
+    let parsedAdditional = {
+      title: "",
+      fabric: "",
+      model_size: "",
+      info: "",
+      description: "",
+    };
+
+    try {
+      parsedAdditional = product.additional_info
+        ? JSON.parse(product.additional_info)
+        : parsedAdditional;
+    } catch (e) {
+      console.error("Invalid additional_info JSON");
+    }
+
     setFormData({
       product_group: product.product_group || "",
       productCategory: product.category?.name || "",
@@ -207,7 +222,7 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       purchase_year: product.purchase_year || "",
       purchase_place: product.purchase_place || "",
       product_link: product.product_link || "",
-      additional_info: product.additional_info || "",
+      additional_info: parsedAdditional,
       more_images: [],
     });
 
@@ -250,7 +265,7 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   useEffect(() => {
     if (!formData.category_id) return;
 
-    const abc =axios
+    const abc = axios
       .get(
         `${API_URL}/api/product/types?category_id=${formData.category_id}`,
         { withCredentials: true }
@@ -258,12 +273,24 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       .then((r) => r.data.success && setTypes(r.data.data.map((x) => x.type_name)))
       .catch((e) => e.response?.status === 401 && handleUnauthorized());
 
-      console.log("abc", abc);
+    console.log("abc", abc);
   }, [formData.category_id]);
 
   /* ===== CHANGE HANDLER ===== */
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
+
+    if (name.startsWith("additional_info.")) {
+      const key = name.split(".")[1];
+      setFormData((p) => ({
+        ...p,
+        additional_info: {
+          ...p.additional_info,
+          [key]: value,
+        },
+      }));
+      return;
+    }
 
     if (type === "file") {
       if (name === "more_images") {
@@ -304,7 +331,7 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   };
 
 
-    /* ===== UPDATE ===== */
+  /* ===== UPDATE ===== */
   const handleUpdate = async () => {
     const fd = new FormData();
 
@@ -312,9 +339,12 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       if (v == null) return;
       if (Array.isArray(v)) {
         v.forEach((f) => fd.append(k, f));
+      } else if (k === "additional_info") {
+        fd.append("additional_info", JSON.stringify(v));
       } else {
         fd.append(k, v);
       }
+
     });
 
     // 🔥 size_other explicit append (backend expects this)
@@ -358,18 +388,16 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
           ].map((s) => (
             <div key={s.id} className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 flex items-center justify-center rounded-full font-bold ${
-                  step === s.id
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
+                className={`w-10 h-10 flex items-center justify-center rounded-full font-bold ${step === s.id
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-200 text-gray-600"
+                  }`}
               >
                 {s.id}
               </div>
               <span
-                className={`font-semibold ${
-                  step === s.id ? "text-orange-600" : "text-gray-500"
-                }`}
+                className={`font-semibold ${step === s.id ? "text-orange-600" : "text-gray-500"
+                  }`}
               >
                 {s.label}
               </span>
@@ -443,6 +471,24 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
               <FormField
                 field={{ name: "model_name", label: "Model Name", type: "text" }}
                 value={formData.model_name}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.title", label: "Title" }}
+                value={formData.additional_info?.title}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.fabric", label: "Fabric" }}
+                value={formData.additional_info?.fabric}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.model_size", label: "Model Size" }}
+                value={formData.additional_info?.model_size}
                 onChange={handleChange}
               />
 
@@ -587,11 +633,32 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
               />
 
               <div className="sm:col-span-2">
-                <FormField
-                  field={{ name: "additional_info", label: "Additional Info", type: "textarea" }}
-                  value={formData.additional_info}
-                  onChange={handleChange}
-                />
+                <div className="sm:col-span-2">
+                  <div className="mt-6">
+                    <FormField
+                      field={{
+                        name: "additional_info.info",
+                        label: "Additional Info",
+                        type: "textarea",
+                      }}
+                      value={formData.additional_info?.info}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="mt-6">
+                    <FormField
+                      field={{
+                        name: "additional_info.description",
+                        label: "Product Description",
+                        type: "textarea",
+                      }}
+                      value={formData.additional_info?.description}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
