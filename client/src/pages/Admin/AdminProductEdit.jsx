@@ -1,10 +1,10 @@
-// src/pages/admin/AdminProductEdit.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const PRODUCT_CONDITION_OPTIONS = [
   { value: "new", label: "New" },
@@ -14,8 +14,8 @@ const PRODUCT_CONDITION_OPTIONS = [
   { value: "satisfactory", label: "Satisfactory" },
 ];
 
-/* ================= FORM FIELD ================= */
-const FormField = ({ field, value, onChange, disabled, previewUrl }) => {
+// REUSABLE FormField — EXACT SAME AS AddProductForm.jsx
+const FormField = ({ field, value, onChange, error, disabled, previewUrl }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [filteredOptions, setFilteredOptions] = useState(field.options || []);
@@ -23,147 +23,154 @@ const FormField = ({ field, value, onChange, disabled, previewUrl }) => {
 
   useEffect(() => {
     if (searchValue && Array.isArray(field.options)) {
-      setFilteredOptions(
-        field.options.filter((opt) =>
-          (opt.name || opt)
-            .toLowerCase()
-            .includes(searchValue.toLowerCase())
-        )
+      const filtered = field.options.filter((opt) =>
+        opt.name
+          ? opt.name.toLowerCase().includes(searchValue.toLowerCase())
+          : opt.toString().toLowerCase().includes(searchValue.toLowerCase())
       );
+      setFilteredOptions(filtered);
     } else {
       setFilteredOptions(field.options || []);
     }
   }, [searchValue, field.options]);
 
   useEffect(() => {
-    const close = (e) =>
-      wrapperRef.current &&
-      !wrapperRef.current.contains(e.target) &&
-      setIsOpen(false);
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (val) => {
-    let finalVal = val;
-    if (field.name === "productCategory") finalVal = val.name || val;
-    onChange({ target: { name: field.name, value: finalVal } });
-    setIsOpen(false);
+  const handleSelect = (selectedValue) => {
+    let finalValue = selectedValue;
+
+    if (field.name === "productCategory") {
+      finalValue = selectedValue.name || selectedValue;
+    } else if (field.name === "product_condition") {
+      finalValue = selectedValue;
+    }
+
+    onChange({
+      target: { name: field.name, value: finalValue },
+    });
     setSearchValue("");
+    setIsOpen(false);
   };
 
-  /* ===== SELECT ===== */
+  const handleToggle = () => setIsOpen(!isOpen);
+
   if (field.type === "select") {
     return (
-      <div className="flex flex-col relative" ref={wrapperRef}>
-        <label className="font-medium mb-1">{field.label}</label>
-        <div
-          onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={`border rounded px-3 py-2 cursor-pointer ${disabled ? "bg-gray-100" : ""
-            }`}
-        >
-          {field.name === "product_condition"
-            ? PRODUCT_CONDITION_OPTIONS.find((x) => x.value === value)?.label ||
-            "Select Condition"
-            : value || `Search ${field.label}`}
-        </div>
-
-        {isOpen && !disabled && (
-          <div className="absolute bg-white border w-full max-h-40 overflow-y-auto z-50">
-            <input
-              className="w-full px-2 py-1 border-b"
-              placeholder="Search..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-            {filteredOptions.map((opt, i) => (
-              <div
-                key={i}
-                onClick={() => handleSelect(opt)}
-                className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-              >
-                {opt.name || opt}
-              </div>
-            ))}
-            {filteredOptions.length === 0 && (
-              <div
-                className="px-3 py-2 text-sm text-gray-500 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSelect(searchValue)}
-              >
-                Use “{searchValue}”
-              </div>
-            )}
+      <div className="flex flex-col" ref={wrapperRef}>
+        <label className="text-gray-700 font-medium mb-1" data-field={field.name}>
+          {field.label}
+        </label>
+        <div className="relative">
+          <div
+            className={`border rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            onClick={disabled ? null : handleToggle}
+          >
+            {field.name === "product_condition"
+              ? PRODUCT_CONDITION_OPTIONS.find((x) => x.value === value)?.label || "Select Condition"
+              : field.name === "productCategory"
+                ? value || "Select Category"
+                : value || `Select ${field.label}`}
           </div>
-        )}
+          {isOpen && !disabled && (
+            <div className="absolute z-50 w-full bg-white border rounded-b mt-1 max-h-40 overflow-y-auto shadow-lg">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                placeholder={`Search ${field.label}...`}
+                className="border-b px-2 py-1 w-full focus:outline-none sticky top-0 bg-white"
+                onClick={(e) => e.stopPropagation()}
+              />
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSelect(opt.name ? opt : opt)}
+                    className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-sm"
+                  >
+                    {field.name === "product_condition"
+                      ? PRODUCT_CONDITION_OPTIONS.find((x) => x.value === (opt.name || opt))?.label || opt
+                      : opt.name || opt}
+                  </div>
+                ))
+              ) : (
+                <div className="px-2 py-1 text-gray-500">No options found</div>
+              )}
+            </div>
+          )}
+        </div>
+        {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
       </div>
     );
   }
 
-  /* ===== FILE ===== */
   if (field.type === "file") {
     return (
-      <div className="flex flex-col gap-2">
-        <label className="font-medium">{field.label}</label>
+      <div className="flex flex-col space-y-4">
+        <label className="text-gray-700 font-medium text-sm md:text-base">{field.label}</label>
         {previewUrl && (
-          <img
-            src={previewUrl}
-            alt=""
-            className="h-48 object-cover rounded border"
-          />
-        )}
-        <div className="flex items-center gap-4">
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              name={field.name}
-              multiple={field.multiple}
-              accept="image/*"
-              onChange={onChange}
-              className="hidden"
+          <div className="mx-auto w-full max-w-xs">
+            <img
+              src={previewUrl}
+              alt={field.label}
+              className="w-full h-56 object-cover rounded-xl shadow-lg border border-gray-200"
+              onError={(e) => (e.target.style.display = "none")}
             />
-            <span className="px-6 py-2 rounded-full bg-orange-100 text-orange-600 font-semibold hover:bg-orange-200 transition">
-              Choose file
-            </span>
-          </label>
-          <span className="text-sm text-gray-500">No file chosen</span>
-        </div>
+          </div>
+        )}
+        <input
+          type="file"
+          name={field.name}
+          onChange={onChange}
+          multiple={field.multiple}
+          accept="image/*"
+          className="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-7 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 cursor-pointer"
+          disabled={disabled}
+        />
+        {error && <span className="text-red-500 text-xs">{error}</span>}
       </div>
     );
   }
 
-  /* ===== TEXTAREA ===== */
   if (field.type === "textarea") {
     return (
       <div className="flex flex-col">
-        <label className="font-medium mb-1">{field.label}</label>
+        <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">{field.label}</label>
         <textarea
           name={field.name}
-          rows="4"
           value={value || ""}
           onChange={onChange}
-          className="border rounded px-3 py-2"
+          rows="4"
+          className="border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
         />
       </div>
     );
   }
 
-  /* ===== INPUT ===== */
   return (
     <div className="flex flex-col">
-      <label className="font-medium mb-1">{field.label}</label>
+      <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">{field.label}</label>
       <input
         type={field.type || "text"}
         name={field.name}
         value={value || ""}
         onChange={onChange}
-        className="border rounded px-3 py-2"
+        className="border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
         disabled={disabled}
       />
+      {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
     </div>
   );
 };
 
-/* ================= ADMIN PRODUCT EDIT ================= */
 const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -175,11 +182,60 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
   const handleUnauthorized = () => {
-    toast.error("Session expired");
-    navigate("/admin/login");
+    toast.error("Session expired. Please login again.");
+    navigate("/login");
   };
 
-  /* ===== INIT ===== */
+  // FETCH CATEGORIES on product_group change
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!formData.product_group) {
+        setCategories([]);
+        return;
+      }
+      setIsLoadingCategories(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("group", formData.product_group);
+        const res = await axios.get(
+          `${API_URL}/api/product/categories-list?${params.toString()}`,
+          { withCredentials: true }
+        );
+        if (res.data.success) {
+          setCategories(res.data.data || []);
+        }
+      } catch (err) {
+        if (err.response?.status === 401) handleUnauthorized();
+        else toast.error("Failed to load categories");
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, [formData.product_group]);
+
+  // FETCH TYPES on category_id change
+  useEffect(() => {
+    const fetchTypes = async () => {
+      if (!formData.category_id) {
+        setTypes([]);
+        return;
+      }
+      try {
+        const res = await axios.get(`${API_URL}/api/product?category_id=${formData.category_id}`, {
+          withCredentials: true,
+        });
+        if (res.data.success) {
+          setTypes(res.data.data.map((t) => t.name || t.type_name || ""));
+        }
+      } catch (err) {
+        if (err.response?.status === 401) handleUnauthorized();
+      }
+    };
+    fetchTypes();
+  }, [formData.category_id]);
+
+  // Initialize form data
   useEffect(() => {
     if (!product) return;
 
@@ -199,10 +255,10 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       console.error("Invalid additional_info JSON");
     }
 
-    setFormData({
+    const initialData = {
       product_group: product.product_group || "",
       productCategory: product.category?.name || "",
-      category_id: product.category_id || "",
+      category_id: product.category_id || product.category?.id || "",
       product_type: product.product_type || "",
       product_condition: product.product_condition || "",
       fit: product.fit || "",
@@ -222,12 +278,21 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       purchase_year: product.purchase_year || "",
       purchase_place: product.purchase_place || "",
       product_link: product.product_link || "",
-      additional_info: parsedAdditional,
+      additional_info: product.additional_info || "",
+      front_photo: null,
+      back_photo: null,
+      label_photo: null,
+      inside_photo: null,
+      button_photo: null,
+      wearing_photo: null,
+      invoice_photo: null,
+      repair_photo: null,
       more_images: [],
-    });
+    };
+    setFormData(initialData);
 
-    const imgs = {};
-    [
+    const previews = {};
+    const keys = [
       "front_photo",
       "back_photo",
       "label_photo",
@@ -236,47 +301,18 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       "wearing_photo",
       "invoice_photo",
       "repair_photo",
-    ].forEach((k) => {
-      if (product[k]) {
-        imgs[k] = product[k].startsWith("http")
-          ? product[k]
-          : API_URL + product[k];
+    ];
+    keys.forEach((key) => {
+      if (product[key]) {
+        const url = product[key];
+        previews[key] = url.startsWith("http")
+          ? url
+          : `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
       }
     });
-    setImagePreviews(imgs);
+    setImagePreviews(previews);
   }, [product]);
 
-  /* ===== CATEGORY API ===== */
-  useEffect(() => {
-    if (!formData.product_group) return;
-
-    setIsLoadingCategories(true);
-    axios
-      .get(
-        `${API_URL}/api/product/categories-list?group=${formData.product_group}`,
-        { withCredentials: true }
-      )
-      .then((r) => r.data.success && setCategories(r.data.data))
-      .catch((e) => e.response?.status === 401 && handleUnauthorized())
-      .finally(() => setIsLoadingCategories(false));
-  }, [formData.product_group]);
-
-  /* ===== TYPES API (FIXED) ===== */
-  useEffect(() => {
-    if (!formData.category_id) return;
-
-    const abc = axios
-      .get(
-        `${API_URL}/api/product/types?category_id=${formData.category_id}`,
-        { withCredentials: true }
-      )
-      .then((r) => r.data.success && setTypes(r.data.data.map((x) => x.type_name)))
-      .catch((e) => e.response?.status === 401 && handleUnauthorized());
-
-    console.log("abc", abc);
-  }, [formData.category_id]);
-
-  /* ===== CHANGE HANDLER ===== */
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
 
@@ -292,124 +328,160 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       return;
     }
 
-    if (type === "file") {
+    if (type === "file" && files?.length > 0) {
       if (name === "more_images") {
-        setFormData((p) => ({
-          ...p,
-          more_images: [...p.more_images, ...Array.from(files)],
+        setFormData((prev) => ({
+          ...prev,
+          more_images: [...(prev.more_images || []), ...Array.from(files)],
         }));
       } else {
-        setFormData((p) => ({ ...p, [name]: files[0] }));
-        setImagePreviews((p) => ({
-          ...p,
-          [name]: URL.createObjectURL(files[0]),
+        const file = files[0];
+        setFormData((prev) => ({ ...prev, [name]: file }));
+        setImagePreviews((prev) => ({
+          ...prev,
+          [name]: URL.createObjectURL(file),
         }));
       }
-      return;
-    }
-
-    if (name === "productCategory") {
-      const c = categories.find((x) => x.name === value);
-      setFormData((p) => ({
-        ...p,
+    } else if (name === "productCategory") {
+      const selectedCategory = categories.find((c) => c.name === value);
+      setFormData((prev) => ({
+        ...prev,
         productCategory: value,
-        category_id: c?.id || "",
+        category_id: selectedCategory ? selectedCategory.id : "",
+        product_type: "",
       }));
-      return;
-    }
-
-    if (name === "size") {
-      setFormData((p) => ({
-        ...p,
+    } else if (name === "size") {
+      setFormData((prev) => ({
+        ...prev,
         size: value,
-        other_size: value === "Other" ? p.other_size : "",
+        other_size: value === "Other" ? prev.other_size || "" : "",
       }));
-      return;
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-
-    setFormData((p) => ({ ...p, [name]: value }));
   };
 
-
-  /* ===== UPDATE ===== */
   const handleUpdate = async () => {
-    const fd = new FormData();
+    const data = new FormData();
 
-    Object.entries(formData).forEach(([k, v]) => {
-      if (v == null) return;
-      if (Array.isArray(v)) {
-        v.forEach((f) => fd.append(k, f));
-      } else if (k === "additional_info") {
-        fd.append("additional_info", JSON.stringify(v));
-      } else {
-        fd.append(k, v);
+    Object.keys(formData).forEach((key) => {
+      const value = formData[key];
+
+      // Allow empty strings; skip only null/undefined
+      if (value === null || value === undefined) return;
+
+      if (key === "more_images" && Array.isArray(value)) {
+        value.forEach((file) => data.append("more_images", file));
       }
-
+      else if (value instanceof File) {
+        data.append(key, value);
+      }
+      else if (key === "size" && value === "Other") {
+        data.append("size", "Other");
+        if (formData.other_size) data.append("size_other", formData.other_size);
+      }
+      else if (key !== "other_size" && key !== "productCategory") {
+        data.append(key, value);
+      }
     });
 
-    // 🔥 size_other explicit append (backend expects this)
-    if (formData.size === "Other") {
-      fd.append("size_other", formData.other_size);
-    }
 
+    // try {
+    //   setIsSubmitting(true);
+    //   await axios.put(
+    //     `${API_URL}/api/product/${product.id || product._id}`,
+    //     data,
+    //     {
+    //       method: "PUT",
+    //       headers: { "Content-Type": "multipart/form-data" },
+    //       withCredentials: true,
+    //     }
+    //   );
+    //   toast.success("Product updated successfully!");
+    //   onUpdateSuccess?.();
+    //   onClose();
+    // } catch (err) {
+    //   if (err.response?.status === 401) {
+    //     handleUnauthorized();
+    //   } else {
+    //     toast.error(err.response?.data?.message || "Update failed");
+    //   }
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
     try {
       setIsSubmitting(true);
       await axios.put(
-        `${API_URL}/api/admin/management/product/${product.id}`,
-        fd,
-        { withCredentials: true }
+        `${API_URL}/api/product/${product.id || product._id}`,
+        data,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
       );
-      toast.success("Product updated");
+      toast.success("Product updated successfully!");
       onUpdateSuccess?.();
       onClose();
-    } catch (error) {
-      toast.error("Update failed");
+    } catch (err) {
+      if (err.response?.status === 401) {
+        handleUnauthorized();
+      } else {
+        // Check if backend sent an array of validation errors
+        const errors = err.response?.data?.errors;
+        if (errors && Array.isArray(errors) && errors.length > 0) {
+          // Show all errors in the toast (can also join them into a single string)
+          errors.forEach((error) => toast.error(error));
+        } else {
+          // Show single error message if no array exists
+          toast.error(err.response?.data?.message || "Update failed");
+        }
+      }
     } finally {
       setIsSubmitting(false);
     }
+
   };
 
-  /* ================= UI ================= */
+  const steps = ["Product", "Condition", "Images", "Price & Details"];
+
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-6xl max-h-[95vh] overflow-y-auto">
-        <div className="p-6 border-b flex justify-between">
-          <h2 className="text-2xl font-bold">Edit Product</h2>
-          <button onClick={onClose} className="text-3xl">×</button>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center z-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Edit Product
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-4xl text-gray-500 hover:text-gray-800"
+          >
+            ×
+          </button>
         </div>
 
-        {/* STEPS */}
-        <div className="flex justify-center gap-10 py-6">
-          {[
-            { id: 1, label: "Product" },
-            { id: 2, label: "Condition" },
-            { id: 3, label: "Images" },
-            { id: 4, label: "Price & Details" },
-          ].map((s) => (
-            <div key={s.id} className="flex items-center gap-3">
+        <div className="px-8 py-6 flex justify-center gap-8 md:gap-16 text-sm font-medium">
+          {steps.map((s, i) => (
+            <div
+              key={i}
+              className={`flex items-center gap-3 ${step === i + 1 ? "text-orange-600" : "text-gray-500"
+                }`}
+            >
               <div
-                className={`w-10 h-10 flex items-center justify-center rounded-full font-bold ${step === s.id
-                  ? "bg-orange-600 text-white"
-                  : "bg-gray-200 text-gray-600"
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${step === i + 1 ? "bg-orange-600" : "bg-gray-400"
                   }`}
               >
-                {s.id}
+                {i + 1}
               </div>
-              <span
-                className={`font-semibold ${step === s.id ? "text-orange-600" : "text-gray-500"
-                  }`}
-              >
-                {s.label}
-              </span>
+              <span className="hidden sm:block">{s}</span>
             </div>
           ))}
         </div>
 
         <form
-          className="p-6 space-y-10"
           onSubmit={(e) => e.preventDefault()}
+          className="px-6 md:px-12 pb-10 space-y-12"
         >
-
           {/* STEP 1 - Product */}
           {step === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -418,21 +490,18 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 value={formData.product_group}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "productCategory", label: "Category *", type: "select", options: isLoadingCategories ? [{ name: "Loading..." }] : categories }}
                 value={formData.productCategory}
                 onChange={handleChange}
                 disabled={!formData.product_group || isLoadingCategories}
               />
-
               <FormField
                 field={{ name: "product_type", label: "Type *", type: "select", options: types }}
                 value={formData.product_type}
                 onChange={handleChange}
                 disabled={!formData.category_id}
               />
-
               <FormField
                 field={{
                   name: "product_condition",
@@ -443,55 +512,31 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 value={formData.product_condition}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "fit", label: "Fit (Only for men apparel)", type: "select", options: ["Slim", "Regular", "Loose", "Oversized", "Other"] }}
                 value={formData.fit}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "size", label: "Size *", type: "select", options: ["XS", "S", "M", "L", "XL", "XXL", "Other"] }}
                 value={formData.size}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "product_color", label: "Color", type: "text" }}
                 value={formData.product_color}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "brand", label: "Brand *", type: "text" }}
                 value={formData.brand}
                 onChange={handleChange}
               />
-
               <FormField
-                field={{ name: "model_name", label: "Model Name", type: "text" }}
+                field={{ name: "model_name", label: "Model Name ", type: "text" }}
                 value={formData.model_name}
                 onChange={handleChange}
               />
-
-              <FormField
-                field={{ name: "additional_info.title", label: "Title" }}
-                value={formData.additional_info?.title}
-                onChange={handleChange}
-              />
-
-              <FormField
-                field={{ name: "additional_info.fabric", label: "Fabric" }}
-                value={formData.additional_info?.fabric}
-                onChange={handleChange}
-              />
-
-              <FormField
-                field={{ name: "additional_info.model_size", label: "Model Size" }}
-                value={formData.additional_info?.model_size}
-                onChange={handleChange}
-              />
-
               {formData.size === "Other" && (
                 <div className="sm:col-span-2">
                   <FormField
@@ -512,37 +557,31 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 value={formData.invoice}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "invoice_photo", label: "Invoice Photo", type: "file" }}
                 onChange={handleChange}
                 previewUrl={imagePreviews.invoice_photo}
               />
-
               <FormField
                 field={{ name: "needs_repair", label: "Needs Repair?", type: "select", options: ["No", "Yes"] }}
                 value={formData.needs_repair}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "repair_photo", label: "Repair Photo", type: "file" }}
                 onChange={handleChange}
                 previewUrl={imagePreviews.repair_photo}
               />
-
               <FormField
                 field={{ name: "original_box", label: "Original Box?", type: "select", options: ["No", "Yes"] }}
                 value={formData.original_box}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "dust_bag", label: "Dust Bag?", type: "select", options: ["No", "Yes"] }}
                 value={formData.dust_bag}
                 onChange={handleChange}
               />
-
               <div className="sm:col-span-2">
                 <FormField
                   field={{ name: "additional_items", label: "Additional Items", type: "textarea" }}
@@ -578,7 +617,6 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                   previewUrl={imagePreviews[key]}
                 />
               ))}
-
               <div className="lg:col-span-3">
                 <FormField
                   field={{
@@ -601,37 +639,31 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 value={formData.purchase_price}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "selling_price", label: "Selling Price (₹)", type: "number" }}
                 value={formData.selling_price}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "reason_to_sell", label: "Reason to Sell", type: "text" }}
                 value={formData.reason_to_sell}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "purchase_year", label: "Purchase Year", type: "number" }}
                 value={formData.purchase_year}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "purchase_place", label: "Purchase Place", type: "text" }}
                 value={formData.purchase_place}
                 onChange={handleChange}
               />
-
               <FormField
                 field={{ name: "product_link", label: "Product Link", type: "url" }}
                 value={formData.product_link}
                 onChange={handleChange}
               />
-
               <div className="sm:col-span-2">
                 <div className="sm:col-span-2">
                   <div className="mt-6">
@@ -663,11 +695,12 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
             </div>
           )}
 
-          {/* ACTIONS */}
-          <div className="flex justify-between border-t pt-6">
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-10 border-t">
             <button
+              type="button"
               onClick={onClose}
-              className="bg-gray-600 text-white px-6 py-2 rounded"
+              className="w-full sm:w-auto px-10 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
             >
               Cancel
             </button>
@@ -675,32 +708,33 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
             <div className="flex gap-4">
               {step > 1 && (
                 <button
+                  type="button"
                   onClick={() => setStep(step - 1)}
-                  className="px-6 py-2 bg-gray-300 rounded"
+                  className="px-8 py-3 bg-gray-300 rounded-lg font-medium"
                 >
                   Back
                 </button>
               )}
-
               {step < 4 ? (
                 <button
+                  type="button"
                   onClick={() => setStep(step + 1)}
-                  className="px-8 py-2 bg-orange-600 text-white rounded"
+                  className="px-12 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-lg"
                 >
                   Next
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleUpdate}
                   disabled={isSubmitting}
-                  className="px-8 py-2 bg-green-600 text-white rounded"
+                  className="px-14 py-3.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg shadow-xl"
                 >
                   {isSubmitting ? "Updating..." : "Update Product"}
                 </button>
               )}
             </div>
           </div>
-
         </form>
       </div>
     </div>
