@@ -6,6 +6,7 @@ import { FaHeart, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
 
 import { useUserStore } from "../../stores/useUserStore";
 import { useCartActions } from "../../stores/useCartActions";
+import CartRightSlider from "../../components/CartRightSlider";
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
@@ -25,6 +26,9 @@ const Shop = () => {
   const [availableConditions, setAvailableConditions] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
 
+  const [isCartSliderOpen, setCartSliderOpen] = useState(false);
+  const [sliderProduct, setSliderProduct] = useState(null);
+
   // SORT
   const [sort, setSort] = useState("default");
 
@@ -35,7 +39,7 @@ const Shop = () => {
   const location = useLocation();
 
   const { isAuthenticated, isUserLoading } = useUserStore();
-  const { setPendingAdd } = useCartActions();
+  const { pendingAdd, setPendingAdd } = useCartActions();
 
   const API_BASE = process.env.REACT_APP_API_URL;
 
@@ -48,6 +52,17 @@ const Shop = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      pendingAdd?.type === "cart" &&
+      pendingAdd.product
+    ) {
+      addToCartDirectly(pendingAdd.product);
+      setPendingAdd(null);
+    }
+  }, [isAuthenticated, pendingAdd]);
+
   // FETCH PRODUCTS
   useEffect(() => {
     const fetchProducts = async () => {
@@ -55,6 +70,7 @@ const Shop = () => {
         setLoading(true);
         const res = await axios.get(`${API_BASE}/api/product/shop/all-products`);
 
+        console.log(res.data)
         if (
           res.data.success &&
           res.data.products &&
@@ -77,24 +93,46 @@ const Shop = () => {
   }, [API_BASE]);
 
   // CART
-  const handleAddToCart = async (product) => {
-    if (isUserLoading) return toast.error("Please wait...");
-    if (!isAuthenticated) {
-      setPendingAdd({ product, from: location.pathname, type: "cart" });
-      navigate("/UserAuth/UserLogin");
-      return;
-    }
-
+  const addToCartDirectly = async (product) => {
     try {
-      await axios.post(
+      const res = await axios.post(
         `${API_BASE}/api/user/cart`,
         { product_id: product._id },
         { withCredentials: true }
       );
-      toast.success("Added to cart");
+
+      if (res.data.success) {
+        toast.success("Added to cart");
+
+        setSliderProduct({
+          product_id: res.data.data.product_id,
+          user_id: res.data.data.user_id,
+        });
+
+        setCartSliderOpen(true);
+      }
     } catch {
       toast.error("Failed to add to cart");
     }
+  };
+
+  const handleAddToCart = (product) => {
+    if (isUserLoading) return toast.error("Please wait...");
+
+    if (!isAuthenticated) {
+      setPendingAdd({
+        product,
+        from: location.pathname,
+        type: "cart",
+      });
+
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname },
+      });
+      return;
+    }
+
+    addToCartDirectly(product);
   };
 
   // WISHLIST
@@ -330,7 +368,7 @@ const Shop = () => {
               let additionalInfo = {};
               try {
                 additionalInfo = JSON.parse(product?.product_additionalInfo || "{}");
-              } catch {}
+              } catch { }
 
               return (
                 <div key={product._id} className="group overflow-hidden transition-all duration-300">
@@ -378,7 +416,7 @@ const Shop = () => {
                       onClick={() => handleNavigate(product._id)}
                       className="cursor-pointer hover:text-blue-700"
                     >
-                      {additionalInfo.description || product.product_name}
+                      {additionalInfo.title || additionalInfo.description}
                     </h3>
                     <p className="mt-2">₹{product.product_price}</p>
                   </div>
@@ -394,6 +432,16 @@ const Shop = () => {
           )}
         </main>
       </div>
+      <CartRightSlider
+        open={isCartSliderOpen}
+        product={sliderProduct}
+        onClose={() => setCartSliderOpen(false)}
+        onRemove={() => {
+          setCartSliderOpen(false);
+          toast.success("Item removed");
+        }}
+        onContinue={() => setCartSliderOpen(false)}
+      />
     </>
   );
 };

@@ -69,7 +69,9 @@ export const createProductService = async (vendorId, data, images) => {
       reason_to_sell: data.reason_to_sell?.trim() || null,
       purchase_place: data.purchase_place?.trim() || null,
       product_link: data.product_link?.trim() || null,
-      additional_info: data.additional_info?.trim() || null,
+      additional_info: data.additional_info
+  ? JSON.stringify(JSON.parse(data.additional_info))
+  : null,
 
       // Prices & Year
       purchase_price: data.purchase_price

@@ -55,13 +55,17 @@ const drawProductTable = (doc, items, startY) => {
 
 export const generateInvoicePDF = (invoiceData) => {
 
+  if (!invoiceData.invoiceNumber) {
+    throw new Error("Invoice number missing while generating PDF");
+  }
+
   const invoiceDir = path.join(process.cwd(), "src/public/invoices");
 
   if (!fs.existsSync(invoiceDir)) {
     fs.mkdirSync(invoiceDir, { recursive: true });
   }
 
-  const fileName = `invoice-${invoiceData.orderNumber}.pdf`;
+  const fileName = `invoice-${invoiceData.invoiceNumber}.pdf`;
   const filePath = path.join(invoiceDir, fileName);
   const doc = new PDFDocument({ size: "A4", margin: 40 });
   doc.pipe(fs.createWriteStream(filePath));

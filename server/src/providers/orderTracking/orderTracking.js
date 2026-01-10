@@ -180,7 +180,6 @@ export const mapShiprocketStatusToOrderStatus = (shiprocketStatus) => {
     return "pending";
 };
 
-
 export const generateShiprocketToken = async () => {
     try {
         const response = await axios.post(
@@ -209,7 +208,6 @@ export const generateShiprocketToken = async () => {
         throw error; // calling code ko pata chale
     }
 };
-
 
 export const createShiprocketOrder = async (fullOrder) => {
     try {
@@ -246,7 +244,7 @@ export const createShiprocketOrder = async (fullOrder) => {
             length: 10,                               // > 0.5 cm
             breadth: 15,                              // > 0.5 cm
             height: 20,                               // > 0.5 cm
-            weight: 2.5                               // > 0 kg
+            weight: 1.0                               // > 0 kg
         };
 
         const token = await generateShiprocketToken();

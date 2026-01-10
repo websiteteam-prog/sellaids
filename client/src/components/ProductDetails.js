@@ -134,7 +134,7 @@ const ProductDetails = () => {
 
         const mappedProduct = {
           id: raw.id,
-          name: productName,
+          name: extraInfo.title || extraInfo.description,
           sku: raw.sku || "N/A",
           price: parseFloat(raw.selling_price) || 0,
           original_price: parseFloat(raw.purchase_price) || null,

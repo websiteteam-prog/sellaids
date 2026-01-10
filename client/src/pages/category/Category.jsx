@@ -480,7 +480,7 @@ const CategoryPage = () => {
                       onClick={() => handleNavigate(product._id)}
                       className="text-base font-normal text-gray-800 hover:text-blue-700 transition cursor-pointer"
                     >
-                      {additionalInfo.description || product.product_name}
+                      {additionalInfo.title || additionalInfo.description}
                     </h3>
                     <div className="mt-2">
                       <span className="text-base font-thin text-gray-900">

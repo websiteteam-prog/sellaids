@@ -278,7 +278,7 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       purchase_year: product.purchase_year || "",
       purchase_place: product.purchase_place || "",
       product_link: product.product_link || "",
-      additional_info: product.additional_info || "",
+      additional_info: parsedAdditional,
       front_photo: null,
       back_photo: null,
       label_photo: null,
@@ -379,6 +379,9 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
       else if (key === "size" && value === "Other") {
         data.append("size", "Other");
         if (formData.other_size) data.append("size_other", formData.other_size);
+      }
+      else if (key === "additional_info") {
+        data.append("additional_info", JSON.stringify(value));
       }
       else if (key !== "other_size" && key !== "productCategory") {
         data.append(key, value);
@@ -535,6 +538,23 @@ const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
               <FormField
                 field={{ name: "model_name", label: "Model Name ", type: "text" }}
                 value={formData.model_name}
+                onChange={handleChange}
+              />
+              <FormField
+                field={{ name: "additional_info.title", label: "Title" }}
+                value={formData.additional_info?.title}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.fabric", label: "Fabric" }}
+                value={formData.additional_info?.fabric}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.model_size", label: "Model Size" }}
+                value={formData.additional_info?.model_size}
                 onChange={handleChange}
               />
               {formData.size === "Other" && (

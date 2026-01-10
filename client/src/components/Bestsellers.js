@@ -334,7 +334,7 @@ function Bestsellers() {
               className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-600 transition cursor-pointer"
               onClick={() => navigate(`/product-details/${product.id}`)}
             >
-              {info.description || "Product Name"}
+              {info.title || info.description}
             </h3>
 
             <p className="text-lg font-bold text-black mt-2">

@@ -237,7 +237,13 @@ const AddProductForm = () => {
     purchase_year: "",
     purchase_place: "",
     product_link: "",
-    additional_info: "",
+    additional_info: {
+      title: "",
+      fabric: "",
+      model_size: "",
+      info: "",
+      description: "",
+    },
     agree: false,
   };
 
@@ -307,7 +313,20 @@ const AddProductForm = () => {
   }, [formData.category_id]);
 
   const handleChange = (e) => {
+
     const { name, value, type, checked, files } = e.target || e;
+    if (name.startsWith("additional_info.")) {
+      const key = name.split(".")[1];
+
+      setFormData((prev) => ({
+        ...prev,
+        additional_info: {
+          ...prev.additional_info,
+          [key]: value,
+        },
+      }));
+      return;
+    }
     if (type === "file") {
       setFormData((prev) => ({
         ...prev,
@@ -401,19 +420,42 @@ const AddProductForm = () => {
     try {
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
+
+        // 🪓 1. additional_info → JSON STRING
+        if (key === "additional_info") {
+          data.append("additional_info", JSON.stringify(value));
+          return;
+        }
+
+        // 🪓 2. Multiple images
         if (key === "more_images" && Array.isArray(value)) {
           value.forEach((file) => file && data.append("more_images", file));
-        } else if (value instanceof File && value) {
+          return;
+        }
+
+        // 🪓 3. Single file
+        if (value instanceof File) {
           data.append(key, value);
-        } else if (key !== "productCategory" && key !== "agree" && value !== null && value !== "") {
+          return;
+        }
+
+        // 🪓 4. Normal fields
+        if (
+          key !== "productCategory" &&
+          key !== "agree" &&
+          value !== null &&
+          value !== ""
+        ) {
           if (key !== "other_size") {
             data.append(key, value);
           }
+
           if (key === "other_size" && formData.size === "Other") {
             data.append("size_other", value.trim());
           }
         }
       });
+
 
       const res = await axios.post(`${API_URL}/api/product/add`, data, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -576,6 +618,23 @@ const AddProductForm = () => {
                   )}
                 </React.Fragment>
               ))}
+              <FormField
+                field={{ name: "additional_info.title", label: "Title" }}
+                value={formData.additional_info.title}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.fabric", label: "Fabric" }}
+                value={formData.additional_info.fabric}
+                onChange={handleChange}
+              />
+
+              <FormField
+                field={{ name: "additional_info.model_size", label: "Model Size" }}
+                value={formData.additional_info.model_size}
+                onChange={handleChange}
+              />
             </div>
           )}
 
@@ -647,20 +706,31 @@ const AddProductForm = () => {
               ))}
               {/* Full Width Additional Info */}
               <div className="col-span-full">
-                <FormField
-                  field={{
-                    name: "additional_info",
-                    label: "Additional Product Information *",
-                    type: "textarea",
-                    placeholder: `Tell us about the measurements if its a stitched garment (upper and bottom separate)
-Tell us about the colour of your product
-Tell us about the dry cleaning/handwash/machine wash instruction if any
-Tell us about the material of your product and give detailed description of your product`,
-                  }}
-                  value={formData.additional_info}
-                  onChange={handleChange}
-                  error={errors.additional_info}
-                />
+                <div className="col-span-full">
+                  <div className="mt-4">
+                    <FormField
+                      field={{
+                        name: "additional_info.description",
+                        label: "Product Description",
+                        type: "textarea",
+                      }}
+                      value={formData.additional_info.description}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <FormField
+                      field={{
+                        name: "additional_info.info",
+                        label: "Additional Info",
+                        type: "textarea",
+                      }}
+                      value={formData.additional_info.info}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
               </div>
 
               {/* RESPONSIVE "I agree to the terms" */}

@@ -142,12 +142,12 @@ const ProductDetails = () => {
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.front_photo}`}
               alt="Front"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.back_photo}`}
               alt="Back"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
           </div>
 
@@ -155,12 +155,12 @@ const ProductDetails = () => {
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.label_photo}`}
               alt="Label"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.inside_photo}`}
               alt="Inside"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
           </div>
 
@@ -168,12 +168,12 @@ const ProductDetails = () => {
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.button_photo}`}
               alt="Button"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.wearing_photo}`}
               alt="Wearing"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
           </div>
 
@@ -186,7 +186,7 @@ const ProductDetails = () => {
                     key={i}
                     src={`${process.env.REACT_APP_API_URL}/${img}`}
                     alt={`More ${i}`}
-                    className="w-full h-40 object-cover rounded-lg border"
+                    className="w-full h-48 object-cover rounded-lg border"
                   />
                 ))}
               </div>
@@ -225,9 +225,42 @@ const ProductDetails = () => {
           <p>
             <strong>Reason to Sell:</strong> {product.reason_to_sell}
           </p>
-          <p>
-            <strong>Additional Info:</strong> {additionalInfo?.description}
-          </p>
+          {additionalInfo && (
+            <div className="">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                {additionalInfo.title && (
+                  <p>
+                    <strong>Title:</strong> {additionalInfo.title}
+                  </p>
+                )}
+
+                {additionalInfo.fabric && (
+                  <p>
+                    <strong>Fabric:</strong> {additionalInfo.fabric}
+                  </p>
+                )}
+
+                {additionalInfo.model_size && (
+                  <p>
+                    <strong>Model Size:</strong> {additionalInfo.model_size}
+                  </p>
+                )}
+              </div>
+
+              {additionalInfo.info && (
+                <p className="mt-2">
+                  <strong>Additional Info:</strong> {additionalInfo.info}
+                </p>
+              )}
+
+              {additionalInfo.description && (
+                <p className="mt-2">
+                  <strong>Description:</strong> {additionalInfo.description}
+                </p>
+              )}
+            </div>
+          )}
+
           <p>
             <strong>Invoice:</strong> {product.invoice}
           </p>
