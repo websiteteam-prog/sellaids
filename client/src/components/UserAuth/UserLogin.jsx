@@ -63,80 +63,41 @@ function UserLogin() {
         toast.dismiss();
         toast.success(message || "Login Successful!", { duration: 2000 });
 
-        // 1. Pending Cart Add (checkout flow etc.)
-        // if (pendingAdd) {
-        //   try {
-        //     await axios.post(
-        //       `${process.env.REACT_APP_API_URL}/api/user/cart`,
-        //       { product_id: pendingAdd.product.id },
-        //       { withCredentials: true }
-        //     );
-        //     await fetchCart();
-        //     clearPending();
-        //     navigate("/user/checkout", { replace: true });
-        //   } catch (err) {
-        //     toast.error("Failed to add item to cart");
-        //     navigate("/user/checkout", { replace: true });
-        //   }
-        //   return;
-        // }
+        let productId = pendingAdd.product._id || pendingAdd.product.id
+        if (pendingAdd) {
+          try {
+            // 🟢 WISHLIST FLOW (login → add → wishlist page)
+            if (pendingAdd.type === "wishlist") {
+              const res = await axios.post(
+                `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
+                { product_id: productId },
+                { withCredentials: true }
+              );
 
-        // if (pendingAdd?.type === "cart") {
-        //   // 🔑 sirf redirect karo, cart add category page me useEffect karega
-        //   const redirectTo = pendingAdd.from || "/";
-        //   navigate(redirectTo, { replace: true });
-        //   return;
-        // }
+              toast.success(res.data.message); // backend msg (already added / added)
+              clearPending();
+              navigate("/user/wishlist", { replace: true });
+              return;
+            }
 
-        const redirectTo = pendingAdd?.from || "/";
-        console.log("Redirecting to pendingAdd:", pendingAdd);
-        console.log("Redirecting to:", redirectTo);
-        setTimeout(() => {
-          navigate(redirectTo, { replace: true });
-        }, 0);
-        return;
+            // 🟢 CART FLOW (login → wapas same page)
+            if (pendingAdd.type === "cart") {
+              const redirectTo = pendingAdd.from || "/";
+              setTimeout(() => {
+                navigate(redirectTo, { replace: true });
+              }, 0);
+              return;
+            }
+          } catch (error) {
+            toast.error(error.response?.data?.message || "Action failed");
+            clearPending();
+            navigate("/", { replace: true });
+            return;
+          }
+        }
 
-        // 2. State-based Add to Cart (from product page)
-        // if (location.state?.addToCart) {
-        //   const productId = location.state.addToCart;
-        //   try {
-        //     await axios.post(
-        //       `${process.env.REACT_APP_API_URL}/api/user/cart`,
-        //       { product_id: productId },
-        //       { withCredentials: true }
-        //     );
-        //     await fetchCart();
-        //     toast.success("Product added to cart!");
-        //   } catch (err) {
-        //     toast.error("Failed to add to cart");
-        //   }
-        //   // Wapas usi page pe (product page)
-        //   navigate(location.state.from || "/", { replace: true });
-        //   return;
-        // }
-
-        // 3. State-based Wishlist
-        // if (location.state?.addToWishlist) {
-        //   const productId = location.state.addToWishlist;
-        //   try {
-        //     await axios.post(
-        //       `${process.env.REACT_APP_API_URL}/api/user/wishlist`,
-        //       { product_id: productId },
-        //       { withCredentials: true }
-        //     );
-        //     toast.success("Added to wishlist!");
-        //   } catch (err) {
-        //     toast.error("Failed to add to wishlist");
-        //   }
-        //   navigate(location.state.from || "/", { replace: true });
-        //   return;
-        // }
-
-        // 4. Normal case - jahan se aaya tha wahan wapas
-        // const from = location.state?.from?.pathname || "/";
-        // navigate(from, { replace: true });
-        // const redirectTo = pendingAdd?.from || "/";
-        // navigate(redirectTo, { replace: true });
+        // 🔵 Normal login (no pending action)
+        navigate("/", { replace: true });
       } else {
         setLoginError("Invalid credentials");
       }
@@ -146,16 +107,6 @@ function UserLogin() {
       setLoading(false);
     }
   };
-
-  // Agar already logged in hai to turant redirect
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     toast.dismiss();
-  //     const from = location.state?.from?.pathname || "/";
-  //     navigate(from, { replace: true });
-  //   }
-  // }, [isAuthenticated, navigate, location]);
-
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">

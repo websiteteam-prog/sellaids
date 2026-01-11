@@ -151,29 +151,30 @@ const ProductDetails = () => {
           brand: raw.brand,
         };
 
+        let moreImages = [];
+
+        if (raw.more_images) {
+          if (typeof raw.more_images === "string") {
+            try {
+              moreImages = JSON.parse(raw.more_images);
+            } catch (err) {
+              moreImages = [];
+            }
+          } else if (Array.isArray(raw.more_images)) {
+            moreImages = raw.more_images;
+          }
+        }
+
+
         mappedProduct.images = [
           raw.front_photo,
           raw.back_photo,
           raw.label_photo,
           raw.inside_photo,
           raw.wearing_photo,
-          raw.more_images,
+          ...moreImages,
         ].filter((img) => img && img !== "null" && img !== "undefined");
 
-        // if (raw.more_images) {
-        //   try {
-        //     const extra = JSON.parse(raw.more_images);
-        //     if (Array.isArray(extra)) {
-        //       mappedProduct.images.push(
-        //         ...extra.map((img) =>
-        //           img.startsWith("http")
-        //             ? img
-        //             : `${process.env.REACT_APP_API_URL}${img}`
-        //         )
-        //       );
-        //     }
-        //   } catch (e) { }
-        // }
         const getRelatedProductInfo = (p) => {
           let name = "Beautiful Product";
           let rating = 0;
@@ -336,10 +337,11 @@ const ProductDetails = () => {
   };
 
 
-  const handleAddToWishlist = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please log in to add to wishlist");
-      navigate("/UserAuth/UserLogin", { state: { from: location.pathname } });
+  const addToWishlistDirectly = async (product) => {
+    if (!isAuthenticated) return;
+
+    if (!productId) {
+      toast.error("Product ID missing");
       return;
     }
 
@@ -347,20 +349,48 @@ const ProductDetails = () => {
       const res = await api.post(
         "/api/user/wishlist",
         { product_id: product.id },
-        { withCredentials: true } // 🔴 REQUIRED
+        { withCredentials: true }
       );
 
-      if (res.data.success) {
-        toast.success(res.data.message);
+      toast.success(res.data.message);
+      if (
+        res.data.success &&
+        res.data.message !== "Product already in wishlist"
+      ) {
         navigate("/user/wishlist");
-      } else {
-        toast.success(res.data.message);
       }
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to add to wishlist";
+      toast.error(msg);
 
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add to wishlist");
+      if (error.response?.status === 401) {
+        setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+        navigate("/UserAuth/UserLogin", {
+          state: { from: location.pathname, addToWishlist: productId },
+        });
+      }
     }
   };
+
+  const handleAddToWishlist = () => {
+    if (isUserLoading) {
+      toast.error("Please wait...");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+
+      toast.error("Please log in to add to wishlist");
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname, addToWishlist: product.id },
+      });
+      return;
+    }
+
+    addToWishlistDirectly(product);
+  };
+
 
   // const handleShare = () => {
   //   const url = window.location.href;

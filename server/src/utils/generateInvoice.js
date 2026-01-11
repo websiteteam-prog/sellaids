@@ -78,8 +78,11 @@ export const generateInvoicePDF = (invoiceData) => {
   const imagePath = path.join(process.cwd(), "..", "client/public/site.png")
   console.log(imagePath);
 
+  const subtotal = Number(invoiceData.subtotal);
+  const shipping = Number(invoiceData.shipping_fee);
+  const platform = Number(invoiceData.platform_fee);
 
-  const total = invoiceData.subtotal + invoiceData.shipping_fee + invoiceData.platform_fee;
+  const total = subtotal + shipping + platform;
   doc.image(imagePath, MARGIN, 30, { width: 50 });
 
   /* ================= HEADER ================= */

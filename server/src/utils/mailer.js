@@ -5,29 +5,29 @@ import logger from "../config/logger.js";
 import path from "path";
 
 // Create transporter
-const transporter = nodemailer.createTransport({
-  host: "smtpout.secureserver.net", // c pannel
-  port: 465,
-  secure: true,
-  //   requireTLS: true,
-  auth: {
-    user: config.email.user,
-    pass: config.email.pass,
-  },
-  debug: true,
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-// export const transporter = nodemailer.createTransport({
-//   host: "smtp.gmail.com",
-//   port: 587,
-//   secure: false, // TLS
+// const transporter = nodemailer.createTransport({
+//   host: "smtpout.secureserver.net", // c pannel
+//   port: 465,
+//   secure: true,
+//   //   requireTLS: true,
 //   auth: {
 //     user: config.email.user,
 //     pass: config.email.pass,
 //   },
+//   debug: true,
+//   tls: {
+//     rejectUnauthorized: false
+//   }
 // });
+export const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // TLS
+  auth: {
+    user: config.email.user,
+    pass: config.email.pass,
+  },
+});
 console.log("SMTP USER =", config.email.user);
 console.log("SMTP PASS LENGTH =", config.email.pass ? config.email.pass.length : "NO PASS");
 

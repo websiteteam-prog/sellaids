@@ -76,12 +76,10 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
     const SHIPPING_FEE = 100;
     const PLATFORM_FEE = 50;
     const finalAmount = totalAmount + SHIPPING_FEE + PLATFORM_FEE;
+    const productAmount = totalAmount;
 
     const vendorEarning = Number(((totalAmount * COMMISSION.vendor) / 100).toFixed(2));
-    const adminCommission = Number(
-      (totalAmount - vendorEarning + SHIPPING_FEE + PLATFORM_FEE).toFixed(2)
-    );
-
+    const adminCommission = Number(((totalAmount * COMMISSION.admin) / 100).toFixed(2));
 
     if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
       await transaction.rollback();
@@ -120,7 +118,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
       );
 
       await existingPayment.update({
-        amount: finalAmount,
+        amount: productAmount,
         shipping_fee: SHIPPING_FEE,
         platform_fee: PLATFORM_FEE,
         vendor_earning: vendorEarning,
@@ -170,7 +168,7 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
         vendor_id: vendorId,
         payment_method: "razorpay",
         razorpay_order_id: razorpayOrder.id,
-        amount: finalAmount,
+        amount: productAmount,
         shipping_fee: SHIPPING_FEE,
         platform_fee: PLATFORM_FEE,
         vendor_earning: vendorEarning,

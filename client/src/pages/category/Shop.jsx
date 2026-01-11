@@ -95,6 +95,8 @@ const Shop = () => {
   // CART
   const addToCartDirectly = async (product) => {
     try {
+      // const productId = getProductId(product);
+
       const res = await axios.post(
         `${API_BASE}/api/user/cart`,
         { product_id: product._id },
@@ -102,7 +104,7 @@ const Shop = () => {
       );
 
       if (res.data.success) {
-        toast.success("Added to cart");
+        toast.success(res.data.message);
 
         setSliderProduct({
           product_id: res.data.data.product_id,
@@ -110,8 +112,10 @@ const Shop = () => {
         });
 
         setCartSliderOpen(true);
+      } else {
+        toast.success(res.data.message);
       }
-    } catch {
+    } catch (error) {
       toast.error("Failed to add to cart");
     }
   };
@@ -120,12 +124,8 @@ const Shop = () => {
     if (isUserLoading) return toast.error("Please wait...");
 
     if (!isAuthenticated) {
-      setPendingAdd({
-        product,
-        from: location.pathname,
-        type: "cart",
-      });
-
+      setPendingAdd({ product, from: location.pathname, type: "cart" });
+      toast.error("Please log in to add to cart");
       navigate("/UserAuth/UserLogin", {
         state: { from: location.pathname },
       });
@@ -136,24 +136,43 @@ const Shop = () => {
   };
 
   // WISHLIST
-  const handleWishlist = async (product) => {
-    if (isUserLoading) return toast.error("Please wait...");
-    if (!isAuthenticated) {
-      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
-      navigate("/UserAuth/UserLogin");
-      return;
-    }
-
+  const addToWishlistDirectly = async (product) => {
     try {
-      await axios.post(
+      // const productId = getProductId(product);
+
+      const res = await axios.post(
         `${API_BASE}/api/user/wishlist`,
         { product_id: product._id },
         { withCredentials: true }
       );
-      toast.success("Added to wishlist");
-    } catch {
-      toast.error("Failed to add to wishlist");
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        navigate("/user/wishlist");
+      } else {
+        toast.success(res.data.message);
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+        navigate("/UserAuth/UserLogin");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
     }
+  };
+
+  const handleWishlist = (product) => {
+    if (isUserLoading) return toast.error("Please wait...");
+
+    if (!isAuthenticated) {
+      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+      toast.error("Please log in to add to wishlist");
+      navigate("/UserAuth/UserLogin");
+      return;
+    }
+
+    addToWishlistDirectly(product);
   };
 
   // APPLY / CLEAR FILTERS

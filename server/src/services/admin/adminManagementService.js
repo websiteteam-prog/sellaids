@@ -557,128 +557,125 @@ export const getPaymentCommissionService = async (vendorId) => {
   const where =
     vendorId === "all" ? {} : { vendor_id: vendorId };
 
-  // 1️⃣ STATS (UPDATED BUSINESS LOGIC)
+  /* =======================
+     1️⃣ STATS (FINAL & CORRECT)
+  ======================= */
   const stats = await Payment.findOne({
     where,
     attributes: [
-      // ✅ All orders
+      // ✅ Total unique orders (all statuses)
       [fn("COUNT", fn("DISTINCT", col("order_id"))), "totalOrders"],
 
-      // ✅ Total amount (ALL statuses)
-      [fn("SUM", col("amount")), "totalAmount"],
-
-      // ✅ Admin commission (ONLY success)
+      // ✅ Total product amount (SUCCESS only)
       [
-        fn(
-          "SUM",
-          literal(
-            `CASE 
-              WHEN payment_status = 'success' 
-              THEN admin_commission 
-              ELSE 0 
-            END`
+        literal(`
+          SUM(
+            CASE
+              WHEN payment_status = 'success'
+              THEN amount
+              ELSE 0
+            END
           )
-        ),
+        `),
+        "totalAmount",
+      ],
+
+      // ✅ Admin commission (SUCCESS only)
+      [
+        literal(`
+          SUM(
+            CASE
+              WHEN payment_status = 'success'
+              THEN admin_commission
+              ELSE 0
+            END
+          )
+        `),
         "adminCommission",
       ],
 
-      // ✅ Vendor payout (ONLY success)
+      // ✅ Vendor payout (SUCCESS only)
       [
-        fn(
-          "SUM",
-          literal(
-            `CASE 
-              WHEN payment_status = 'success' 
-              THEN vendor_earning 
-              ELSE 0 
-            END`
+        literal(`
+          SUM(
+            CASE
+              WHEN payment_status = 'success'
+              THEN vendor_earning
+              ELSE 0
+            END
           )
-        ),
+        `),
         "vendorPayout",
       ],
 
-      // ✅ Vendor earnings (ONLY success)
+      // 🟡 Pending product amount
       [
-        fn(
-          "SUM",
-          literal(
-            `CASE 
-              WHEN payment_status = 'success' 
-              THEN vendor_earning 
-              ELSE 0 
-            END`
+        literal(`
+          SUM(
+            CASE
+              WHEN payment_status = 'pending'
+              THEN amount
+              ELSE 0
+            END
           )
-        ),
-        "totalVendorEarning",
-      ],
-
-      // 🟡 Pending amount
-      [
-        fn(
-          "SUM",
-          literal(
-            `CASE 
-              WHEN payment_status = 'pending' 
-              THEN amount 
-              ELSE 0 
-            END`
-          )
-        ),
+        `),
         "totalPendingAmount",
       ],
 
-      // 🔴 Failed amount
+      // 🔴 Failed product amount
       [
-        fn(
-          "SUM",
-          literal(
-            `CASE 
-              WHEN payment_status = 'failed' 
-              THEN amount 
-              ELSE 0 
-            END`
+        literal(`
+          SUM(
+            CASE
+              WHEN payment_status = 'failed'
+              THEN amount
+              ELSE 0
+            END
           )
-        ),
+        `),
         "totalFailedAmount",
       ],
 
-      // ✅ Operational Fees
+      // ✅ Operational fees (shipping + platform)
       [
-        fn(
-          "SUM",
-          literal(
-            `IFNULL(shipping_fee, 0) + IFNULL(platform_fee, 0)`
-          )
-        ),
+        literal(`
+          SUM(IFNULL(shipping_fee,0))
+          + SUM(IFNULL(platform_fee,0))
+        `),
         "operationalFees",
       ],
 
-      // ✅ Total Admin Revenue
+      // ✅ Total admin revenue
+      // = admin commission (success) + all fees
       [
-        fn(
-          "SUM",
-          literal(
-            `IFNULL(admin_commission, 0) 
-            + IFNULL(shipping_fee, 0) 
-            + IFNULL(platform_fee, 0)`
+        literal(`
+          SUM(
+            CASE
+              WHEN payment_status = 'success'
+              THEN admin_commission
+              ELSE 0
+            END
           )
-        ),
+          + SUM(IFNULL(shipping_fee,0))
+          + SUM(IFNULL(platform_fee,0))
+        `),
         "totalAdminRevenue",
       ],
-
     ],
     raw: true,
   });
 
-  // 2️⃣ PAYMENTS LIST (NO CHANGE)
+  /* =======================
+     2️⃣ PAYMENTS LIST
+  ======================= */
   const payments = await Payment.findAll({
     where,
     attributes: [
       "id",
       "order_id",
-      "amount",
-      "admin_commission",
-      "vendor_earning",
+      "amount",           // product total only
+      "admin_commission", // 30% of product
+      "vendor_earning",   // 70% of product
       "payment_status",
       "transaction_id",
       [fn("DATE", col("payment_date")), "payment_date"],
@@ -687,7 +684,9 @@ export const getPaymentCommissionService = async (vendorId) => {
     raw: true,
   });
 
-  // 3️⃣ VENDORS (NO CHANGE)
+  /* =======================
+     3️⃣ VENDORS
+  ======================= */
   const vendors = await Vendor.findAll({
     attributes: ["id", "name"],
     raw: true,

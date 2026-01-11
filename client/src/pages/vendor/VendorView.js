@@ -63,6 +63,15 @@ export default function VendorView() {
     fetchProduct();
   }, [productId]);
 
+  const CONDITION_MAP = {
+    new: "Brand New",
+    almost_new: "Almost New",
+    good: "Good Condition",
+    hardly_ever_used: "Hardly Ever Used",
+    satisfactory: "Satisfactory",
+  };
+
+
   if (loading) {
     return <p className="text-center py-10 text-gray-500">Loading product details...</p>;
   }
@@ -117,7 +126,10 @@ export default function VendorView() {
               <p><strong>Group:</strong> {product.product_group || "N/A"}</p>
               <p><strong>Category:</strong> {product.category?.name || "N/A"}</p>
               <p><strong>Type:</strong> {product.product_type || "N/A"}</p>
-              <p><strong>Condition:</strong> {product.product_condition || "N/A"}</p>
+              <p>
+                <strong>Condition:</strong>{" "}
+                {CONDITION_MAP[product.product_condition] || "N/A"}
+              </p>
               <p><strong>Fit:</strong> {product.fit || "N/A"}</p>
               <p><strong>Size:</strong> {product.size || product.size_other || "N/A"}</p>
               <p><strong>Color:</strong> {product.product_color || "N/A"}</p>
