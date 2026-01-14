@@ -6,7 +6,13 @@ export const searchProductsService = async (query) => {
   const terms = query.toLowerCase().split(/\s+/); 
   const likeConditions = [];
 
-  terms.forEach(term => {
+  const GROUP_TERMS = ["men", "women", "kids", "boys", "girls"];
+
+  const groupTerm = terms.find(t => GROUP_TERMS.includes(t));
+
+  const keywordTerms = terms.filter(t => !GROUP_TERMS.includes(t));
+
+ keywordTerms.forEach(term => {
     const searchTerm = `%${term}%`;
 
     likeConditions.push({
@@ -42,26 +48,80 @@ export const searchProductsService = async (query) => {
     });
   });
 
+  
+   if (groupTerm) {
+    // map search word -> category.group value
+    const GROUP_MAP = {
+      men: "Men",
+      women: "Women",
+      kids: "Kids",
+      boys: "Boys",
+      girls: "Girls",
+    };
+
+  
+    likeConditions.push(
+      literal(`
+        JSON_CONTAINS(
+          category.group,
+          JSON_ARRAY('${GROUP_MAP[groupTerm]}')
+        )
+      `)
+    );
+  }
+
+  /* ======================
+     QUERY
+     ====================== */
   try {
     return await Product.findAll({
       where: {
         is_active: true,
         status: "approved",
-        [Op.and]: likeConditions,
+        ...(likeConditions.length > 0 && {
+          [Op.and]: likeConditions,
+        }),
       },
       include: [
         {
           model: Category,
           as: "category",
-          attributes: ["id", "name", "slug"],
+          attributes: ["id", "name", "slug", "group"],
+          required: true,
         },
       ],
-      order: [["category_id", "DESC"]],
+
+      // priority ordering when group is searched
+      order: groupTerm
+        ? [
+            [
+              literal(`
+                CASE
+                  WHEN JSON_CONTAINS(
+                    category.group,
+                    JSON_ARRAY('${
+                      {
+                        men: "Men",
+                        women: "Women",
+                        kids: "Kids",
+                        boys: "Boys",
+                        girls: "Girls",
+                      }[groupTerm]
+                    }')
+                  )
+                  THEN 1
+                  ELSE 2
+                END
+              `),
+              "ASC",
+            ],
+          ]
+        : [["created_at", "DESC"]],
+
       limit: 5000,
     });
-
   } catch (error) {
-    console.log("SEARCH ERROR:", error);
+    console.error("SEARCH ERROR:", error);
     throw new Error(error.message || "Database error during search");
   }
 };
