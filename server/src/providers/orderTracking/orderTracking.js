@@ -260,7 +260,7 @@ export const createShiprocketOrder = async (fullOrder) => {
             }
         );
 
-        console.log("Shiprocket Order Create Response:", response);
+        // console.log("Shiprocket Order Create Response:", response);
 
         const shipmentId = response.data?.shipment_id;
 

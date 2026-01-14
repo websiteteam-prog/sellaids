@@ -157,7 +157,6 @@ export const createOrderService = async (userId, cartItems, shippingAddress, fin
           order_date: new Date(),
         }, { transaction });
 
-        await product.update({ stock: product.stock - item.quantity }, { transaction });
         orders.push(order);
       }
 
@@ -225,11 +224,17 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
     }
 
     for (const orderId of orderIds) {
-      const order = await Order.findOne({ where: { id: orderId, user_id: userId }, transaction });
-      if (!order) {
+      const order = await Order.findOne({
+        where: { id: orderId, user_id: userId },
+        include: [{ model: Product, as: "product" }],
+        transaction
+      });
+
+      if (!order || !order.product) {
         await transaction.rollback();
-        return { status: false, message: `Order ${orderId} not found` };
+        return { status: false, message: `Order or product not found for ${orderId}` };
       }
+
       await order.update(
         {
           payment_status: "success",
@@ -239,6 +244,20 @@ export const verifyPaymentService = async (userId, paymentDetails) => {
         },
         { transaction }
       );
+
+      const product = order.product;
+
+      // Payment success ke baad FINAL stock calculation
+      const newStock = Math.max(product.stock - order.quantity, 0);
+
+      await product.update(
+        {
+          stock: newStock > 0 ? newStock : 0,
+          stock_status: newStock <= 0 ? "out_of_stock" : "in_stock",
+        },
+        { transaction }
+      );
+
       updatedOrders.push(order); // updatedOrders push
     }
 

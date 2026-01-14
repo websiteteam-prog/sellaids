@@ -109,6 +109,7 @@ export const getAllVendorsService = async ({ search, status, page, limit }) => {
     limit,
     order: [["created_at", "DESC"]],
     attributes: ["id", "name", "email", "phone", "status", "created_at"],
+    raw: true, 
   });
 
   return { total: count, vendors: rows };
@@ -127,6 +128,7 @@ export const updateVendorStatusService = async (id, status) => {
   if (!vendor) throw new Error("Vendor not found");
   vendor.status = status;
   await vendor.save();
+  await vendor.reload();
   return vendor;
 };
 

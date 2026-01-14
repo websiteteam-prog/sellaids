@@ -428,19 +428,20 @@ const CategoryPage = () => {
 
               return (
                 <div key={product._id} className="group overflow-hidden border-gray-100 transition-all duration-300">
-                  <div className="relative bg-gray-50">
+                  <div className="relative h-80 overflow-hidden rounded-t-xl bg-gray-50">
                     <img
                       src={`${process.env.REACT_APP_API_URL}/${product?.product_img}`}
                       alt={product.product_name}
                       onClick={() => handleNavigate(product._id)}
-                      className={`object-cover w-full h-80 rounded-t-xl transition-transform duration-500 ease-in-out
-                      ${product.stock === 0 ? "grayscale cursor-not-allowed" : "cursor-pointer group-hover:scale-105"}`}
+                      className="object-cover w-full h-full cursor-pointer
+                                  transition-transform duration-500 ease-in-out
+                                  group-hover:scale-105"
                     />
 
                     {/* OUT OF STOCK overlay – only on image */}
                     {product.stock === 0 && (
                       <div className="absolute inset-0 flex items-center justify-center
-                    bg-black/60 rounded-t-xl">
+                    bg-black/60 pointer-events-none">
                         <span className="text-white text-xl font-bold tracking-widest
                        border-2 border-white px-5 py-2 rounded-lg">
                           OUT OF STOCK

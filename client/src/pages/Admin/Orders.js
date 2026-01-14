@@ -68,28 +68,29 @@ const Orders = () => {
   const openInvoiceModal = async (order) => {
     setSelectedOrder(order);
 
-    if (order?.invoice_pdf_url) {
-      setInvoiceUrl(`${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`);
-    } else {
-      const doc = await generateDummyInvoice(order);
-      setInvoiceUrl(doc.output("bloburl"));
+    if (!order?.invoice_pdf_url) {
+      toast.error("Invoice not generated yet. Please try again later.");
+      return;
     }
+
+    setInvoiceUrl(`${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`);
+    console.log(`${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`)
     setShowInvoiceModal(true);
   };
 
 
   const downloadInvoice = async (order) => {
-    if (order?.invoice_pdf_url) {
-      const link = document.createElement("a");
-      link.href = `${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`;
-      link.download = `invoice-${order.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      const doc = await generateDummyInvoice(order); // ✅ await
-      doc.save(`invoice-${order.id}.pdf`);
+    if (!order?.invoice_pdf_url) {
+      toast.error("Invoice not available for this order yet.");
+      return;
     }
+
+    const link = document.createElement("a");
+    link.href = `${process.env.REACT_APP_API_URL}${order.invoice_pdf_url}`;
+    link.download = `invoice-${order.id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
 
