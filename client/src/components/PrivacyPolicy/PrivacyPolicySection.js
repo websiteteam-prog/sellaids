@@ -1,6 +1,6 @@
 import React from "react";
 import bgImage from "../../assets/images/cta-image.webp";
-import { useNavigate } from "react-router";
+import { useNavigate } from 'react-router-dom';
 export default function PrivacyPolicySection() {
     const navigate = useNavigate();
 

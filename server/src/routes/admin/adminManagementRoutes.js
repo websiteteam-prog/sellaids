@@ -1,6 +1,6 @@
 import express from "express";
-import { getAdminDashboardController, getAllUsersController, getAllVendorsController, getVendorByIdController, updateVendorStatusController, getAllProductsController , getPaymentsController, getProductByIdController, updateProductStatusController, getAllOrders, getOrderDetails, getPaymentCommission } from "../../controllers/admin/adminManagementController.js";
-import { isAdminLoginIn } from "../../middlewares/authMiddlewares.js"
+import { getAdminDashboardController, getAllUsersController, getAllVendorsController, getVendorByIdController, updateVendorStatusController, getAllProductsController , getPaymentsController, getProductByIdController, updateProductStatusController, getAllOrders, getOrderDetails, getPaymentCommission, adminUpdateProductController } from "../../controllers/admin/adminManagementController.js";
+import { uploadFields } from "../product/productFormRoutes.js";
 
 const router = express.Router();
 
@@ -20,6 +20,7 @@ router.patch("/vendor/:id/status", updateVendorStatusController); // Update vend
 router.get("/product/", getAllProductsController);
 router.get("/product/:id", getProductByIdController);
 router.patch("/product/:id/status", updateProductStatusController);
+router.put("/product/:id", uploadFields, adminUpdateProductController);
 
 // orders management
 router.get("/order", getAllOrders);       

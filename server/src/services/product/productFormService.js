@@ -69,7 +69,9 @@ export const createProductService = async (vendorId, data, images) => {
       reason_to_sell: data.reason_to_sell?.trim() || null,
       purchase_place: data.purchase_place?.trim() || null,
       product_link: data.product_link?.trim() || null,
-      additional_info: data.additional_info?.trim() || null,
+      additional_info: data.additional_info
+  ? JSON.stringify(JSON.parse(data.additional_info))
+  : null,
 
       // Prices & Year
       purchase_price: data.purchase_price
@@ -124,13 +126,14 @@ export const createProductService = async (vendorId, data, images) => {
   }
 };
 
-export const updateProductService = async (productId, vendorId, data, images) => {
+export const updateProductService = async (productId, vendorId, data, images, isAdmin = false) => {
   const t = await sequelize.transaction();
   try {
     const product = await Product.findOne({
-      where: { id: productId, vendor_id: vendorId },
+      where: isAdmin ? { id: productId } : { id: productId, vendor_id: vendorId },
       transaction: t,
     });
+
 
     if (!product) {
       throw new Error("Product not found");
@@ -210,7 +213,8 @@ export const updateProductService = async (productId, vendorId, data, images) =>
 
       // SKU & Status
       sku,
-      status: product.status === "approved" ? "pending" : product.status, // Re-review if was approved
+      status: isAdmin
+        ? data.status || product.status : product.status === "approved" ? "pending" : product.status, // Re-review if was approved
     };
 
     // === HANDLE SIZE ===
@@ -257,7 +261,7 @@ export const fetchCategories = async (search = "", selectedGroup = "") => {
       })
     },
     order: [["name", "ASC"]],
-    attributes: ["id", "name"], 
+    attributes: ["id", "name"],
   });
 };
 
@@ -331,6 +335,148 @@ export const getAllProductsService = async (query, vendorId, isAdmin) => {
     products: rows,
   };
 };
+
+// export const getAllProductsPublicService = async () => {
+//   try {
+//     const products = await Product.findAll({
+//       order: [["id", "ASC"]],
+//       attributes: [
+//         "id",
+//         "sku",
+//         "product_group",
+//         "brand",
+//         "model_name",
+//         "selling_price",
+//         "status",
+//         "front_photo",
+//         "created_at"
+//       ],
+//       include: [
+//         {
+//           model: Category,
+//           as: "category",
+//           attributes: ["id", "name"],
+//         },
+//         {
+//           model: Vendor,
+//           as: "vendor",
+//           attributes: ["id", "name"],
+//         },
+//       ],
+//     });
+
+//     return products;
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+
+export const getAllProductsPublicService = async () => {
+  try {
+    const productsRaw = await Product.findAll({
+      where: {
+        is_active: true,
+        status: "approved",
+      },
+      order: [["created_at", "DESC"]],
+      attributes: [
+        "id",
+        "sku",
+        "product_type",
+        "product_group",
+        "product_condition",
+        "size",
+        "size_other",
+        "brand",
+        "model_name",
+        "selling_price",
+        "front_photo",
+        "more_images",
+        "additional_info",
+        "stock",
+        "created_at",
+      ],
+      raw: true,
+    });
+
+    /* ===============================
+       TRANSFORM PRODUCTS (AXE SAME)
+    =============================== */
+    const products = productsRaw.map((p) => {
+      let product_img = p.front_photo;
+
+      if (!product_img && p.more_images) {
+        try {
+          const parsed = JSON.parse(p.more_images);
+          if (Array.isArray(parsed) && parsed.length) {
+            product_img = parsed[0];
+          }
+        } catch (_) { }
+      }
+
+      return {
+        _id: p.id,
+        sku: p.sku,
+        product_name: p.model_name,
+        product_group: p.product_group,
+        product_img,
+        product_additionalInfo: p.additional_info || "",
+        product_price: p.selling_price,
+        product_condition: p.product_condition,
+        size: p.size,
+        size_other: p.size_other,
+        brand: p.brand,
+        stock: p.stock,
+      };
+    });
+
+    /* ===============================
+       BUILD FILTERS FROM PRODUCTS
+    =============================== */
+
+    // 🔹 CONDITIONS (dynamic from DB)
+    const product_conditions = Array.from(
+      new Set(
+        products
+          .map((p) => p.product_condition)
+          .filter(Boolean)
+      )
+    );
+
+    // 🔹 SIZES (size + size_other split)
+    const sizeSet = new Set();
+
+    for (const p of products) {
+      if (p.size?.toLowerCase() === "other" && p.size_other) {
+        p.size_other
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .forEach((s) => sizeSet.add(s));
+      } else if (p.size) {
+        sizeSet.add(p.size);
+      }
+    }
+
+    const sizes = Array.from(sizeSet);
+
+    /* ===============================
+       FINAL RESPONSE (CATEGORY STYLE)
+    =============================== */
+    return {
+      totalProducts: products.length,
+      filters: {
+        product_conditions,
+        sizes,
+      },
+      products,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
 
 export const getProductByIdService = async (id) => {
   const product = await Product.findOne({

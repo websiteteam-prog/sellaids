@@ -1,4 +1,4 @@
-// src/pages/vendor/ProductEdit.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -171,7 +171,7 @@ const FormField = ({ field, value, onChange, error, disabled, previewUrl }) => {
   );
 };
 
-const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
+const AdminProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -315,6 +315,18 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
+
+    if (name.startsWith("additional_info.")) {
+      const key = name.split(".")[1];
+      setFormData((p) => ({
+        ...p,
+        additional_info: {
+          ...p.additional_info,
+          [key]: value,
+        },
+      }));
+      return;
+    }
 
     if (type === "file" && files?.length > 0) {
       if (name === "more_images") {
@@ -528,64 +540,23 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
                 value={formData.model_name}
                 onChange={handleChange}
               />
-              {/* Title */}
-              <div className="flex flex-col mb-4">
-                <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-                  Title
-                </label>
+              <FormField
+                field={{ name: "additional_info.title", label: "Title" }}
+                value={formData.additional_info?.title}
+                onChange={handleChange}
+              />
 
-                <input
-                  type="text"
-                  className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  value={formData.additional_info?.title || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      additional_info: {
-                        ...prev.additional_info,
-                        title: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              </div>
+              <FormField
+                field={{ name: "additional_info.fabric", label: "Fabric" }}
+                value={formData.additional_info?.fabric}
+                onChange={handleChange}
+              />
 
-              {/* Fabric */}
-              <div className="flex flex-col mb-4">
-                <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-                  Fabric
-                </label>
-                <input
-                  type="text"
-                  className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  value={formData.additional_info?.fabric || ""}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      additional_info: { ...p.additional_info, fabric: e.target.value },
-                    }))
-                  }
-                />
-              </div>
-
-              {/* Model Size */}
-              <div className="flex flex-col mb-4">
-                <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-                  Model Size
-                </label>
-                <input
-                  type="text"
-                  className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  value={formData.additional_info?.model_size || ""}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      additional_info: { ...p.additional_info, model_size: e.target.value },
-                    }))
-                  }
-                />
-              </div>
-
+              <FormField
+                field={{ name: "additional_info.model_size", label: "Model Size" }}
+                value={formData.additional_info?.model_size}
+                onChange={handleChange}
+              />
               {formData.size === "Other" && (
                 <div className="sm:col-span-2">
                   <FormField
@@ -715,43 +686,29 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
               />
               <div className="sm:col-span-2">
                 <div className="sm:col-span-2">
-
-                  {/* Description */}
-                  <div className="flex flex-col mb-4">
-                    <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-                      Product Description
-                    </label>
-                    <textarea
-                      rows={4}
-                      className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
-                      value={formData.additional_info?.description || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          additional_info: { ...p.additional_info, description: e.target.value },
-                        }))
-                      }
+                  <div className="mt-6">
+                    <FormField
+                      field={{
+                        name: "additional_info.info",
+                        label: "Additional Info",
+                        type: "textarea",
+                      }}
+                      value={formData.additional_info?.info}
+                      onChange={handleChange}
                     />
                   </div>
 
-                  {/* Additional Info */}
-                  <div className="flex flex-col mb-4">
-                    <label className="text-gray-700 font-medium mb-2 text-sm md:text-base">
-                      Additional Info
-                    </label>
-                    <textarea
-                      rows={4}
-                      className="border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
-                      value={formData.additional_info?.info || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          additional_info: { ...p.additional_info, info: e.target.value },
-                        }))
-                      }
+                  <div className="mt-6">
+                    <FormField
+                      field={{
+                        name: "additional_info.description",
+                        label: "Product Description",
+                        type: "textarea",
+                      }}
+                      value={formData.additional_info?.description}
+                      onChange={handleChange}
                     />
                   </div>
-
                 </div>
 
               </div>
@@ -804,4 +761,4 @@ const ProductEdit = ({ product, onClose, onUpdateSuccess }) => {
   );
 };
 
-export default ProductEdit;
+export default AdminProductEdit;

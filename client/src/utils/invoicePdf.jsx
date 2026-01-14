@@ -67,18 +67,18 @@ export const generateDummyInvoice = async () => {
 
   /* ================= LOGO ================= */
   try {
-    const logoBase64 = await getBase64FromUrl("/logo.webp");
-    doc.addImage(logoBase64, "PNG", MARGIN, 10, 35, 15);
+    const logoBase64 = await getBase64FromUrl("/site.png");
+    doc.addImage(logoBase64, "PNG", MARGIN, 10, 15, 15);
   } catch (e) {}
 
   /* ================= HEADER LEFT ================= */
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("SELLAIDS", MARGIN + 40, 18);
+  doc.text("SELLAIDS", MARGIN + 15, 18);
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("USE TO REUSE", MARGIN + 40, 24);
+  doc.text("USE TO REUSE", MARGIN + 15, 24);
 
   /* ================= HEADER RIGHT ================= */
   doc.setFont("helvetica", "bold");

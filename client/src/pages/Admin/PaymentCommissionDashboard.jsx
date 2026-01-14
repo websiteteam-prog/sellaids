@@ -102,6 +102,14 @@ const PaymentCommissionDashboard = () => {
           value={`₹${stats?.totalFailedAmount ?? 0}`}
           color="red"
         />
+        <Stat
+          label="Total Admin Revenue"
+          value={`₹${stats?.totalAdminRevenue ?? 0}`}
+        />
+        <Stat
+          label="Operational Fees"
+          value={`₹${stats?.operationalFees ?? 0}`}
+        />
       </div>
 
       {/* TABLE */}

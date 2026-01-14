@@ -26,6 +26,17 @@ const getImageUrl = (path) => {
   return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
 
+const parseAdditionalInfo = (data) => {
+  if (!data) return null;
+  if (typeof data === "object") return data;
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn("Invalid additional_info JSON", data);
+    return null;
+  }
+};
+
 export default function VendorView() {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
@@ -51,6 +62,15 @@ export default function VendorView() {
     };
     fetchProduct();
   }, [productId]);
+
+  const CONDITION_MAP = {
+    new: "Brand New",
+    almost_new: "Almost New",
+    good: "Good Condition",
+    hardly_ever_used: "Hardly Ever Used",
+    satisfactory: "Satisfactory",
+  };
+
 
   if (loading) {
     return <p className="text-center py-10 text-gray-500">Loading product details...</p>;
@@ -106,21 +126,40 @@ export default function VendorView() {
               <p><strong>Group:</strong> {product.product_group || "N/A"}</p>
               <p><strong>Category:</strong> {product.category?.name || "N/A"}</p>
               <p><strong>Type:</strong> {product.product_type || "N/A"}</p>
-              <p><strong>Condition:</strong> {product.product_condition || "N/A"}</p>
+              <p>
+                <strong>Condition:</strong>{" "}
+                {CONDITION_MAP[product.product_condition] || "N/A"}
+              </p>
               <p><strong>Fit:</strong> {product.fit || "N/A"}</p>
               <p><strong>Size:</strong> {product.size || product.size_other || "N/A"}</p>
               <p><strong>Color:</strong> {product.product_color || "N/A"}</p>
               <p><strong>Brand:</strong> {product.brand || "N/A"}</p>
               <p><strong>Model Name:</strong> {product.model_name || "N/A"}</p>
               <p><strong>SKU:</strong> {product.sku || "N/A"}</p>
+              <div className="mt-3">
+                {(() => {
+                  const info = parseAdditionalInfo(product.additional_info);
+                  if (!info) return <p className="text-sm">N/A</p>;
+
+                  return (
+                    <div className="mt-2 space-y-2 text-sm">
+                      <p><strong>Product Title:</strong> {info.title || "N/A"}</p>
+                      <p><strong>Fabric:</strong> {info.fabric || "N/A"}</p>
+                      <p><strong>Model Size:</strong> {info.model_size || "N/A"}</p>
+                      <p><strong>Product Description:</strong> {info.description || "N/A"}</p>
+                      <p><strong>Additional Info:</strong> {info.info || "N/A"}</p>
+                    </div>
+                  );
+                })()}
+              </div>
               <p>
                 <strong>Status:</strong>{" "}
                 <span
                   className={`px-3 py-1 rounded-full text-xs ${product.status === "Approved"
-                      ? "bg-green-100 text-green-700"
-                      : product.status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-100 text-gray-700"
+                    ? "bg-green-100 text-green-700"
+                    : product.status === "pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-700"
                     }`}
                 >
                   {product.status}
@@ -249,9 +288,11 @@ export default function VendorView() {
                   "N/A"
                 )}
               </p>
-              <p><strong>Additional Info:</strong> {product.additional_info || "N/A"}</p>
+              {/* Additional Info */}
+
+
             </div>
- 
+
             {/* Seller Information */}
             <div className="sm:col-span-2">
               <h3 className="text-lg font-semibold mb-2">Seller Information</h3>

@@ -16,7 +16,7 @@ function VogueSection() {
     const navigate = useNavigate();
 
     const handleNavigate = () => {
-        navigate("/about"); 
+        navigate("/shop"); 
     };
 
     const goPrev = () => {

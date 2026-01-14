@@ -83,7 +83,6 @@ import AdminVendors from "./pages/Admin/Vendors";
 import AdminProducts from "./pages/Admin/Products";
 import AdminOrders from "./pages/Admin/Orders";
 import AdminPayments from "./pages/Admin/Payments";
-import AdminReviews from "./pages/Admin/Reviews"
 import Profilesetting from "./pages/Admin/Profilesetting";
 import AdminSecurity from "./pages/Admin/Security";
 import AdminLogin from "./pages/Admin/AdminLogin";
@@ -94,6 +93,7 @@ import AdminOrderDetails from "./pages/Admin/AdminOrderDetails";
 import Category from "./pages/category/Category";
 import AffordableLuxury from "./components/AffordableLuxury";
 import PaymentCommissionDashboard from "./pages/Admin/PaymentCommissionDashboard";
+import Shop from "./pages/category/Shop";
 
 const App = () => {
   const hydrate = useUserStore((s) => s.hydrate);
@@ -124,6 +124,7 @@ const App = () => {
       <Route path="/kidsaids" element={<Layout><Kidsaids /></Layout>} />
       <Route path="/product-category/*" element={<Layout><Category /></Layout>} />
       <Route path="/seo" element={<Layout><SeoPage /></Layout>} />
+      <Route path="/shop" element={<Layout><Shop /></Layout>} />
 
       {/* Product Details - User */}
       <Route path="/product-details/:productId" element={<Layout><ProductDetails /></Layout>} />
@@ -199,8 +200,6 @@ const App = () => {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
           <Route path="payments" element={<AdminPayments />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          {/* <Route path="reports" element={<AdminReports />} /> */}
           <Route path="commission" element={<PaymentCommissionDashboard />} />
           <Route path="profile-settings" element={<Profilesetting />} />
           <Route path="security" element={<AdminSecurity />} />

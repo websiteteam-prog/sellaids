@@ -37,12 +37,7 @@ export default function RaiseTicket() {
 
       if (success && ticket) {
         setForm({ title: "", message: "" });
-        toast.success(`Ticket #${ticket.id} raised successfully ✅`, {
-          style: {
-            background: "#dc2626",
-            color: "#fff",
-          },
-        });
+        toast.success(`Ticket raised successfully ✅`);
         setTimeout(() => {
           navigate("/user/support");
         }, 1500);
@@ -80,7 +75,6 @@ export default function RaiseTicket() {
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
-      <Toaster position="top-right" />
       <h2 className="text-2xl font-bold mb-6">Raise a Support Ticket</h2>
       {error && (
         <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>

@@ -14,6 +14,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
 import Seo from "./Seo";
+import CartRightSlider from "./CartRightSlider"
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -22,13 +23,15 @@ const ProductDetails = () => {
   const id = parseInt(productId);
 
   const { isAuthenticated, isUserLoading, user } = useUserStore();
-  const { setPendingAdd } = useCartActions();
+  const { pendingAdd, setPendingAdd } = useCartActions();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCartSliderOpen, setCartSliderOpen] = useState(false);
+  const [sliderProduct, setSliderProduct] = useState(null);
 
   // const [quantity, setQuantity] = useState(1);
   const [mainImgIdx, setMainImgIdx] = useState(0);
@@ -41,6 +44,40 @@ const ProductDetails = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id, location.key]);
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      pendingAdd?.type === "cart" &&
+      pendingAdd?.from === location.pathname &&
+      pendingAdd?.product?.id
+    ) {
+      (async () => {
+        try {
+          const res = await api.post(
+            "/api/user/cart",
+            { product_id: pendingAdd.product.id },
+            { withCredentials: true }
+          );
+
+          if (res.data.success) {
+            toast.success(res.data.message || "Product added to cart");
+
+            // 🔥 SAME AS CATEGORY PAGE
+            setSliderProduct({
+              product_id: res.data.data.product_id,
+              user_id: res.data.data.user_id,
+            });
+
+            setCartSliderOpen(true);
+          }
+        } catch (err) {
+          toast.error("Failed to add to cart");
+        }
+      })();
+    }
+  }, [isAuthenticated]);
+
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
@@ -97,7 +134,7 @@ const ProductDetails = () => {
 
         const mappedProduct = {
           id: raw.id,
-          name: productName,
+          name: extraInfo.title || extraInfo.description,
           sku: raw.sku || "N/A",
           price: parseFloat(raw.selling_price) || 0,
           original_price: parseFloat(raw.purchase_price) || null,
@@ -111,25 +148,33 @@ const ProductDetails = () => {
           condition: conditionMap[raw.product_condition] || "Not specified",
           rating: 0,
           review_count: 0,
+          brand: raw.brand,
         };
 
-        if (raw.front_photo) mappedProduct.images.push(raw.front_photo);
-        if (raw.back_photo) mappedProduct.images.push(raw.back_photo);
-        if (raw.label_photo) mappedProduct.images.push(raw.label_photo);
+        let moreImages = [];
+
         if (raw.more_images) {
-          try {
-            const extra = JSON.parse(raw.more_images);
-            if (Array.isArray(extra)) {
-              mappedProduct.images.push(
-                ...extra.map((img) =>
-                  img.startsWith("http")
-                    ? img
-                    : `${process.env.REACT_APP_API_URL}${img}`
-                )
-              );
+          if (typeof raw.more_images === "string") {
+            try {
+              moreImages = JSON.parse(raw.more_images);
+            } catch (err) {
+              moreImages = [];
             }
-          } catch (e) { }
+          } else if (Array.isArray(raw.more_images)) {
+            moreImages = raw.more_images;
+          }
         }
+
+
+        mappedProduct.images = [
+          raw.front_photo,
+          raw.back_photo,
+          raw.label_photo,
+          raw.inside_photo,
+          raw.wearing_photo,
+          ...moreImages,
+        ].filter((img) => img && img !== "null" && img !== "undefined");
+
         const getRelatedProductInfo = (p) => {
           let name = "Beautiful Product";
           let rating = 0;
@@ -250,13 +295,23 @@ const ProductDetails = () => {
     if (isUserLoading) return toast.error("Please wait...");
 
     if (!isAuthenticated) {
-      setPendingAdd({ product, from: location.pathname, type: "cart" });
-      toast.error("Please log in to add to cart");
-      navigate("/UserAuth/UserLogin", {
-        state: { from: location.pathname, addToCart: product.id },
+      setPendingAdd({
+        product: {
+          id: product.id,   // 🔑 minimal product object
+        },
+        from: location.pathname,
+        type: "cart",
       });
+
+      toast.error("Please log in to add to cart");
+
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname },
+      });
+
       return;
     }
+
 
     try {
       const res = await api.post(
@@ -267,7 +322,11 @@ const ProductDetails = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        navigate("/user/checkout");
+        setSliderProduct({
+          product_id: res.data.data.product_id,
+          user_id: res.data.data.user_id,
+        });
+        setCartSliderOpen(true);
       } else {
         toast.success(res.data.message);
       }
@@ -278,10 +337,11 @@ const ProductDetails = () => {
   };
 
 
-  const handleAddToWishlist = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please log in to add to wishlist");
-      navigate("/UserAuth/UserLogin", { state: { from: location.pathname } });
+  const addToWishlistDirectly = async (product) => {
+    if (!isAuthenticated) return;
+
+    if (!productId) {
+      toast.error("Product ID missing");
       return;
     }
 
@@ -289,19 +349,46 @@ const ProductDetails = () => {
       const res = await api.post(
         "/api/user/wishlist",
         { product_id: product.id },
-        { withCredentials: true } // 🔴 REQUIRED
+        { withCredentials: true }
       );
 
-      if (res.data.success) {
-        toast.success(res.data.message);
+      toast.success(res.data.message);
+      if (
+        res.data.success &&
+        res.data.message !== "Product already in wishlist"
+      ) {
         navigate("/user/wishlist");
-      } else {
-        toast.success(res.data.message);
       }
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to add to wishlist";
+      toast.error(msg);
 
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add to wishlist");
+      if (error.response?.status === 401) {
+        setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+        navigate("/UserAuth/UserLogin", {
+          state: { from: location.pathname, addToWishlist: productId },
+        });
+      }
     }
+  };
+
+  const handleAddToWishlist = () => {
+    if (isUserLoading) {
+      toast.error("Please wait...");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setPendingAdd({ product, from: location.pathname, type: "wishlist" });
+
+      toast.error("Please log in to add to wishlist");
+      navigate("/UserAuth/UserLogin", {
+        state: { from: location.pathname, addToWishlist: product.id },
+      });
+      return;
+    }
+
+    addToWishlistDirectly(product);
   };
 
 
@@ -364,12 +451,20 @@ const ProductDetails = () => {
           {/* Images */}
           <div className="relative">
             <div className="bg-gray-10 overflow-hidden aspect-square">
-              <img
+              {product.images.length > 0 && (
+                <img
+                  src={`${process.env.REACT_APP_API_URL}/${product.images[mainImgIdx]}`}
+                  alt={product.name}
+                  className={`w-full h-full object-cover transition-all duration-300
+                ${product.stock === 0 ? "grayscale cursor-not-allowed" : ""}`}
+                />
+              )}
+              {/* <img
                 src={`${process.env.REACT_APP_API_URL}/${product.images[mainImgIdx]}`}
                 alt={product.name}
                 className={`w-full h-full object-cover transition-all duration-300
                 ${product.stock === 0 ? "grayscale cursor-not-allowed" : ""}`}
-              />
+              /> */}
               {/* {console.log(product.stock)}
               {console.log(product.id)}
               {console.log(product.stock_status)} */}
@@ -435,10 +530,10 @@ const ProductDetails = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
               <p className="text-sm text-gray-500 mt-1">SKU: {product.sku}</p>
 
-              <div className="flex items-center gap-3 mt-3">
+              {/* <div className="flex items-center gap-3 mt-3">
                 {renderStars(product.rating)}
                 <span className="text-sm text-gray-600">({product.review_count} reviews)</span>
-              </div>
+              </div> */}
 
               <div className="mt-4 flex items-baseline gap-3">
                 <span className="text-3xl font-bold text-orange-600">₹{product.price.toLocaleString()}</span>
@@ -454,6 +549,7 @@ const ProductDetails = () => {
 
               {(product.model || product.fabric) && (
                 <div className="mt-4 space-y-1 text-gray-700">
+                  {product.brand && <p><strong>Brand:</strong> {product.brand}</p>}
                   {product.model && <p><strong>Model Size:</strong> {product.model}</p>}
                   {product.fabric && <p><strong>Fabric:</strong> {product.fabric}</p>}
                 </div>
@@ -493,7 +589,7 @@ const ProductDetails = () => {
         </div>
 
         {/* Reviews Section */}
-        <section className="mt-12 bg-white p-6 shadow-sm">
+        {/* <section className="mt-12 bg-white p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h2 className="text-2xl font-bold">Customer Reviews</h2>
             {isAuthenticated ? (
@@ -567,7 +663,7 @@ const ProductDetails = () => {
               ))}
             </div>
           )}
-        </section>
+        </section> */}
 
         {relatedProducts.length > 0 && (
           <section className="mt-12">
@@ -590,7 +686,6 @@ const ProductDetails = () => {
                   </div>
                   <div className="p-4">
                     <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{p.name}</h3>
-                    <div className="flex items-center gap-1 mt-2">{renderStars(p.rating)}</div>
                     <p className="text-lg font-bold text-orange-600 mt-3">₹{p.price.toLocaleString()}</p>
                   </div>
                 </div>
@@ -599,6 +694,11 @@ const ProductDetails = () => {
           </section>
         )}
       </div>
+      <CartRightSlider
+        open={isCartSliderOpen}
+        product={sliderProduct}
+        onClose={() => setCartSliderOpen(false)}
+      />
     </>
   );
 };

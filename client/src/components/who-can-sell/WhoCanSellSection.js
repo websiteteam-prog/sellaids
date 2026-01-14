@@ -1,6 +1,6 @@
 import React from "react";
 import bgImage from "../../assets/images/cta-image.webp";
-import { useNavigate } from "react-router";
+import { useNavigate } from 'react-router-dom';
 
 export default function WhoCanSellSection() {
     const navigate = useNavigate();
@@ -47,7 +47,6 @@ export default function WhoCanSellSection() {
                     second life. Sellaids offers a seamless process to list and sell your
                     luxury goods, letting someone else enjoy them while you earn money.
                 </p>
-
                 {/* Kids' Luxury Items */}
                 <h2 className="text-2xl font-heading text-black mt-8 mb-4">
                     Kids' Luxury Items

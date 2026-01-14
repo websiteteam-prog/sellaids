@@ -91,7 +91,7 @@ const Popup = ({ onClose }) => {
         login(res.data.data);
         toast.success("Login Successful!");
         handleClose();
-        navigate("/user");
+        navigate("/");
       }
     } catch (err) {
       setLoginError(err.response?.data?.message || "Login failed");

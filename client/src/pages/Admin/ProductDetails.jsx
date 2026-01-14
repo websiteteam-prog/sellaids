@@ -81,11 +81,36 @@ const ProductDetails = () => {
       </div>
     );
 
-  // Convert JSON string to array safely
-  const moreImages = product.more_images ? JSON.parse(product.more_images) : [];
-  const additionalInfo = product.additional_info
-    ? JSON.parse(product.additional_info)
-    : null;
+  // 🔹 MORE IMAGES (SAFE + OPTIONAL CHAINING)
+  let moreImages = [];
+
+  if (product?.more_images) {
+    if (Array.isArray(product?.more_images)) {
+      moreImages = product.more_images;
+    } else if (
+      typeof product?.more_images === "string" &&
+      product?.more_images?.startsWith("[")
+    ) {
+      moreImages = JSON.parse(product.more_images);
+    } else {
+      moreImages = [];
+    }
+  }
+
+  // 🔹 ADDITIONAL INFO (SAFE + OPTIONAL CHAINING)
+  let additionalInfo = null;
+
+  if (product?.additional_info) {
+    if (typeof product?.additional_info === "object") {
+      additionalInfo = product.additional_info;
+    } else if (
+      typeof product?.additional_info === "string" &&
+      product?.additional_info?.startsWith("{")
+    ) {
+      additionalInfo = JSON.parse(product.additional_info);
+    }
+  }
+
 
   const productConditionMap = {
     new: "New",
@@ -117,12 +142,12 @@ const ProductDetails = () => {
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.front_photo}`}
               alt="Front"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.back_photo}`}
               alt="Back"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
           </div>
 
@@ -130,12 +155,12 @@ const ProductDetails = () => {
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.label_photo}`}
               alt="Label"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.inside_photo}`}
               alt="Inside"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
           </div>
 
@@ -143,12 +168,12 @@ const ProductDetails = () => {
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.button_photo}`}
               alt="Button"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
             <img
               src={`${process.env.REACT_APP_API_URL}/${product.wearing_photo}`}
               alt="Wearing"
-              className="w-full h-40 object-cover rounded-lg border"
+              className="w-full h-48 object-cover rounded-lg border"
             />
           </div>
 
@@ -161,7 +186,7 @@ const ProductDetails = () => {
                     key={i}
                     src={`${process.env.REACT_APP_API_URL}/${img}`}
                     alt={`More ${i}`}
-                    className="w-full h-40 object-cover rounded-lg border"
+                    className="w-full h-48 object-cover rounded-lg border"
                   />
                 ))}
               </div>
@@ -200,32 +225,45 @@ const ProductDetails = () => {
           <p>
             <strong>Reason to Sell:</strong> {product.reason_to_sell}
           </p>
-          <p>
-            {/* <strong>Additional Info:</strong> {product.additional_info}description  */}
-            <strong>Additional Info:</strong> {additionalInfo.description}
-          </p>
+          {additionalInfo && (
+            <div className="">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                {additionalInfo.title && (
+                  <p>
+                    <strong>Title:</strong> {additionalInfo.title}
+                  </p>
+                )}
+
+                {additionalInfo.fabric && (
+                  <p>
+                    <strong>Fabric:</strong> {additionalInfo.fabric}
+                  </p>
+                )}
+
+                {additionalInfo.model_size && (
+                  <p>
+                    <strong>Model Size:</strong> {additionalInfo.model_size}
+                  </p>
+                )}
+              </div>
+
+              {additionalInfo.info && (
+                <p className="mt-2">
+                  <strong>Additional Info:</strong> {additionalInfo.info}
+                </p>
+              )}
+
+              {additionalInfo.description && (
+                <p className="mt-2">
+                  <strong>Description:</strong> {additionalInfo.description}
+                </p>
+              )}
+            </div>
+          )}
+
           <p>
             <strong>Invoice:</strong> {product.invoice}
           </p>
-          {product.invoice_photo && (
-            <img
-              src={product.invoice_photo}
-              alt="Invoice"
-              className="w-40 h-40 object-cover rounded-lg border"
-            />
-          )}
-          {product.repair_photo && (
-            <div>
-              <p className="mt-2">
-                <strong>Repair Needed:</strong> {product.needs_repair}
-              </p>
-              <img
-                src={product.repair_photo}
-                alt="Repair"
-                className="w-40 h-40 object-cover rounded-lg border"
-              />
-            </div>
-          )}
           <p>
             <strong>Purchase Price:</strong> ₹{product.purchase_price}
           </p>

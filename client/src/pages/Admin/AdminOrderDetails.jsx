@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useParams } from "react-router";
+import { useParams } from "react-router-dom";
 
 const AdminOrderDetails = () => {
   const [order, setOrder] = useState(null);

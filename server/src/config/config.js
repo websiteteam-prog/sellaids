@@ -41,6 +41,12 @@ const config = {
     email: process.env.XPRESSBEES_EMAIL,
     password: process.env.XPRESSBEES_PASSWORD
   },
+  shiprocket: {
+    baseUrl: process.env.SHIPROCKET_BASE_URL,
+    email: process.env.SHIPROCKET_EMAIL,
+    password: process.env.SHIPROCKET_PASSWORD,
+    webhookSecret: process.env.SHIPROCKET_WEBHOOK_SECRET
+  },
 };
 
 export default config;

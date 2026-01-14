@@ -192,8 +192,8 @@ export default function CartStep({ onNext }) {
       0
     );
 
-    const SHIPPING_FEE = 0;
-    const PLATFORM_FEE = 0;
+    const SHIPPING_FEE = 100;
+    const PLATFORM_FEE = 50;
 
     const finalTotal = totalProductPrice + SHIPPING_FEE + PLATFORM_FEE;
 
@@ -215,8 +215,8 @@ export default function CartStep({ onNext }) {
     0
   );
   const orderTotal = totalProductPrice;
-  const SHIPPING_FEE = 0;
-  const PLATFORM_FEE = 0;
+  const SHIPPING_FEE = 100;
+  const PLATFORM_FEE = 50;
   const finalTotal = orderTotal + SHIPPING_FEE + PLATFORM_FEE;
 
   return (
