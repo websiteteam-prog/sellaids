@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { FaHeart, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
-
+import useCartStore from "../../stores/useCartStore";
 import { useUserStore } from "../../stores/useUserStore";
 import { useCartActions } from "../../stores/useCartActions";
 import CartRightSlider from "../../components/CartRightSlider";
@@ -38,6 +38,7 @@ const Shop = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { fetchCart } = useCartStore();
   const { isAuthenticated, isUserLoading } = useUserStore();
   const { pendingAdd, setPendingAdd } = useCartActions();
 
@@ -105,7 +106,7 @@ const Shop = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-
+        await fetchCart()
         setSliderProduct({
           product_id: res.data.data.product_id,
           user_id: res.data.data.user_id,

@@ -312,7 +312,7 @@ export default function ReviewStep({
                 </div>
 
                 <p className="text-sm text-gray-600">
-                  Size: <strong>{item.size}</strong> 
+                  {product.size && <span>Size: {product.size === 'Other' ? product.size_other : product.size}</span>} 
                 </p>
 
               </div>

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import api from "../api/axiosInstance";
 import { useUserStore } from "../stores/useUserStore";
+import useCartStore from "../stores/useCartStore"
 import { useCartActions } from "../stores/useCartActions";
 import { toast } from "react-hot-toast";
 import Seo from "./Seo";
@@ -24,6 +25,7 @@ const ProductDetails = () => {
 
   const { isAuthenticated, isUserLoading, user } = useUserStore();
   const { pendingAdd, setPendingAdd } = useCartActions();
+  const fetchCart = useCartStore((state) => state.fetchCart);
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -140,6 +142,7 @@ const ProductDetails = () => {
           original_price: parseFloat(raw.purchase_price) || null,
           model: extraInfo.model_size,
           fabric: extraInfo.fabric,
+          description: extraInfo.description,
           images: [],
           colors: raw.product_color
             ? [{ hex: getColorHex(raw.product_color), name: raw.product_color }]
@@ -149,6 +152,7 @@ const ProductDetails = () => {
           rating: 0,
           review_count: 0,
           brand: raw.brand,
+          stock: raw.stock
         };
 
         let moreImages = [];
@@ -266,6 +270,19 @@ const ProductDetails = () => {
     return map[c?.toLowerCase()] || "#6b7280";
   };
 
+  const getResolvedSize = (product) => {
+    if (!product?.sizes?.length) return null;
+
+    const size = product.sizes[0];
+    if (!size) return null;
+
+    if (size === "Other") {
+      return product.size_other?.trim() || null;
+    }
+
+    return size;
+  };
+
   const getUnifiedBadge = (text) => {
     const v = text?.trim();
     if (!v || v === "N/A" || v === "Not specified")
@@ -322,6 +339,7 @@ const ProductDetails = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
+        await fetchCart()
         setSliderProduct({
           product_id: res.data.data.product_id,
           user_id: res.data.data.user_id,
@@ -517,7 +535,7 @@ const ProductDetails = () => {
                     onClick={() => setMainImgIdx(i)}
                     className={` overflow-hidden border-2 ${mainImgIdx === i ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-300"}`}
                   >
-                    <img src={`${process.env.REACT_APP_API_URL}/${src}`} alt="" className="w-full aspect-square object-cover" />
+                    <img src={`${process.env.REACT_APP_API_URL}/${src}`} alt="" className={`w-full aspect-square object-cover ${product.stock === 0 ? "grayscale cursor-not-allowed" : ""}`} />
                   </button>
                 ))}
               </div>
@@ -556,9 +574,37 @@ const ProductDetails = () => {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-                <div className="bg-gray-50 p-4 rounded-xl text-center"><p className="text-xs uppercase text-gray-500 font-medium">Condition</p><div className="mt-2">{getUnifiedBadge(product.condition)}</div></div>
-                <div className="bg-gray-50 p-4 rounded-xl text-center"><p className="text-xs uppercase text-gray-500 font-medium">Color</p><div className="mt-2">{getUnifiedBadge(product.colors[0]?.name || "N/A")}</div></div>
-                <div className="bg-gray-50 p-4 rounded-xl text-center"><p className="text-xs uppercase text-gray-500 font-medium">Size</p><div className="mt-2">{getUnifiedBadge(product.sizes[0] || "N/A")}</div></div>
+
+                {/* CONDITION */}
+                {getUnifiedBadge(product?.condition) && (
+                  <div className="bg-gray-50 p-4 rounded-xl text-center">
+                    <p className="text-xs uppercase text-gray-500 font-medium">Condition</p>
+                    <div className="mt-2">
+                      {getUnifiedBadge(product.condition)}
+                    </div>
+                  </div>
+                )}
+
+                {/* COLOR */}
+                {getUnifiedBadge(product?.colors?.[0]?.name) && (
+                  <div className="bg-gray-50 p-4 rounded-xl text-center">
+                    <p className="text-xs uppercase text-gray-500 font-medium">Color</p>
+                    <div className="mt-2">
+                      {getUnifiedBadge(product.colors[0].name)}
+                    </div>
+                  </div>
+                )}
+
+                {/* SIZE (with Other + null handling) */}
+                {getResolvedSize(product) && (
+                  <div className="bg-gray-50 p-4 rounded-xl text-center">
+                    <p className="text-xs uppercase text-gray-500 font-medium">Size</p>
+                    <div className="mt-2">
+                      {getUnifiedBadge(getResolvedSize(product))}
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* <div className="flex items-center gap-4 mt-8">
@@ -583,6 +629,15 @@ const ProductDetails = () => {
                     {/* <button onClick={handleShare} className="flex-1 p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 transition flex items-center justify-center"><Share2 className="w-6 h-6 text-gray-700" /></button> */}
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-8">
+                {product.description && (
+                  <>
+                    <h2 className="text-xl font-bold mb-3">Product Description</h2>
+                    <p className="text-gray-700">{product.description}</p>
+                  </>
+                )}
               </div>
             </div>
           </div>

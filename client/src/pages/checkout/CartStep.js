@@ -385,7 +385,7 @@ export default function CartStep({ onNext }) {
               </div>
 
               <p className="text-sm text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span>Size: {item.size}</span>
+                {product.size && <span>Size: {product.size === 'Other' ? product.size_other : product.size}</span>}
                 {/* <span className="hidden sm:inline">|</span>
                 <span className="flex items-center gap-2">
                   Qty:

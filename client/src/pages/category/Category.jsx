@@ -107,6 +107,7 @@ const CategoryPage = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
+        await fetchCart();
         console.log("Adding to cart slider2", res.data.data);
         // navigate("/user/checkout");
         setSliderProduct({

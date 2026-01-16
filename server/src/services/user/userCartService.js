@@ -55,7 +55,7 @@ export const getCartService = async (userId) => {
         {
           model: Product,
           as: "product",
-          attributes: ['id', 'product_type', 'purchase_price', 'selling_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
+          attributes: ['id', 'size', 'size_other', 'product_type', 'purchase_price', 'selling_price', 'front_photo', 'back_photo', 'label_photo', 'inside_photo', 'button_photo', 'wearing_photo', 'more_images'],
         },
       ],
     });
@@ -63,8 +63,9 @@ export const getCartService = async (userId) => {
     const formattedCart = cartItems.map((item) => ({
       product_id: item.product_id,
       quantity: item.quantity,
-      size: item.size || 'XL',
       product: {
+        size: item.product.size,
+        size_other: item.product.size_other,
         id: item.product?.id,
         name: item.product?.product_type || 'Unknown Product',
         price: parseFloat(item.product?.selling_price) || parseFloat(item.product?.purchase_price) || 0, // ✅ Use selling_price first
