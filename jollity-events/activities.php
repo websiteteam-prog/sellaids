@@ -1,54 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Activities — The Jollity Events</title>
-  <meta name="description" content="Enriching Lives Through Meaningful Engagements! Explore Art & Craft, Hobbies & Recreation, Cognitive Games, Music & Movement, Mindfulness, Social Jollies, Digital Literacy and One-on-One programs.">
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-
-  <!-- ================= Header ================= -->
-  <header class="site-header">
-    <div class="container">
-      <nav class="nav-bar">
-        <a href="index.html" class="brand">
-          <span class="brand-mark">☀️</span>
-          <span class="brand-name">The <span>Jollity</span> Events</span>
-        </a>
-        <ul class="nav-links">
-          <li><a href="activities.html" class="active">Activities</a></li>
-          <li><a href="calendar.html">Calendar</a></li>
-          <li><a href="our-jollies.html">Our Jollies</a></li>
-          <li><a href="happy-moments.html">Happy Moments</a></li>
-          <li><a href="about.html">About Us</a></li>
-          <li class="mobile-cta">
-            <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
-            <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
-          </li>
-        </ul>
-        <div class="nav-actions">
-          <button class="search-btn" data-open-search aria-label="Search">🔍</button>
-          <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
-          <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
-          <button class="nav-toggle" aria-label="Open menu"><span></span><span></span><span></span></button>
-        </div>
-      </nav>
-    </div>
-  </header>
-
-  <!-- ================= Search overlay ================= -->
-  <div class="search-overlay" id="search-overlay">
-    <div class="search-panel">
-      <input id="search-input" type="text" placeholder="Search activities, programs, pages…" aria-label="Search">
-      <div class="search-results" id="search-results"></div>
-    </div>
-  </div>
+<?php
+$pageTitle = 'Activities — The Jollity Events';
+$pageDesc  = 'Enriching Lives Through Meaningful Engagements! Explore Art & Craft, Hobbies & Recreation, Cognitive Games, Music & Movement, Mindfulness, Social Jollies, Digital Literacy and One-on-One programs.';
+$active    = 'activities';
+include 'includes/header.php';
+?>
 
   <!-- ================= Page hero ================= -->
   <div class="container">
@@ -112,7 +67,7 @@
                 <span class="chip">Small DIY projects</span>
                 <span class="chip">Reminiscence and Memory Boxes</span>
               </div>
-              <p class="acc-note">Ready to get creative? <a href="register.html?activity=Art+%26+Craft">Register for Art &amp; Craft →</a></p>
+              <p class="acc-note">Ready to get creative? <a href="register.php?activity=Art+%26+Craft">Register for Art &amp; Craft →</a></p>
             </div>
           </div>
         </div>
@@ -139,7 +94,7 @@
                 <span class="chip">Engaging Art</span>
                 <span class="chip">Knitting and Crafting</span>
               </div>
-              <p class="acc-note">Rediscover an old passion. <a href="register.html?activity=Hobbies+%26+Recreation">Register for Hobbies &amp; Recreation →</a></p>
+              <p class="acc-note">Rediscover an old passion. <a href="register.php?activity=Hobbies+%26+Recreation">Register for Hobbies &amp; Recreation →</a></p>
             </div>
           </div>
         </div>
@@ -165,7 +120,7 @@
                 <span class="chip">Treat Trolley</span>
                 <span class="chip">Physical Recreation</span>
               </div>
-              <p class="acc-note">Keep the mind sharp and smiling. <a href="register.html?activity=Cognitive+Games">Register for Cognitive Games →</a></p>
+              <p class="acc-note">Keep the mind sharp and smiling. <a href="register.php?activity=Cognitive+Games">Register for Cognitive Games →</a></p>
             </div>
           </div>
         </div>
@@ -192,7 +147,7 @@
                 <span class="chip">Musical games</span>
                 <span class="chip">Learn musical instrument</span>
               </div>
-              <p class="acc-note">Creating moments of joy through music, laughter, and togetherness! <a href="register.html?activity=Music+%26+Movement">Register for Music &amp; Movement →</a></p>
+              <p class="acc-note">Creating moments of joy through music, laughter, and togetherness! <a href="register.php?activity=Music+%26+Movement">Register for Music &amp; Movement →</a></p>
             </div>
           </div>
         </div>
@@ -214,7 +169,7 @@
                 <span class="chip">Gentle Stretching</span>
                 <span class="chip">Easy Sit-down Exercises</span>
               </div>
-              <p class="acc-note">Gentle care for body and mind. <a href="register.html?activity=Mindfulness">Register for Mindfulness →</a></p>
+              <p class="acc-note">Gentle care for body and mind. <a href="register.php?activity=Mindfulness">Register for Mindfulness →</a></p>
             </div>
           </div>
         </div>
@@ -238,7 +193,7 @@
                 <span class="chip">Culinary Adventures</span>
                 <span class="chip">Garden Club</span>
               </div>
-              <p class="acc-note">Make new friends and share stories. <a href="register.html?activity=Social+Jollies">Register for Social Jollies →</a></p>
+              <p class="acc-note">Make new friends and share stories. <a href="register.php?activity=Social+Jollies">Register for Social Jollies →</a></p>
             </div>
           </div>
         </div>
@@ -260,7 +215,7 @@
                 <span class="chip">Entertainment &amp; Hobbies</span>
                 <span class="chip">AI-powered tools</span>
               </div>
-              <p class="acc-note">Confidence in the digital world. <a href="register.html?activity=Digital+Literacy">Register for Digital Literacy →</a></p>
+              <p class="acc-note">Confidence in the digital world. <a href="register.php?activity=Digital+Literacy">Register for Digital Literacy →</a></p>
             </div>
           </div>
         </div>
@@ -279,7 +234,7 @@
               <div class="chip-row">
                 <span class="chip">One-on-one visits for many fun &amp; stimulating activities</span>
               </div>
-              <p class="acc-note">Personal attention, at their pace. <a href="register.html?activity=One-on-One">Register for One-on-One →</a></p>
+              <p class="acc-note">Personal attention, at their pace. <a href="register.php?activity=One-on-One">Register for One-on-One →</a></p>
             </div>
           </div>
         </div>
@@ -294,49 +249,11 @@
       <div class="cta-band reveal">
         <h2>With The Jollity Events, it's an opportunity to laugh, learn, connect, and create lasting memories!</h2>
         <div class="hero-cta">
-          <a href="register.html" class="btn btn-accent">Register Now</a>
-          <a href="contact.html" class="btn btn-outline">Enquire Us</a>
+          <a href="register.php" class="btn btn-accent">Register Now</a>
+          <a href="contact.php" class="btn btn-outline">Enquire Us</a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= Footer ================= -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <span class="brand-name">The <span>Jollity</span> Events</span>
-          <p>Connecting, Engaging, Empowering… Our Seniors! Helping every senior stay active, social, creative, and Jolly.</p>
-          <p class="footer-cap">“Inspiring active minds, joyful hearts, and purposeful living!”</p>
-        </div>
-        <div class="footer-col">
-          <h4>Quick Links</h4>
-          <ul>
-            <li><a href="activities.html">Activities</a></li>
-            <li><a href="calendar.html">Calendar</a></li>
-            <li><a href="about.html">About Us</a></li>
-            <li><a href="contact.html">Contact</a></li>
-            <li><a href="testimonials.html">Testimonials</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Get Started</h4>
-          <ul>
-            <li><a href="register.html">Register Now</a></li>
-            <li><a href="contact.html">Enquire Us</a></li>
-            <li><a href="our-jollies.html">Our Jollies</a></li>
-            <li><a href="happy-moments.html">Happy Moments</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© <span data-year></span> The Jollity Events. All rights reserved.</span>
-        <span>Made with 💛 for our Seniors</span>
-      </div>
-    </div>
-  </footer>
-
-  <script src="js/main.js"></script>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>

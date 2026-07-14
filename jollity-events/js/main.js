@@ -75,14 +75,14 @@ const ACTIVITIES = {
 };
 
 const PAGES = [
-  { title: "Activities", url: "activities.html", tag: "Page" },
-  { title: "Calendar", url: "calendar.html", tag: "Page" },
-  { title: "Our Jollies", url: "our-jollies.html", tag: "Page" },
-  { title: "Happy Moments", url: "happy-moments.html", tag: "Page" },
-  { title: "About Us", url: "about.html", tag: "Page" },
-  { title: "Contact", url: "contact.html", tag: "Page" },
-  { title: "Testimonials", url: "testimonials.html", tag: "Page" },
-  { title: "Register Now", url: "register.html", tag: "Page" }
+  { title: "Activities", url: "activities.php", tag: "Page" },
+  { title: "Calendar", url: "calendar.php", tag: "Page" },
+  { title: "Our Jollies", url: "our-jollies.php", tag: "Page" },
+  { title: "Happy Moments", url: "happy-moments.php", tag: "Page" },
+  { title: "About Us", url: "about.php", tag: "Page" },
+  { title: "Contact", url: "contact.php", tag: "Page" },
+  { title: "Testimonials", url: "testimonials.php", tag: "Page" },
+  { title: "Register Now", url: "register.php", tag: "Page" }
 ];
 
 const CATEGORY_ANCHOR = {
@@ -129,9 +129,9 @@ const searchResults = document.getElementById("search-results");
 function buildSearchIndex() {
   const index = [...PAGES];
   Object.keys(ACTIVITIES).forEach((cat) => {
-    index.push({ title: cat, url: "activities.html#" + CATEGORY_ANCHOR[cat], tag: "Category" });
+    index.push({ title: cat, url: "activities.php#" + CATEGORY_ANCHOR[cat], tag: "Category" });
     ACTIVITIES[cat].forEach((sub) => {
-      index.push({ title: sub, url: "activities.html#" + CATEGORY_ANCHOR[cat], tag: cat });
+      index.push({ title: sub, url: "activities.php#" + CATEGORY_ANCHOR[cat], tag: cat });
     });
   });
   return index;

@@ -1,54 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register Now — The Jollity Events</title>
-  <meta name="description" content="Register your senior for The Jollity Events engagement programs — home or group sessions across Mumbai.">
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-
-  <!-- ================= Header ================= -->
-  <header class="site-header">
-    <div class="container">
-      <nav class="nav-bar">
-        <a href="index.html" class="brand">
-          <span class="brand-mark">☀️</span>
-          <span class="brand-name">The <span>Jollity</span> Events</span>
-        </a>
-        <ul class="nav-links">
-          <li><a href="activities.html">Activities</a></li>
-          <li><a href="calendar.html">Calendar</a></li>
-          <li><a href="our-jollies.html">Our Jollies</a></li>
-          <li><a href="happy-moments.html">Happy Moments</a></li>
-          <li><a href="about.html">About Us</a></li>
-          <li class="mobile-cta">
-            <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
-            <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
-          </li>
-        </ul>
-        <div class="nav-actions">
-          <button class="search-btn" data-open-search aria-label="Search">🔍</button>
-          <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
-          <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
-          <button class="nav-toggle" aria-label="Open menu"><span></span><span></span><span></span></button>
-        </div>
-      </nav>
-    </div>
-  </header>
-
-  <!-- ================= Search overlay ================= -->
-  <div class="search-overlay" id="search-overlay">
-    <div class="search-panel">
-      <input id="search-input" type="text" placeholder="Search activities, programs, pages…" aria-label="Search">
-      <div class="search-results" id="search-results"></div>
-    </div>
-  </div>
+<?php
+$pageTitle = 'Register Now — The Jollity Events';
+$pageDesc  = 'Register your senior for The Jollity Events engagement programs — home or group sessions across Mumbai.';
+$active    = '';
+include 'includes/header.php';
+?>
 
   <!-- ================= Page hero ================= -->
   <div class="container">
@@ -218,42 +173,4 @@
     </div>
   </section>
 
-  <!-- ================= Footer ================= -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <span class="brand-name">The <span>Jollity</span> Events</span>
-          <p>Connecting, Engaging, Empowering… Our Seniors! Helping every senior stay active, social, creative, and Jolly.</p>
-          <p class="footer-cap">“Inspiring active minds, joyful hearts, and purposeful living!”</p>
-        </div>
-        <div class="footer-col">
-          <h4>Quick Links</h4>
-          <ul>
-            <li><a href="activities.html">Activities</a></li>
-            <li><a href="calendar.html">Calendar</a></li>
-            <li><a href="about.html">About Us</a></li>
-            <li><a href="contact.html">Contact</a></li>
-            <li><a href="testimonials.html">Testimonials</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Get Started</h4>
-          <ul>
-            <li><a href="register.html">Register Now</a></li>
-            <li><a href="contact.html">Enquire Us</a></li>
-            <li><a href="our-jollies.html">Our Jollies</a></li>
-            <li><a href="happy-moments.html">Happy Moments</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© <span data-year></span> The Jollity Events. All rights reserved.</span>
-        <span>Made with 💛 for our Seniors</span>
-      </div>
-    </div>
-  </footer>
-
-  <script src="js/main.js"></script>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>

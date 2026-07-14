@@ -1,54 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Jollity Events — Connecting, Engaging, Empowering… Our Seniors!</title>
-  <meta name="description" content="Senior engagement activities and community programs. Enrol your parents and grandparents for home or group sessions with our trained and thoughtful artists.">
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-
-  <!-- ================= Header ================= -->
-  <header class="site-header">
-    <div class="container">
-      <nav class="nav-bar">
-        <a href="index.html" class="brand">
-          <span class="brand-mark">☀️</span>
-          <span class="brand-name">The <span>Jollity</span> Events</span>
-        </a>
-        <ul class="nav-links">
-          <li><a href="activities.html">Activities</a></li>
-          <li><a href="calendar.html">Calendar</a></li>
-          <li><a href="our-jollies.html">Our Jollies</a></li>
-          <li><a href="happy-moments.html">Happy Moments</a></li>
-          <li><a href="about.html">About Us</a></li>
-          <li class="mobile-cta">
-            <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
-            <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
-          </li>
-        </ul>
-        <div class="nav-actions">
-          <button class="search-btn" data-open-search aria-label="Search">🔍</button>
-          <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
-          <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
-          <button class="nav-toggle" aria-label="Open menu"><span></span><span></span><span></span></button>
-        </div>
-      </nav>
-    </div>
-  </header>
-
-  <!-- ================= Search overlay ================= -->
-  <div class="search-overlay" id="search-overlay">
-    <div class="search-panel">
-      <input id="search-input" type="text" placeholder="Search activities, programs, pages…" aria-label="Search">
-      <div class="search-results" id="search-results"></div>
-    </div>
-  </div>
+<?php
+$pageTitle = 'The Jollity Events — Connecting, Engaging, Empowering… Our Seniors!';
+$pageDesc  = 'Senior engagement activities and community programs. Enrol your parents and grandparents for home or group sessions with our trained and thoughtful artists.';
+$active    = '';
+include 'includes/header.php';
+?>
 
   <!-- ================= Hero ================= -->
   <section class="hero">
@@ -63,8 +18,8 @@
         <p class="hero-lead">At the Jollity Events, we believe that every stage of life deserves joy, purpose, and meaningful engagements. Our programs are designed to help Seniors stay active, social, creative, and Jolly through a variety of enriching activities and community experiences.</p>
         <p class="hero-sub">Say goodbye to boredom, loneliness, anxiety and help your Seniors explore new interests, make new friends, stay physically active, or simply enjoy their favourite hobbies in the form of our thoughtfully curated Engagement programs.</p>
         <div class="hero-cta">
-          <a href="register.html" class="btn btn-accent">Register Today</a>
-          <a href="activities.html" class="btn btn-outline">Explore Activities</a>
+          <a href="register.php" class="btn btn-accent">Register Today</a>
+          <a href="activities.php" class="btn btn-outline">Explore Activities</a>
         </div>
         <div class="hero-collage">
           <div class="blob b1"></div>
@@ -96,7 +51,7 @@
           <div class="enrol-body">
             <div class="tagline">Enrol your Parents and Grand-parents</div>
             <p>for Home or Group sessions with our trained and thoughtful artists.</p>
-            <a href="register.html" class="btn btn-accent">Register Today →</a>
+            <a href="register.php" class="btn btn-accent">Register Today →</a>
             <div class="enrol-note">💛 Every smile celebrated, every story valued</div>
           </div>
         </div>
@@ -150,42 +105,42 @@
         <p>Thoughtfully curated programs for every interest — pick a favourite or discover a brand-new passion.</p>
       </div>
       <div class="cat-grid">
-        <a class="cat-card reveal" href="activities.html#art-craft">
+        <a class="cat-card reveal" href="activities.php#art-craft">
           <div class="ring"><img src="assets/img/cat-art-craft.svg" alt="Art & Craft"></div>
           <span class="pill-count">8 sessions</span>
           <h3>Art &amp; Craft</h3>
         </a>
-        <a class="cat-card reveal reveal-d1" href="activities.html#hobbies-recreation">
+        <a class="cat-card reveal reveal-d1" href="activities.php#hobbies-recreation">
           <div class="ring"><img src="assets/img/cat-hobbies.svg" alt="Hobbies & Recreation"></div>
           <span class="pill-count">9 sessions</span>
           <h3>Hobbies &amp; Recreation</h3>
         </a>
-        <a class="cat-card reveal reveal-d2" href="activities.html#cognitive-games">
+        <a class="cat-card reveal reveal-d2" href="activities.php#cognitive-games">
           <div class="ring"><img src="assets/img/cat-cognitive.svg" alt="Cognitive Games"></div>
           <span class="pill-count">8 sessions</span>
           <h3>Cognitive Games</h3>
         </a>
-        <a class="cat-card reveal reveal-d3" href="activities.html#music-movement">
+        <a class="cat-card reveal reveal-d3" href="activities.php#music-movement">
           <div class="ring"><img src="assets/img/cat-music.svg" alt="Music & Movement"></div>
           <span class="pill-count">9 sessions</span>
           <h3>Music &amp; Movement</h3>
         </a>
-        <a class="cat-card reveal" href="activities.html#mindfulness">
+        <a class="cat-card reveal" href="activities.php#mindfulness">
           <div class="ring"><img src="assets/img/cat-mindfulness.svg" alt="Mindfulness"></div>
           <span class="pill-count">4 sessions</span>
           <h3>Mindfulness</h3>
         </a>
-        <a class="cat-card reveal reveal-d1" href="activities.html#social-jollies">
+        <a class="cat-card reveal reveal-d1" href="activities.php#social-jollies">
           <div class="ring"><img src="assets/img/cat-social.svg" alt="Social Jollies"></div>
           <span class="pill-count">6 sessions</span>
           <h3>Social Jollies</h3>
         </a>
-        <a class="cat-card reveal reveal-d2" href="activities.html#digital-literacy">
+        <a class="cat-card reveal reveal-d2" href="activities.php#digital-literacy">
           <div class="ring"><img src="assets/img/cat-digital.svg" alt="Digital Literacy"></div>
           <span class="pill-count">4 sessions</span>
           <h3>Digital Literacy</h3>
         </a>
-        <a class="cat-card reveal reveal-d3" href="activities.html#one-on-one">
+        <a class="cat-card reveal reveal-d3" href="activities.php#one-on-one">
           <div class="ring"><img src="assets/img/cat-one-on-one.svg" alt="One-on-One"></div>
           <span class="pill-count">Personalised</span>
           <h3>One-on-One</h3>
@@ -201,49 +156,11 @@
         <h2>Bringing joy, purpose, and companionship to their Golden Years!</h2>
         <p>Be part of this welcoming community where every smile is celebrated, every story is valued, and every senior is empowered to live with confidence, purpose, and belonging.</p>
         <div class="hero-cta">
-          <a href="register.html" class="btn btn-accent">Register Now</a>
-          <a href="contact.html" class="btn btn-outline">Enquire Us</a>
+          <a href="register.php" class="btn btn-accent">Register Now</a>
+          <a href="contact.php" class="btn btn-outline">Enquire Us</a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= Footer ================= -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <span class="brand-name">The <span>Jollity</span> Events</span>
-          <p>Connecting, Engaging, Empowering… Our Seniors! Helping every senior stay active, social, creative, and Jolly.</p>
-          <p class="footer-cap">“Inspiring active minds, joyful hearts, and purposeful living!”</p>
-        </div>
-        <div class="footer-col">
-          <h4>Quick Links</h4>
-          <ul>
-            <li><a href="activities.html">Activities</a></li>
-            <li><a href="calendar.html">Calendar</a></li>
-            <li><a href="about.html">About Us</a></li>
-            <li><a href="contact.html">Contact</a></li>
-            <li><a href="testimonials.html">Testimonials</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Get Started</h4>
-          <ul>
-            <li><a href="register.html">Register Now</a></li>
-            <li><a href="contact.html">Enquire Us</a></li>
-            <li><a href="our-jollies.html">Our Jollies</a></li>
-            <li><a href="happy-moments.html">Happy Moments</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© <span data-year></span> The Jollity Events. All rights reserved.</span>
-        <span>Made with 💛 for our Seniors</span>
-      </div>
-    </div>
-  </footer>
-
-  <script src="js/main.js"></script>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>
