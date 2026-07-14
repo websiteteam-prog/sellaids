@@ -197,34 +197,98 @@ const revealObserver = new IntersectionObserver(
 document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
 
 /* ------------------------------------------------------------------
-   Accordions (Activities page)
+   Activities catalogue grid: category tabs, sort, lazy "load more"
    ------------------------------------------------------------------ */
-function setAccordion(item, open) {
-  const body = item.querySelector(".acc-body");
-  item.classList.toggle("open", open);
-  const head = item.querySelector(".acc-head");
-  if (head) head.setAttribute("aria-expanded", open ? "true" : "false");
-  if (body) body.style.maxHeight = open ? body.scrollHeight + "px" : "0px";
-}
+const pgrid = document.getElementById("pgrid");
+if (pgrid) {
+  const cards = Array.from(pgrid.querySelectorAll(".pcard"));
+  const band = document.getElementById("cta-inline");
+  const sortSel = document.getElementById("grid-sort");
+  const loading = document.getElementById("grid-loading");
+  const empty = document.getElementById("grid-empty");
+  const tabs = Array.from(document.querySelectorAll(".ftab"));
+  const BATCH = 12;
+  const state = { cat: "all", sort: "new", shown: BATCH };
+  let pending = false;
 
-document.querySelectorAll(".acc-item").forEach((item) => {
-  const head = item.querySelector(".acc-head");
-  if (!head) return;
-  head.addEventListener("click", () => setAccordion(item, !item.classList.contains("open")));
-});
+  cards.forEach((c, i) => (c.dataset.index = i));
 
-/* Open the accordion targeted by the URL hash (from search / strip links) */
-function openHashAccordion() {
-  const id = window.location.hash.replace("#", "");
-  if (!id) return;
-  const target = document.getElementById(id);
-  if (target && target.classList.contains("acc-item")) {
-    setAccordion(target, true);
-    setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+  function applyGrid() {
+    const list = cards.filter((c) => state.cat === "all" || c.dataset.cat === state.cat);
+    if (state.sort === "az") list.sort((a, b) => a.dataset.title.localeCompare(b.dataset.title));
+    else if (state.sort === "za") list.sort((a, b) => b.dataset.title.localeCompare(a.dataset.title));
+    else list.sort((a, b) => a.dataset.index - b.dataset.index);
+
+    cards.forEach((c) => c.classList.add("hide"));
+    const visible = list.slice(0, state.shown);
+    visible.forEach((c, i) => {
+      c.classList.remove("hide");
+      c.style.order = i * 2;
+    });
+    /* keep the inline CTA band after the 8th visible card, like the reference */
+    if (band) band.style.order = visible.length >= 8 ? 15 : visible.length * 2 + 1;
+    if (empty) empty.classList.toggle("on", list.length === 0);
+    pending = list.length > state.shown;
+    if (loading) loading.classList.toggle("on", pending);
   }
+
+  const moreObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && pending) {
+          pending = false;
+          setTimeout(() => {
+            state.shown += BATCH;
+            applyGrid();
+          }, 450);
+        }
+      });
+    },
+    { rootMargin: "220px" }
+  );
+  if (loading) moreObserver.observe(loading);
+
+  function selectCat(cat) {
+    state.cat = cat;
+    state.shown = BATCH;
+    tabs.forEach((t) => t.classList.toggle("active", t.dataset.cat === cat));
+    applyGrid();
+  }
+
+  tabs.forEach((t) => t.addEventListener("click", () => selectCat(t.dataset.cat)));
+
+  document.querySelectorAll(".fd-row").forEach((row) => {
+    row.addEventListener("click", () => {
+      selectCat(row.dataset.cat);
+      const item = row.dataset.item;
+      if (item) {
+        state.shown = cards.length;
+        applyGrid();
+        const target = cards.find(
+          (c) => !c.classList.contains("hide") && c.querySelector("h3").textContent === item
+        );
+        if (target) setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+      }
+    });
+  });
+
+  if (sortSel) {
+    sortSel.addEventListener("change", () => {
+      state.sort = sortSel.value;
+      state.shown = BATCH;
+      applyGrid();
+    });
+  }
+
+  /* Deep links (#music-movement etc.) select the matching category tab */
+  function applyCatalogHash() {
+    const id = window.location.hash.replace("#", "");
+    if (id && tabs.some((t) => t.dataset.cat === id)) selectCat(id);
+  }
+  window.addEventListener("hashchange", applyCatalogHash);
+  applyGrid();
+  applyCatalogHash();
 }
-window.addEventListener("hashchange", openHashAccordion);
-openHashAccordion();
 
 /* ------------------------------------------------------------------
    Register form: dependent Activity -> Session dropdown + submit
@@ -320,71 +384,80 @@ if (enquiryForm) {
 }
 
 /* ------------------------------------------------------------------
-   Calendar (calendar page) — sample events, month navigation
+   Calendar page — month tabs + circular event cards
    ------------------------------------------------------------------ */
-const calGrid = document.getElementById("cal-grid");
-if (calGrid) {
-  const calTitle = document.getElementById("cal-title");
-  const MONTHS = ["January", "February", "March", "April", "May", "June",
+const evGrid = document.getElementById("ev-grid");
+if (evGrid) {
+  const MONTHS_FULL = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
-  const DOWS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const calYear = new Date().getFullYear();
 
-  /* Sample events by day-of-month (repeat every month as placeholders) */
-  const SAMPLE_EVENTS = {
-    2: [{ t: "Fun Painting", c: 1 }],
-    4: [{ t: "Musical Bingo", c: 2 }],
-    6: [{ t: "Yoga", c: 3 }],
-    9: [{ t: "Book Club", c: 4 }],
-    11: [{ t: "Memory Boosters", c: 1 }],
-    13: [{ t: "Karaoke", c: 2 }],
-    16: [{ t: "Garden Club", c: 3 }],
-    18: [{ t: "Clay Modelling", c: 1 }],
-    20: [{ t: "Digital Skills", c: 4 }],
-    23: [{ t: "Story Telling", c: 2 }],
-    25: [{ t: "Gentle Stretching", c: 3 }],
-    27: [{ t: "Culinary Adventures", c: 4 }],
-    30: [{ t: "Social Jollies Meet", c: 2 }]
-  };
+  /* Sample sessions shown every month as placeholders */
+  const CAL_EVENTS = [
+    { d: 1,  title: "Fun Painting",            img: "act-fun-painting.svg",        note: "Art & Craft" },
+    { d: 3,  title: "Musical Bingo",           img: "act-musical-bingo.svg",       note: "Music & Movement" },
+    { d: 5,  title: "Yoga Morning",            img: "act-yoga.svg",                note: "Mindfulness" },
+    { d: 8,  title: "Book Club",               img: "act-book-club.svg",           note: "Social Jollies" },
+    { d: 10, title: "Memory Boosters",         img: "act-memory-boosters.svg",     note: "Cognitive Games" },
+    { d: 12, title: "Karaoke Afternoon",       img: "act-karaoke.svg",             note: "Music & Movement" },
+    { d: 15, title: "Garden Club",             img: "act-garden-club.svg",         note: "Social Jollies" },
+    { d: 17, title: "Clay Modelling",          img: "act-clay-modelling.svg",      note: "Art & Craft" },
+    { d: 19, title: "Essential Digital Skills", img: "act-essential-skills.svg",   note: "Digital Literacy" },
+    { d: 22, title: "Story Telling Circle",    img: "act-story-telling.svg",       note: "Hobbies & Recreation" },
+    { d: 24, title: "Gentle Stretching",       img: "act-gentle-stretching.svg",   note: "Mindfulness" },
+    { d: 26, title: "Culinary Adventures",     img: "act-culinary-adventures.svg", note: "Social Jollies" },
+    { d: 28, title: "Birthday Celebrations",   img: "moment-1.svg",                note: "Community" },
+    { d: 30, title: "Social Jollies Meet",     img: "cat-social.svg",              note: "Community" }
+  ];
 
-  const today = new Date();
-  let viewYear = today.getFullYear();
-  let viewMonth = today.getMonth();
-
-  function renderCalendar() {
-    calTitle.textContent = MONTHS[viewMonth] + " " + viewYear;
-    calGrid.innerHTML = DOWS.map((d) => `<div class="cal-dow">${d}</div>`).join("");
-
-    const firstDow = new Date(viewYear, viewMonth, 1).getDay();
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-    for (let i = 0; i < firstDow; i++) {
-      calGrid.insertAdjacentHTML("beforeend", '<div class="cal-cell empty"></div>');
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      const isToday =
-        d === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
-      const events = (SAMPLE_EVENTS[d] || [])
-        .map((ev) => `<span class="cal-event ev-${ev.c}">${ev.t}</span>`)
-        .join("");
-      calGrid.insertAdjacentHTML(
-        "beforeend",
-        `<div class="cal-cell${isToday ? " today" : ""}"><span class="d">${d}</span>${events}</div>`
-      );
-    }
+  /* Stable dummy counts until real session data is available */
+  function dummyCount(s) {
+    let h = 0;
+    for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return (h % 36) + 6;
   }
 
-  document.getElementById("cal-prev").addEventListener("click", () => {
-    viewMonth--;
-    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-    renderCalendar();
-  });
-  document.getElementById("cal-next").addEventListener("click", () => {
-    viewMonth++;
-    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-    renderCalendar();
-  });
+  function renderMonth(monthIdx) {
+    const monthName = MONTHS_FULL[monthIdx];
+    document.getElementById("cal-month-title").textContent = monthName;
+    document.getElementById("crumb-month").textContent = monthName;
 
-  renderCalendar();
+    const daysInMonth = new Date(calYear, monthIdx + 1, 0).getDate();
+    const events = CAL_EVENTS.filter((e) => e.d <= daysInMonth);
+    document.getElementById("cal-ev-count").textContent = events.length;
+
+    const mon3 = monthName.slice(0, 3).toUpperCase();
+    evGrid.innerHTML = events
+      .map((e) => {
+        const date = new Date(calYear, monthIdx, e.d);
+        const dow = date.toLocaleDateString("en-US", { weekday: "long" });
+        const n = dummyCount(e.title + monthIdx);
+        const plus = (n % 4) + 1;
+        return `<a class="ev-card" href="register.php">
+          <div class="ev-img"><img src="assets/img/${e.img}" alt="${e.title}" loading="lazy"></div>
+          <div class="ev-meta">
+            <span class="ev-day">${String(e.d).padStart(2, "0")}</span>
+            <span class="ev-date"><span class="ev-dow">${dow}</span><span class="ev-my">${mon3} ${calYear}</span></span>
+            <span class="ev-count">${n}</span>
+            <span class="ev-plus">+${plus}</span>
+          </div>
+          <h3>${e.title}</h3>
+          <div class="ev-note">${e.note}</div>
+        </a>`;
+      })
+      .join("");
+  }
+
+  const monthBtns = document.querySelectorAll(".month-item");
+  monthBtns.forEach((btn) =>
+    btn.addEventListener("click", () => {
+      monthBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderMonth(parseInt(btn.dataset.month, 10));
+    })
+  );
+
+  renderMonth(new Date().getMonth());
 }
 
 /* ------------------------------------------------------------------

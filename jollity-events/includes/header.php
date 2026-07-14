@@ -36,7 +36,7 @@ function nav_active(string $key, string $active): string
     <div class="container">
       <nav class="nav-bar">
         <a href="index.php" class="brand">
-          <span class="brand-mark">☀️</span>
+          <img class="brand-logo" src="assets/img/logo.svg" alt="The Jollity Events logo">
           <span class="brand-name">The <span>Jollity</span> Events</span>
         </a>
         <ul class="nav-links">

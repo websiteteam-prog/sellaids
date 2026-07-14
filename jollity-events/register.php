@@ -161,11 +161,11 @@ include 'includes/header.php';
           <h3>Every smile is celebrated 💛</h3>
           <p>Be part of this welcoming community where every smile is celebrated, every story is valued, and every senior is empowered to live with confidence, purpose, and belonging.</p>
           <ul class="mini-list">
-            <li><span class="dot">🏡</span> Home or Group sessions</li>
-            <li><span class="dot">🎨</span> 8 activity categories to choose from</li>
-            <li><span class="dot">🤝</span> Trained and thoughtful artists</li>
-            <li><span class="dot">📍</span> Sessions across Mumbai</li>
-            <li><span class="dot">🎉</span> A community that feels like family</li>
+            <li><span class="dot"><img src="assets/img/icon-home.svg" alt=""></span> Home or Group sessions</li>
+            <li><span class="dot"><img src="assets/img/icon-art.svg" alt=""></span> 8 activity categories to choose from</li>
+            <li><span class="dot"><img src="assets/img/icon-hands.svg" alt=""></span> Trained and thoughtful artists</li>
+            <li><span class="dot"><img src="assets/img/icon-pin.svg" alt=""></span> Sessions across Mumbai</li>
+            <li><span class="dot"><img src="assets/img/icon-party.svg" alt=""></span> A community that feels like family</li>
           </ul>
         </aside>
 

@@ -39,9 +39,9 @@ include 'includes/header.php';
         <h2>Words we <span class="hl">live by</span></h2>
       </div>
       <div class="caption-band">
-        <div class="caption-card c1 reveal"><span class="cap-emoji">🧠</span>Inspiring active minds, joyful hearts, and purposeful living!</div>
-        <div class="caption-card c2 reveal reveal-d1"><span class="cap-emoji">🌟</span>Bringing joy, purpose, and companionship to their Golden Years!</div>
-        <div class="caption-card c3 reveal reveal-d2"><span class="cap-emoji">🎶</span>Creating moments of joy through music, laughter, and togetherness!</div>
+        <div class="caption-card c1 reveal"><img class="cap-img" src="assets/img/icon-mind.svg" alt="">Inspiring active minds, joyful hearts, and purposeful living!</div>
+        <div class="caption-card c2 reveal reveal-d1"><img class="cap-img" src="assets/img/icon-star.svg" alt="">Bringing joy, purpose, and companionship to their Golden Years!</div>
+        <div class="caption-card c3 reveal reveal-d2"><img class="cap-img" src="assets/img/icon-melody.svg" alt="">Creating moments of joy through music, laughter, and togetherness!</div>
       </div>
     </div>
   </section>

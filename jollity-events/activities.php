@@ -3,243 +3,168 @@ $pageTitle = 'Activities — The Jollity Events';
 $pageDesc  = 'Enriching Lives Through Meaningful Engagements! Explore Art & Craft, Hobbies & Recreation, Cognitive Games, Music & Movement, Mindfulness, Social Jollies, Digital Literacy and One-on-One programs.';
 $active    = 'activities';
 include 'includes/header.php';
+
+/* ------------------------------------------------------------------
+   Activity catalogue — categories, sub-activities and dummy counts.
+   Images live in assets/img/ as act-<slug>.svg placeholders.
+   ------------------------------------------------------------------ */
+function slugify(string $name): string
+{
+    return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($name)), '-');
+}
+
+/* Stable dummy counts until real session data is available */
+function dummy_count(string $name): int { return (crc32($name) % 90) + 8; }
+function dummy_new(string $name): int   { return crc32($name) % 5; }
+
+$CATALOG = [
+    'art-craft' => ['name' => 'Art & Craft', 'img' => 'cat-art-craft.svg', 'items' => [
+        'Fun Painting', 'Creative crafts', 'Clay modelling', 'Collage-making',
+        'Scrapbooking', 'Gratitude tree', 'Small DIY projects', 'Reminiscence and Memory Boxes',
+    ]],
+    'hobbies-recreation' => ['name' => 'Hobbies & Recreation', 'img' => 'cat-hobbies.svg', 'items' => [
+        'Therapeutic Colouring', 'Drawing Activities', 'Reading', 'Writing & Journaling',
+        'Story Telling', 'Indoor Herb Gardens', 'Dancing', 'Engaging Art', 'Knitting and Crafting',
+    ]],
+    'cognitive-games' => ['name' => 'Cognitive Games', 'img' => 'cat-cognitive.svg', 'items' => [
+        'Memory boosters', 'Decision making games', 'Strategy thinking games',
+        'Brain Stimulating activities', 'Visual games', 'Comforting activities',
+        'Treat Trolley', 'Physical Recreation',
+    ]],
+    'music-movement' => ['name' => 'Music & Movement', 'img' => 'cat-music.svg', 'items' => [
+        'Karaoke', 'Charades', 'Interactive sing-alongs', 'Listening Sessions', 'Jamming',
+        'Musical Bingo', 'Props dancing', 'Musical games', 'Learn musical instrument',
+    ]],
+    'mindfulness' => ['name' => 'Mindfulness', 'img' => 'cat-mindfulness.svg', 'items' => [
+        'Meditation & Mindfulness', 'Yoga', 'Gentle Stretching', 'Easy Sit-down Exercises',
+    ]],
+    'social-jollies' => ['name' => 'Social Jollies', 'img' => 'cat-social.svg', 'items' => [
+        'Book Club', 'Photo Sharing Circle', 'Reading club', 'Reminiscence Group',
+        'Culinary Adventures', 'Garden Club',
+    ]],
+    'digital-literacy' => ['name' => 'Digital Literacy', 'img' => 'cat-digital.svg', 'items' => [
+        'Security & Safety', 'Essential Skills', 'Entertainment & Hobbies', 'AI-powered tools',
+    ]],
+    'one-on-one' => ['name' => 'One-on-One', 'img' => 'cat-one-on-one.svg', 'items' => [
+        'One-on-one visits',
+    ]],
+];
+
+$totalItems = 0;
+foreach ($CATALOG as $cat) {
+    $totalItems += count($cat['items']);
+}
 ?>
 
-  <!-- ================= Page hero ================= -->
+  <!-- ================= Category filter tabs ================= -->
   <div class="container">
-    <section class="page-hero">
-      <span class="crumb">Activities</span>
-      <h1>Enriching Lives Through Meaningful Engagements!</h1>
-      <p>Inspiring active minds, joyful hearts, and purposeful living!</p>
-    </section>
-  </div>
+    <div class="ftab-bar" id="ftab-bar">
+      <div class="ftab-wrap">
+        <button class="ftab active" data-cat="all">
+          <span class="ft-count"><?php echo $totalItems; ?></span>
+          <span class="ft-name">All</span>
+        </button>
+      </div>
+<?php foreach ($CATALOG as $slug => $cat) : ?>
+      <div class="ftab-wrap">
+        <button class="ftab" data-cat="<?php echo $slug; ?>">
+          <span class="ft-count"><img src="assets/img/<?php echo $cat['img']; ?>" alt=""><?php echo count($cat['items']); ?></span>
+          <span class="ft-name"><?php echo htmlspecialchars($cat['name']); ?></span>
+        </button>
+        <div class="ftab-drop">
+          <button class="fd-row" data-cat="<?php echo $slug; ?>">
+            <img src="assets/img/<?php echo $cat['img']; ?>" alt="">
+            <span class="fd-name">All <?php echo htmlspecialchars($cat['name']); ?></span>
+            <span class="fd-count"><?php echo dummy_count($cat['name']) * 3; ?></span>
+            <span class="fd-new">+<?php echo dummy_new($cat['name']) + 1; ?></span>
+          </button>
+<?php foreach ($cat['items'] as $item) : ?>
+          <button class="fd-row" data-cat="<?php echo $slug; ?>" data-item="<?php echo htmlspecialchars($item); ?>">
+            <img src="assets/img/act-<?php echo slugify($item); ?>.svg" alt="">
+            <span class="fd-name"><?php echo htmlspecialchars($item); ?></span>
+            <span class="fd-count"><?php echo dummy_count($item); ?></span>
+<?php if (dummy_new($item) > 0) : ?>
+            <span class="fd-new">+<?php echo dummy_new($item); ?></span>
+<?php endif; ?>
+          </button>
+<?php endforeach; ?>
+        </div>
+      </div>
+<?php endforeach; ?>
+    </div>
 
-  <!-- ================= Horizontal category strip ================= -->
-  <div class="container">
-    <div class="cat-strip" aria-label="Activity categories">
-      <a class="strip-item" href="#art-craft"><img src="assets/img/cat-art-craft.svg" alt="">Art &amp; Craft</a>
-      <a class="strip-item" href="#hobbies-recreation"><img src="assets/img/cat-hobbies.svg" alt="">Hobbies &amp; Recreation</a>
-      <a class="strip-item" href="#cognitive-games"><img src="assets/img/cat-cognitive.svg" alt="">Cognitive Games</a>
-      <a class="strip-item" href="#music-movement"><img src="assets/img/cat-music.svg" alt="">Music &amp; Movement</a>
-      <a class="strip-item" href="#mindfulness"><img src="assets/img/cat-mindfulness.svg" alt="">Mindfulness</a>
-      <a class="strip-item" href="#social-jollies"><img src="assets/img/cat-social.svg" alt="">Social Jollies</a>
-      <a class="strip-item" href="#digital-literacy"><img src="assets/img/cat-digital.svg" alt="">Digital Literacy</a>
-      <a class="strip-item" href="#one-on-one"><img src="assets/img/cat-one-on-one.svg" alt="">One-on-One</a>
+    <!-- ================= Breadcrumb ================= -->
+    <div class="crumb-bar">
+      <a href="index.php">Home</a>
+      <span class="sep">›</span>
+      <span class="here">Activities</span>
     </div>
   </div>
 
-  <!-- ================= Page content ================= -->
-  <section class="section-tight">
+  <!-- ================= Page heading + intro ================= -->
+  <section class="section-tight" style="padding-top: 12px;">
     <div class="container">
-      <div class="section-head reveal" style="max-width: 860px;">
+      <h1 style="font-size: clamp(30px, 4vw, 46px); font-weight: 800; margin-bottom: 16px;">Enriching Lives Through <span style="color: var(--primary);">Meaningful Engagements!</span></h1>
+      <div style="max-width: 880px;">
         <p>Growing older is not about slowing down—it's about embracing new opportunities, nurturing relationships, and finding joy in everyday moments. Our elder engagement activities are thoughtfully designed to promote physical wellness, mental stimulation, emotional well-being, and meaningful social connections.</p>
-        <br>
-        <p>Whether it's discovering a new hobby, reconnecting with old passions, or simply sharing laughter with friends, each activity encourages seniors to remain active, confident, and connected to the community.</p>
-        <br>
-        <p style="font-family: var(--font-display); font-weight: 700; color: var(--navy); font-size: 19px;">With The Jollity Events, it is more than just a pastime—it's an opportunity to laugh, learn, connect, and create lasting memories!</p>
+        <p style="margin-top: 12px;">Whether it's discovering a new hobby, reconnecting with old passions, or simply sharing laughter with friends, each activity encourages seniors to remain active, confident, and connected to the community.</p>
+        <p style="margin-top: 12px; font-family: var(--font-display); font-weight: 700; color: var(--navy);">With The Jollity Events, it is more than just a pastime—it's an opportunity to laugh, learn, connect, and create lasting memories!</p>
       </div>
-    </div>
-  </section>
 
-  <!-- ================= Category dropdowns ================= -->
-  <section class="section" style="padding-top: 10px;">
-    <div class="container">
-      <div class="acc-list">
-
-        <div class="acc-item reveal" id="art-craft">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-art-craft.svg" alt="">
-            <span class="acc-title">
-              <h3>Art &amp; Craft</h3>
-              <span>8 creative sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Fun Painting</span>
-                <span class="chip">Creative crafts</span>
-                <span class="chip">Clay modelling</span>
-                <span class="chip">Collage-making</span>
-                <span class="chip">Scrapbooking</span>
-                <span class="chip">Gratitude tree</span>
-                <span class="chip">Small DIY projects</span>
-                <span class="chip">Reminiscence and Memory Boxes</span>
-              </div>
-              <p class="acc-note">Ready to get creative? <a href="register.php?activity=Art+%26+Craft">Register for Art &amp; Craft →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="hobbies-recreation">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-hobbies.svg" alt="">
-            <span class="acc-title">
-              <h3>Hobbies &amp; Recreation</h3>
-              <span>Hobbies / Recreation / Jollies — 9 sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Therapeutic Colouring</span>
-                <span class="chip">Drawing Activities</span>
-                <span class="chip">Reading</span>
-                <span class="chip">Writing &amp; Journaling</span>
-                <span class="chip">Story Telling</span>
-                <span class="chip">Indoor Herb Gardens</span>
-                <span class="chip">Dancing</span>
-                <span class="chip">Engaging Art</span>
-                <span class="chip">Knitting and Crafting</span>
-              </div>
-              <p class="acc-note">Rediscover an old passion. <a href="register.php?activity=Hobbies+%26+Recreation">Register for Hobbies &amp; Recreation →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="cognitive-games">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-cognitive.svg" alt="">
-            <span class="acc-title">
-              <h3>Cognitive Games</h3>
-              <span>8 brain-boosting sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Memory boosters</span>
-                <span class="chip">Decision making games</span>
-                <span class="chip">Strategy thinking games</span>
-                <span class="chip">Brain Stimulating activities</span>
-                <span class="chip">Visual games</span>
-                <span class="chip">Comforting activities</span>
-                <span class="chip">Treat Trolley</span>
-                <span class="chip">Physical Recreation</span>
-              </div>
-              <p class="acc-note">Keep the mind sharp and smiling. <a href="register.php?activity=Cognitive+Games">Register for Cognitive Games →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="music-movement">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-music.svg" alt="">
-            <span class="acc-title">
-              <h3>Music &amp; Movement</h3>
-              <span>9 joyful sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Karaoke</span>
-                <span class="chip">Charades</span>
-                <span class="chip">Interactive sing-alongs</span>
-                <span class="chip">Listening Sessions</span>
-                <span class="chip">Jamming</span>
-                <span class="chip">Musical Bingo</span>
-                <span class="chip">Props dancing</span>
-                <span class="chip">Musical games</span>
-                <span class="chip">Learn musical instrument</span>
-              </div>
-              <p class="acc-note">Creating moments of joy through music, laughter, and togetherness! <a href="register.php?activity=Music+%26+Movement">Register for Music &amp; Movement →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="mindfulness">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-mindfulness.svg" alt="">
-            <span class="acc-title">
-              <h3>Mindfulness</h3>
-              <span>4 calming sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Meditation &amp; Mindfulness</span>
-                <span class="chip">Yoga</span>
-                <span class="chip">Gentle Stretching</span>
-                <span class="chip">Easy Sit-down Exercises</span>
-              </div>
-              <p class="acc-note">Gentle care for body and mind. <a href="register.php?activity=Mindfulness">Register for Mindfulness →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="social-jollies">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-social.svg" alt="">
-            <span class="acc-title">
-              <h3>Social Jollies</h3>
-              <span>6 community sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Book Club</span>
-                <span class="chip">Photo Sharing Circle</span>
-                <span class="chip">Reading club</span>
-                <span class="chip">Reminiscence Group</span>
-                <span class="chip">Culinary Adventures</span>
-                <span class="chip">Garden Club</span>
-              </div>
-              <p class="acc-note">Make new friends and share stories. <a href="register.php?activity=Social+Jollies">Register for Social Jollies →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="digital-literacy">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-digital.svg" alt="">
-            <span class="acc-title">
-              <h3>Digital Literacy</h3>
-              <span>4 empowering sessions</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">Security &amp; Safety</span>
-                <span class="chip">Essential Skills</span>
-                <span class="chip">Entertainment &amp; Hobbies</span>
-                <span class="chip">AI-powered tools</span>
-              </div>
-              <p class="acc-note">Confidence in the digital world. <a href="register.php?activity=Digital+Literacy">Register for Digital Literacy →</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item reveal" id="one-on-one">
-          <button class="acc-head" aria-expanded="false">
-            <img src="assets/img/cat-one-on-one.svg" alt="">
-            <span class="acc-title">
-              <h3>One-on-One</h3>
-              <span>Personalised companionship</span>
-            </span>
-            <span class="acc-chevron">▾</span>
-          </button>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              <div class="chip-row">
-                <span class="chip">One-on-one visits for many fun &amp; stimulating activities</span>
-              </div>
-              <p class="acc-note">Personal attention, at their pace. <a href="register.php?activity=One-on-One">Register for One-on-One →</a></p>
-            </div>
-          </div>
-        </div>
-
+      <!-- ================= Section heading ================= -->
+      <div class="section-head" style="margin: 34px auto 6px;">
+        <h2>Explore Each Category <span class="hl">in Detail</span></h2>
       </div>
+
+      <!-- ================= Sort toolbar ================= -->
+      <div class="grid-toolbar" style="justify-content: flex-end;">
+        <select class="grid-sort" id="grid-sort" aria-label="Sort activities">
+          <option value="new">What's New</option>
+          <option value="az">A – Z</option>
+          <option value="za">Z – A</option>
+        </select>
+      </div>
+
+      <!-- ================= Activity grid ================= -->
+      <div class="pgrid" id="pgrid">
+<?php
+$i = 0;
+foreach ($CATALOG as $slug => $cat) :
+    foreach ($cat['items'] as $item) :
+        $i++;
+?>
+        <a class="pcard" href="register.php?activity=<?php echo urlencode($cat['name']); ?>"
+           data-cat="<?php echo $slug; ?>" data-title="<?php echo htmlspecialchars(strtolower($item)); ?>">
+          <div class="pimg"><img src="assets/img/act-<?php echo slugify($item); ?>.svg" alt="<?php echo htmlspecialchars($item); ?>" loading="lazy"></div>
+          <div class="badge-row">
+            <span class="pcount"><img src="assets/img/<?php echo $cat['img']; ?>" alt=""><?php echo dummy_count($item); ?></span>
+<?php if (dummy_new($item) > 0) : ?>
+            <span class="pnew">+<?php echo dummy_new($item); ?></span>
+<?php endif; ?>
+          </div>
+          <h3><?php echo htmlspecialchars($item); ?></h3>
+          <div class="psub"><?php echo htmlspecialchars($cat['name']); ?></div>
+        </a>
+<?php
+        /* CTA band woven into the grid after the first 8 cards, like the reference */
+        if ($i === 8) :
+?>
+        <div class="cta-inline" id="cta-inline">
+          <div class="cta-band slim">
+            <h2>Ready to join or want to explore first?</h2>
+            <p>Enrol your Parents and Grand-parents for Home or Group sessions with our trained and thoughtful artists.</p>
+            <div class="hero-cta">
+              <a href="register.php" class="btn btn-accent">Register Now</a>
+              <a href="contact.php" class="btn btn-outline">Enquire Us</a>
+            </div>
+          </div>
+        </div>
+<?php endif; ?>
+<?php endforeach; endforeach; ?>
+      </div>
+
+      <div class="grid-empty" id="grid-empty">No activities found in this category.</div>
+      <div class="grid-loading" id="grid-loading">Loading more posts…</div>
     </div>
   </section>
 

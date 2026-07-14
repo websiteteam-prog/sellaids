@@ -20,19 +20,19 @@ include 'includes/header.php';
         <div class="contact-info-card reveal">
           <h3>We'd love to hear from you 💙</h3>
           <div class="contact-line">
-            <span class="ico">📍</span>
+            <span class="ico"><img src="assets/img/icon-visit.svg" alt=""></span>
             <div><strong>Visit us</strong><span>Mumbai, Maharashtra, India</span></div>
           </div>
           <div class="contact-line">
-            <span class="ico">📞</span>
+            <span class="ico"><img src="assets/img/icon-call.svg" alt=""></span>
             <div><strong>Call us</strong><span>+91 XXXXX XXXXX</span></div>
           </div>
           <div class="contact-line">
-            <span class="ico">✉️</span>
+            <span class="ico"><img src="assets/img/icon-mail.svg" alt=""></span>
             <div><strong>Email us</strong><span>hello@thejollityevents.com</span></div>
           </div>
           <div class="contact-line">
-            <span class="ico">🕘</span>
+            <span class="ico"><img src="assets/img/icon-hours.svg" alt=""></span>
             <div><strong>Hours</strong><span>Mon – Sat, 9:00 AM – 7:00 PM</span></div>
           </div>
         </div>

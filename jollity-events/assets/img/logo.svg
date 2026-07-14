@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="94" fill="#5b7cfa"/>
+  <circle cx="100" cy="100" r="94" fill="none" stroke="#ffad0d" stroke-width="10"/>
+  <circle cx="62" cy="58" r="16" fill="#ffffff" opacity="0.25"/>
+  <text x="50%" y="56%" font-size="92" text-anchor="middle" dominant-baseline="middle">☀️</text>
+</svg>
