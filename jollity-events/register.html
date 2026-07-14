@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Now — The Jollity Events</title>
+  <meta name="description" content="Register your senior for The Jollity Events engagement programs — home or group sessions across Mumbai.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ================= Header ================= -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-bar">
+        <a href="index.html" class="brand">
+          <span class="brand-mark">☀️</span>
+          <span class="brand-name">The <span>Jollity</span> Events</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="activities.html">Activities</a></li>
+          <li><a href="calendar.html">Calendar</a></li>
+          <li><a href="our-jollies.html">Our Jollies</a></li>
+          <li><a href="happy-moments.html">Happy Moments</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li class="mobile-cta">
+            <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
+            <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
+          </li>
+        </ul>
+        <div class="nav-actions">
+          <button class="search-btn" data-open-search aria-label="Search">🔍</button>
+          <a href="contact.html" class="btn btn-primary btn-sm">Enquire Us</a>
+          <a href="register.html" class="btn btn-accent btn-sm">Register Now</a>
+          <button class="nav-toggle" aria-label="Open menu"><span></span><span></span><span></span></button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= Search overlay ================= -->
+  <div class="search-overlay" id="search-overlay">
+    <div class="search-panel">
+      <input id="search-input" type="text" placeholder="Search activities, programs, pages…" aria-label="Search">
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- ================= Page hero ================= -->
+  <div class="container">
+    <section class="page-hero">
+      <span class="crumb">Register Now</span>
+      <h1>Join Our Jolly Community!</h1>
+      <p>Bringing joy, purpose, and companionship to their Golden Years!</p>
+    </section>
+  </div>
+
+  <!-- ================= Form ================= -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="form-layout">
+
+        <div class="form-card reveal">
+          <h2>Register Now</h2>
+          <p>Tell us a little about your senior and we'll match them with the perfect sessions.</p>
+
+          <div class="form-success" id="form-success">
+            🎉 Thank you! Your registration has been received. Our team will reach out to you shortly.
+          </div>
+
+          <form id="register-form" novalidate>
+            <div class="form-grid">
+
+              <div class="field">
+                <label for="enrolling-for">Enrolling for <span class="req">*</span></label>
+                <select id="enrolling-for" name="enrolling-for" required>
+                  <option value="">Select</option>
+                  <option>Self</option>
+                  <option>Parent</option>
+                  <option>Grandparent</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="senior-name">Senior's name <span class="req">*</span></label>
+                <input type="text" id="senior-name" name="senior-name" placeholder="Full name" required>
+              </div>
+
+              <div class="field">
+                <label for="age">Age <span class="req">*</span></label>
+                <input type="text" id="age" name="age" inputmode="numeric" placeholder="e.g. 68" required>
+              </div>
+
+              <div class="field">
+                <label for="mobile">Mobile <span class="req">*</span></label>
+                <input type="tel" id="mobile" name="mobile" inputmode="tel" placeholder="10-digit mobile number" required>
+              </div>
+
+              <div class="field">
+                <label for="area">Area <span class="req">*</span></label>
+                <select id="area" name="area" required>
+                  <option value="">Select area (Mumbai)</option>
+                  <option>Andheri</option>
+                  <option>Bandra</option>
+                  <option>Borivali</option>
+                  <option>Byculla</option>
+                  <option>Chembur</option>
+                  <option>Colaba</option>
+                  <option>Dadar</option>
+                  <option>Ghatkopar</option>
+                  <option>Goregaon</option>
+                  <option>Juhu</option>
+                  <option>Kandivali</option>
+                  <option>Khar</option>
+                  <option>Kurla</option>
+                  <option>Lower Parel</option>
+                  <option>Malad</option>
+                  <option>Matunga</option>
+                  <option>Mulund</option>
+                  <option>Navi Mumbai</option>
+                  <option>Powai</option>
+                  <option>Santacruz</option>
+                  <option>Sion</option>
+                  <option>Thane</option>
+                  <option>Vile Parle</option>
+                  <option>Wadala</option>
+                  <option>Worli</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="activity">Choose Activity <span class="req">*</span></label>
+                <select id="activity" name="activity" required>
+                  <option value="">Select activity</option>
+                </select>
+              </div>
+
+              <div class="field full">
+                <label for="session">Choose Session <span class="req">*</span></label>
+                <select id="session" name="session" required disabled>
+                  <option value="">Choose an activity first</option>
+                </select>
+              </div>
+
+              <div class="field full">
+                <label for="interests">Senior's interests</label>
+                <input type="text" id="interests" name="interests" placeholder="e.g. music, gardening, old films…">
+              </div>
+
+              <div class="field full">
+                <label for="reason">Reason for enrolling</label>
+                <input type="text" id="reason" name="reason" placeholder="What are you hoping the sessions bring?">
+              </div>
+
+              <div class="field full">
+                <label for="hobbies">Any old/new hobbies or interests</label>
+                <input type="text" id="hobbies" name="hobbies" placeholder="Hobbies they love or would like to try">
+              </div>
+
+              <div class="field">
+                <label for="mode">Preferable mode of the sessions <span class="req">*</span></label>
+                <select id="mode" name="mode" required>
+                  <option value="">Select mode</option>
+                  <option>Group</option>
+                  <option>One-on-One</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="food">Food Preference (Please specify) <span class="req">*</span></label>
+                <select id="food" name="food" required>
+                  <option value="">Select preference</option>
+                  <option>Jain</option>
+                  <option>Veg</option>
+                </select>
+              </div>
+
+              <div class="field full">
+                <label for="medical">Any Medical Condition or Allergies (please specify)</label>
+                <textarea id="medical" name="medical" placeholder="Please share anything we should know to care better"></textarea>
+              </div>
+
+              <div class="field full">
+                <label for="helper">Any Helper needed/accompanying?</label>
+                <input type="text" id="helper" name="helper" placeholder="e.g. Yes — caretaker will accompany">
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">OK</button>
+              <button type="button" class="btn btn-ghost" id="form-cancel">Cancel</button>
+              <button type="submit" class="btn btn-accent">Join Our Community</button>
+            </div>
+
+            <p class="form-note">Fields marked <span class="req">*</span> are required. Your details stay private and are used only to plan the best sessions for your senior.</p>
+          </form>
+        </div>
+
+        <aside class="side-card reveal reveal-d1">
+          <h3>Every smile is celebrated 💛</h3>
+          <p>Be part of this welcoming community where every smile is celebrated, every story is valued, and every senior is empowered to live with confidence, purpose, and belonging.</p>
+          <ul class="mini-list">
+            <li><span class="dot">🏡</span> Home or Group sessions</li>
+            <li><span class="dot">🎨</span> 8 activity categories to choose from</li>
+            <li><span class="dot">🤝</span> Trained and thoughtful artists</li>
+            <li><span class="dot">📍</span> Sessions across Mumbai</li>
+            <li><span class="dot">🎉</span> A community that feels like family</li>
+          </ul>
+        </aside>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Footer ================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="brand-name">The <span>Jollity</span> Events</span>
+          <p>Connecting, Engaging, Empowering… Our Seniors! Helping every senior stay active, social, creative, and Jolly.</p>
+          <p class="footer-cap">“Inspiring active minds, joyful hearts, and purposeful living!”</p>
+        </div>
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="activities.html">Activities</a></li>
+            <li><a href="calendar.html">Calendar</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="testimonials.html">Testimonials</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Get Started</h4>
+          <ul>
+            <li><a href="register.html">Register Now</a></li>
+            <li><a href="contact.html">Enquire Us</a></li>
+            <li><a href="our-jollies.html">Our Jollies</a></li>
+            <li><a href="happy-moments.html">Happy Moments</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year></span> The Jollity Events. All rights reserved.</span>
+        <span>Made with 💛 for our Seniors</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
