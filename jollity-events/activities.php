@@ -71,6 +71,7 @@ foreach ($CATALOG as $cat) {
           <span class="ft-count"><img src="assets/img/<?php echo $cat['img']; ?>" alt=""><?php echo count($cat['items']); ?></span>
           <span class="ft-name"><?php echo htmlspecialchars($cat['name']); ?></span>
         </button>
+        <button class="ft-caret" type="button" aria-expanded="false" aria-label="Show <?php echo htmlspecialchars($cat['name']); ?> sessions">▾</button>
         <div class="ftab-drop">
           <button class="fd-row" data-cat="<?php echo $slug; ?>">
             <img src="assets/img/<?php echo $cat['img']; ?>" alt="">

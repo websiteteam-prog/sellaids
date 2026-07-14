@@ -257,8 +257,49 @@ if (pgrid) {
 
   tabs.forEach((t) => t.addEventListener("click", () => selectCat(t.dataset.cat)));
 
+  /* Dropdowns open on caret icon click (one at a time) */
+  function closeDrops() {
+    document.querySelectorAll(".ftab-wrap.open").forEach((w) => {
+      w.classList.remove("open");
+      const caret = w.querySelector(".ft-caret");
+      if (caret) caret.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  document.querySelectorAll(".ft-caret").forEach((caret) => {
+    caret.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const wrap = caret.closest(".ftab-wrap");
+      const wasOpen = wrap.classList.contains("open");
+      closeDrops();
+      if (wasOpen) return;
+      wrap.classList.add("open");
+      caret.setAttribute("aria-expanded", "true");
+
+      const drop = wrap.querySelector(".ftab-drop");
+      if (!drop) return;
+      if (window.innerWidth <= 860) {
+        /* fixed-position panel on mobile: place it just under the tab */
+        drop.style.top = wrap.getBoundingClientRect().bottom + 8 + "px";
+      } else {
+        drop.style.top = "";
+        /* flip to the right edge if the panel would overflow the viewport */
+        drop.classList.remove("flip");
+        if (drop.getBoundingClientRect().right > window.innerWidth - 12) drop.classList.add("flip");
+      }
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".ftab-wrap")) closeDrops();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrops();
+  });
+
   document.querySelectorAll(".fd-row").forEach((row) => {
     row.addEventListener("click", () => {
+      closeDrops();
       selectCat(row.dataset.cat);
       const item = row.dataset.item;
       if (item) {

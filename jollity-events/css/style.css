@@ -1310,12 +1310,40 @@ h1, h2, h3, h4 {
   background: #fff;
   border: 2px solid var(--border);
   border-radius: 16px;
-  padding: 10px 18px;
+  padding: 10px 42px 10px 18px;
   min-width: 104px;
+  width: 100%;
   cursor: pointer;
   font-family: var(--font-display);
   text-align: left;
   transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Dropdown caret icon on every category tab */
+.ft-caret {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary-tint);
+  color: var(--primary-dark);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease;
+  z-index: 2;
+}
+.ft-caret:hover { background: #dfe7ff; }
+.ftab-wrap.open .ft-caret {
+  transform: translateY(-50%) rotate(180deg);
+  background: var(--primary);
+  color: #fff;
 }
 .ftab:hover { border-color: var(--primary-soft); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
 .ftab.active { background: var(--primary-tint); border-color: var(--primary); }
@@ -1336,6 +1364,8 @@ h1, h2, h3, h4 {
   top: calc(100% + 8px);
   left: 0;
   min-width: 280px;
+  max-height: 62vh;
+  overflow-y: auto;
   background: #fff;
   border-radius: 18px;
   box-shadow: var(--shadow-lg);
@@ -1343,9 +1373,8 @@ h1, h2, h3, h4 {
   display: none;
   z-index: 400;
 }
-@media (min-width: 861px) {
-  .ftab-wrap:hover .ftab-drop { display: block; animation: pop-up 0.25s ease; }
-}
+.ftab-drop.flip { left: auto; right: 0; }
+.ftab-wrap.open .ftab-drop { display: block; animation: pop-up 0.25s ease; }
 
 .fd-row {
   display: flex;
@@ -1794,7 +1823,8 @@ h1, h2, h3, h4 {
 
 @media (max-width: 860px) {
   .ftab-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 12px; }
-  .ftab-drop { display: none !important; }
+  /* escape the scroll container so the dropdown isn't clipped on mobile */
+  .ftab-drop { position: fixed; left: 4%; right: 4%; min-width: 0; max-height: 55vh; }
   .pgrid, .ev-grid { grid-template-columns: repeat(2, 1fr); gap: 34px 16px; }
   .nav-links {
     position: fixed;
