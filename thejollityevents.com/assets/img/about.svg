@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="500" viewBox="0 0 700 500">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#DCE4FF"/>
+      <stop offset="100%" stop-color="#93A9FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="700" height="500" fill="url(#g)"/>
+  <circle cx="126.0" cy="100.0" r="49.00000000000001" fill="#ffffff" opacity="0.25"/>
+  <circle cx="595.0" cy="150.0" r="35.0" fill="#ffffff" opacity="0.2"/>
+  <circle cx="525.0" cy="410.0" r="63.0" fill="#ffffff" opacity="0.18"/>
+  <circle cx="140.0" cy="390.0" r="28.0" fill="#ffffff" opacity="0.22"/>
+  <text x="50%" y="54%" font-size="130" text-anchor="middle" dominant-baseline="middle">🏡💙</text>
+</svg>
