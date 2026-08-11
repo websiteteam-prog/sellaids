@@ -5,11 +5,13 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "prebuild": "expo prebuild --platform android"
+    "prebuild": "expo prebuild --platform android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "expo": "~51.0.28",
     "expo-file-system": "~17.0.1",
+    "expo-splash-screen": "~0.27.7",
     "expo-image-picker": "~15.0.7",
     "expo-location": "~17.0.1",
     "expo-sharing": "~12.0.1",

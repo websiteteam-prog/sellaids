@@ -4,7 +4,6 @@
     "slug": "oams-field-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.oams.fieldapp",
@@ -16,6 +15,7 @@
       ]
     },
     "plugins": [
+      "./plugins/withSplashColor",
       [
         "expo-image-picker",
         { "cameraPermission": "Allow OAMS Field App to take geo-tagged store photos." }
