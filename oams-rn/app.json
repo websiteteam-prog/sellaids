@@ -16,6 +16,7 @@
     },
     "plugins": [
       "./plugins/withSplashColor",
+      "./plugins/withAbiFilter",
       [
         "expo-image-picker",
         { "cameraPermission": "Allow OAMS Field App to take geo-tagged store photos." }

@@ -53,23 +53,23 @@ jobs:
           CI: "1"
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build debug APK (arm64 only, keeps it small)
+      - name: Build release APK (standalone, arm64, JS embedded)
         working-directory: oams-rn/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace -PreactNativeArchitectures=arm64-v8a
+          ./gradlew assembleRelease --no-daemon --stacktrace -PreactNativeArchitectures=arm64-v8a
 
       - name: Stage APK
         run: |
           mkdir -p dist-rn
-          cp oams-rn/android/app/build/outputs/apk/debug/app-debug.apk dist-rn/oams-field-app-rn-debug.apk
+          cp oams-rn/android/app/build/outputs/apk/release/app-release.apk dist-rn/oams-field-app-rn.apk
           ls -la dist-rn/
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: oams-field-app-rn-debug
-          path: dist-rn/oams-field-app-rn-debug.apk
+          name: oams-field-app-rn
+          path: dist-rn/oams-field-app-rn.apk
           if-no-files-found: error
 
       - name: Publish APK to a GitHub Release
@@ -78,8 +78,8 @@ jobs:
         run: |
           gh release delete oams-rn-latest --yes --cleanup-tag || true
           gh release create oams-rn-latest \
-            dist-rn/oams-field-app-rn-debug.apk \
-            --title "OAMS Field App — React Native debug APK" \
-            --notes "Latest React Native (Expo) debug APK (arm64). Install on any modern Android phone." \
+            dist-rn/oams-field-app-rn.apk \
+            --title "OAMS Field App — React Native APK" \
+            --notes "Latest React Native (Expo) standalone release APK (arm64). Install on any modern Android phone." \
             --target "$GITHUB_SHA"
-          echo "Download: https://github.com/${GITHUB_REPOSITORY}/releases/download/oams-rn-latest/oams-field-app-rn-debug.apk"
+          echo "Download: https://github.com/${GITHUB_REPOSITORY}/releases/download/oams-rn-latest/oams-field-app-rn.apk"
