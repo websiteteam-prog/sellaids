@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>OAMS Field App</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ PAGE 1 — LOGIN ============ -->
+  <section class="screen active" id="screen-login">
+    <div class="login-wrap">
+      <div class="brand">
+        <div class="brand-logo">OAMS</div>
+        <div class="brand-sub">Field Operations</div>
+      </div>
+      <div class="card login-card">
+        <label class="fld">
+          <span>Employee Code</span>
+          <input type="text" id="loginEmpCode" placeholder="e.g. EMP1024" autocomplete="off" />
+        </label>
+        <label class="fld">
+          <span>Password</span>
+          <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="off" />
+        </label>
+
+        <div class="mode-row">
+          <label class="radio"><input type="radio" name="appMode" value="Deployment" checked /> <span>Deployment</span></label>
+          <label class="radio"><input type="radio" name="appMode" value="Maintenance" /> <span>Maintenance</span></label>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" id="rememberMe" /> <span>Remember me</span>
+        </label>
+
+        <button class="btn btn-primary btn-block" id="btnLogin">Login</button>
+
+        <button class="link-btn" id="btnUnableLogin">Unable to Login?</button>
+        <div class="or-divider"><span>or</span></div>
+        <button class="btn btn-outline btn-block" id="btnOffline">Offline Mode</button>
+      </div>
+      <div class="version-tag">v<span id="verTag">1.0.0</span></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 4 — HOME ============ -->
+  <section class="screen" id="screen-home">
+    <header class="appbar">
+      <div class="appbar-title">Home</div>
+      <button class="icon-btn" id="btnInfo" title="App info">ℹ️</button>
+    </header>
+    <div class="content">
+      <div class="hello-strip" id="helloStrip">Welcome</div>
+      <div class="grid" id="moduleGrid"><!-- modules injected --></div>
+      <div class="home-actions">
+        <button class="btn btn-outline btn-block" id="btnRefreshMaster">🔄 Refresh Master</button>
+        <button class="btn btn-danger btn-block" id="btnLogout">⎋ Logout</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 5 — TICKET LIST ============ -->
+  <section class="screen" id="screen-list">
+    <header class="appbar">
+      <button class="icon-btn" data-back="screen-home">←</button>
+      <div class="appbar-title" id="listTitle">Recce</div>
+      <button class="icon-btn" id="btnSearchToggle" title="Search">🔍</button>
+      <button class="icon-btn" id="btnReport" title="Download PPT report">📄</button>
+      <button class="icon-btn" id="btnSync" title="Upload pending data">⬆️</button>
+    </header>
+    <div class="content">
+      <div class="search-bar hidden" id="searchBar">
+        <input type="text" id="searchInput" placeholder="Search store / ticket number" />
+      </div>
+      <div class="counter-strip">Total Tickets: <b id="ticketCount">0</b></div>
+      <div id="ticketList"><!-- ticket cards injected --></div>
+      <div class="empty-state hidden" id="listEmpty">No Tickets Available</div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 6 — TICKET DETAIL ============ -->
+  <section class="screen" id="screen-detail">
+    <header class="appbar">
+      <button class="icon-btn" data-back="screen-list">←</button>
+      <div class="appbar-title">Ticket Detail</div>
+    </header>
+    <div class="content" id="detailContent"><!-- injected --></div>
+    <div class="bottom-bar">
+      <div class="gps-msg" id="gpsMsg">📍 Please turn on your GPS to proceed further</div>
+      <button class="btn btn-primary btn-block" id="btnStart" disabled>Start / Continue</button>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 7 — STORE OVERVIEW ============ -->
+  <section class="screen" id="screen-store">
+    <header class="appbar">
+      <button class="icon-btn" data-back="screen-detail">←</button>
+      <div class="appbar-title">Store Overview</div>
+    </header>
+    <div class="content">
+      <div class="store-head" id="storeHead"></div>
+
+      <div class="photo-block">
+        <div class="section-label">Store Photo (geo-tagged)</div>
+        <div id="photoArea" class="photo-empty">No photo captured yet</div>
+        <button class="btn btn-outline btn-block" id="btnCamera">📷 Capture Store Photo</button>
+        <label class="fld">
+          <span>Photo Address (auto, editable)</span>
+          <input type="text" id="photoAddress" placeholder="Address will stamp here after capture" />
+        </label>
+        <label class="fld">
+          <span>Remarks</span>
+          <input type="text" id="storeRemarks" placeholder="Add a note for the store/photo" />
+        </label>
+      </div>
+
+      <div class="section-label">Items</div>
+      <div id="itemCards"><div class="empty-state small">No Item Added</div></div>
+      <button class="btn btn-primary btn-block" id="btnAddItem">＋ Add Item</button>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn btn-success btn-block" id="btnFinalSave">Final Save / Submit</button>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 10 (module) — REPORT ============ -->
+  <!-- report export lives on ticket list header as well; standalone screen below -->
+
+  <!-- ====================== POPUPS ====================== -->
+
+  <!-- Page 2 — Configuring App -->
+  <div class="overlay" id="ov-config">
+    <div class="popup">
+      <div class="popup-title">Configuring App</div>
+      <div class="sync-list" id="syncList"></div>
+      <div class="popup-actions">
+        <button class="btn btn-outline" id="btnConfigCancel">Cancel</button>
+        <button class="btn btn-primary" id="btnConfigOk" disabled>OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 3 — Welcome Announcement -->
+  <div class="overlay" id="ov-welcome">
+    <div class="popup">
+      <div class="popup-title" id="welcomeTitle">Welcome</div>
+      <div class="popup-body" id="welcomeBody"></div>
+      <div class="popup-actions">
+        <button class="btn btn-primary btn-block" id="btnWelcomeOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 8 — Item Entry Form -->
+  <div class="overlay" id="ov-item">
+    <div class="popup popup-lg">
+      <div class="popup-title">Item Entry</div>
+      <div class="popup-scroll">
+        <div class="tabs" id="locTypeTabs"></div>
+        <div class="tabs" id="catTabs"></div>
+
+        <label class="fld">
+          <span>Location</span>
+          <select id="itemLocation"></select>
+        </label>
+        <label class="fld">
+          <span>Material Name</span>
+          <select id="itemMaterial"></select>
+        </label>
+        <div class="two-col">
+          <label class="fld">
+            <span>Width (Inch)</span>
+            <input type="number" inputmode="decimal" id="itemWidth" placeholder="0" />
+          </label>
+          <label class="fld">
+            <span>Height (Inch)</span>
+            <input type="number" inputmode="decimal" id="itemHeight" placeholder="0" />
+          </label>
+        </div>
+        <label class="fld">
+          <span>Total (Inch) — auto</span>
+          <input type="text" id="itemTotal" value="0" readonly />
+        </label>
+        <label class="fld">
+          <span>Scaffolding (Sq. ft.)</span>
+          <input type="number" inputmode="decimal" id="itemScaffold" placeholder="0" />
+        </label>
+        <label class="fld">
+          <span>Remarks</span>
+          <input type="text" id="itemRemarks" placeholder="Notes for this item" />
+        </label>
+      </div>
+      <div class="popup-actions">
+        <button class="btn btn-outline" id="btnItemCancel">Cancel</button>
+        <button class="btn btn-primary" id="btnItemSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generic toast / confirm popup -->
+  <div class="overlay" id="ov-toast">
+    <div class="popup popup-sm">
+      <div class="popup-title" id="toastTitle"></div>
+      <div class="popup-body" id="toastBody"></div>
+      <div class="popup-actions">
+        <button class="btn btn-primary btn-block" id="btnToastOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info popup -->
+  <div class="overlay" id="ov-info">
+    <div class="popup popup-sm">
+      <div class="popup-title">App Info</div>
+      <div class="popup-body">
+        <p><b>OAMS Field App</b></p>
+        <p>Version 1.0.0</p>
+        <p>Standalone demo build.<br/>Login &rarr; Recce &rarr; Photo &rarr; Items &rarr; Save &rarr; PPT report.</p>
+      </div>
+      <div class="popup-actions">
+        <button class="btn btn-primary btn-block" data-close="ov-info">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full-screen spinner -->
+  <div class="overlay spinner-overlay" id="ov-spinner">
+    <div class="spinner"></div>
+    <div class="spinner-text" id="spinnerText">Working…</div>
+  </div>
+
+</div>
+
+<script src="js/vendor/pptxgen.bundle.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

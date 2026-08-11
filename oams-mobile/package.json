@@ -1,0 +1,23 @@
+{
+  "name": "oams-field-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OAMS Field App - Recce / Installation survey app (standalone offline build)",
+  "scripts": {
+    "build": "echo \"web assets are static in www/ — nothing to bundle\"",
+    "sync": "cap sync android",
+    "add:android": "cap add android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/camera": "^6.1.2",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/filesystem": "^6.0.3",
+    "@capacitor/geolocation": "^6.1.0",
+    "@capacitor/share": "^6.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
+    "pptxgenjs": "^3.12.0"
+  }
+}

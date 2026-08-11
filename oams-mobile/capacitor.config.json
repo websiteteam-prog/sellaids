@@ -1,0 +1,14 @@
+{
+  "appId": "com.oams.fieldapp",
+  "appName": "OAMS Field App",
+  "webDir": "www",
+  "backgroundColor": "#1F3864",
+  "plugins": {
+    "Camera": {
+      "androidScaleType": "CENTER_CROP"
+    }
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
