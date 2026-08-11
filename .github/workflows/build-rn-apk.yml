@@ -53,11 +53,11 @@ jobs:
           CI: "1"
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build debug APK
+      - name: Build debug APK (arm64 only, keeps it small)
         working-directory: oams-rn/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace -PreactNativeArchitectures=arm64-v8a
 
       - name: Stage APK
         run: |
@@ -72,17 +72,14 @@ jobs:
           path: dist-rn/oams-field-app-rn-debug.apk
           if-no-files-found: error
 
-      - name: Commit APK back to branch
+      - name: Publish APK to a GitHub Release
         env:
-          GIT_SSL_CAINFO: /etc/ssl/certs/ca-certificates.crt
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
-          git add -f dist-rn/oams-field-app-rn-debug.apk
-          if git diff --cached --quiet; then
-            echo "APK unchanged — nothing to commit"
-          else
-            git commit -m "build: OAMS React Native debug APK [skip ci]"
-            git -c http.sslCAInfo=/etc/ssl/certs/ca-certificates.crt push origin HEAD:refs/heads/claude/app-brief-to-apk-1c9aau
-          fi
+          gh release delete oams-rn-latest --yes --cleanup-tag || true
+          gh release create oams-rn-latest \
+            dist-rn/oams-field-app-rn-debug.apk \
+            --title "OAMS Field App — React Native debug APK" \
+            --notes "Latest React Native (Expo) debug APK (arm64). Install on any modern Android phone." \
+            --target "$GITHUB_SHA"
+          echo "Download: https://github.com/${GITHUB_REPOSITORY}/releases/download/oams-rn-latest/oams-field-app-rn-debug.apk"
