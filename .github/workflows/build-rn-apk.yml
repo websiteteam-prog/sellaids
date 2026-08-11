@@ -73,13 +73,16 @@ jobs:
           if-no-files-found: error
 
       - name: Commit APK back to branch
+        env:
+          GIT_SSL_CAINFO: /etc/ssl/certs/ca-certificates.crt
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
           git add -f dist-rn/oams-field-app-rn-debug.apk
           if git diff --cached --quiet; then
             echo "APK unchanged — nothing to commit"
           else
             git commit -m "build: OAMS React Native debug APK [skip ci]"
-            git push origin HEAD:refs/heads/claude/app-brief-to-apk-1c9aau
+            git -c http.sslCAInfo=/etc/ssl/certs/ca-certificates.crt push origin HEAD:refs/heads/claude/app-brief-to-apk-1c9aau
           fi
