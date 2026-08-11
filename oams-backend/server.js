@@ -16,6 +16,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const { buildPptxBase64 } = require("./report");
 
 const app = express();
 app.use(cors());
@@ -81,6 +82,21 @@ app.post("/api/recce/:ticketNo/save", (req, res) => {
 app.get("/api/reports", (_req, res) => {
   const db = loadDB();
   res.json(db.submissions || []);
+});
+
+// ---- POST /api/report ----  build a .pptx from posted entries, return base64
+// body: { module, entries: [ { ticket, work } ] }
+app.post("/api/report", async (req, res) => {
+  try {
+    const module = (req.body && req.body.module) || "Recce";
+    const entries = (req.body && req.body.entries) || [];
+    if (!entries.length) return res.status(400).json({ error: "No entries to report" });
+    const base64 = await buildPptxBase64(module, entries);
+    res.json({ fileName: "OAMS_Report_" + module + "_" + Date.now() + ".pptx", base64: base64 });
+  } catch (e) {
+    console.error("report error:", e);
+    res.status(500).json({ error: "Failed to build report" });
+  }
 });
 
 // ---- serve the app itself so http://localhost:4000 is a connected app ----

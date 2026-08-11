@@ -194,32 +194,5 @@
       }
     ]
   },
-  "submissions": [
-    {
-      "ticketNo": "RCE-100245",
-      "module": "recce",
-      "items": [
-        {
-          "locType": "All",
-          "category": "OT",
-          "location": "Main Entrance",
-          "material": "Vinyl",
-          "width": 18,
-          "height": 24,
-          "total": "432.00",
-          "scaffold": 0,
-          "remarks": ""
-        }
-      ],
-      "remarks": "",
-      "photoAddress": "",
-      "coords": {
-        "lat": 19.1197,
-        "lng": 72.8468,
-        "acc": 12
-      },
-      "hasPhoto": false,
-      "savedAt": "2026-08-11T11:26:28.548Z"
-    }
-  ]
+  "submissions": []
 }

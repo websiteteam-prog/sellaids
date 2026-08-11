@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "OAMS Field App",
+    "slug": "oams-field-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.oams.fieldapp",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        { "cameraPermission": "Allow OAMS Field App to take geo-tagged store photos." }
+      ],
+      [
+        "expo-location",
+        { "locationWhenInUsePermission": "Allow OAMS Field App to tag store photos with your GPS location." }
+      ]
+    ]
+  }
+}
