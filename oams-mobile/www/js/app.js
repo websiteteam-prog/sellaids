@@ -11,6 +11,85 @@
   var isNative = !!(Cap && typeof Cap.isNativePlatform === "function" && Cap.isNativePlatform());
   function plugin(name) { return (Cap && Cap.Plugins && Cap.Plugins[name]) || null; }
 
+  // ---------- backend wiring ----------
+  // Resolves where data comes from. See www/js/config.js for the rules.
+  function apiBase() {
+    var cfg = (window.OAMS_CONFIG && window.OAMS_CONFIG.API_BASE) || "";
+    if (cfg) return cfg.replace(/\/+$/, "");
+    if (location.protocol === "http:" || location.protocol === "https:") return location.origin + "/api";
+    return ""; // APK/file:// with no configured URL -> fully offline
+  }
+
+  var DB = {
+    base: apiBase(),
+    on: function () { return !!this.base; },
+    auth: function () {
+      var t = localStorage.getItem("oams_token");
+      return t ? { Authorization: "Bearer " + t } : {};
+    },
+    // login: backend validates; offline accepts any non-empty creds
+    login: async function (code, pass, mode) {
+      if (!this.on()) return { ok: true, name: code };
+      try {
+        var r = await fetch(this.base + "/login", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ empCode: code, password: pass, mode: mode })
+        });
+        if (!r.ok) return { ok: false };
+        var d = await r.json();
+        if (d.token) localStorage.setItem("oams_token", d.token);
+        return { ok: true, name: d.name || code };
+      } catch (e) { return { ok: false, network: true }; }
+    },
+    // master data (materials + locations)
+    master: async function () {
+      var fallback = { materials: D.materials, locations: D.locations };
+      if (!this.on()) return fallback;
+      try {
+        var r = await fetch(this.base + "/master", { headers: this.auth() });
+        if (r.ok) return await r.json();
+      } catch (e) {}
+      return fallback;
+    },
+    // tickets for a module
+    tickets: async function (module) {
+      var fallback = (D.tickets[module] || []);
+      if (!this.on()) return fallback;
+      try {
+        var r = await fetch(this.base + "/tickets?module=" + encodeURIComponent(module), { headers: this.auth() });
+        if (r.ok) return await r.json();
+      } catch (e) {}
+      return fallback;
+    },
+    // submit a completed recce
+    submit: async function (ticketNo, work) {
+      // always keep a local copy so the flow works offline too
+      saveWork(ticketNo, work);
+      markDone(ticketNo);
+      if (!this.on()) return { ok: true, offline: !this.base };
+      try {
+        var r = await fetch(this.base + "/recce/" + encodeURIComponent(ticketNo) + "/save", {
+          method: "POST",
+          headers: Object.assign({ "Content-Type": "application/json" }, this.auth()),
+          body: JSON.stringify({
+            module: state.module,
+            photoAddress: work.photoAddress, coords: work.coords,
+            remarks: work.storeRemarks, hasPhoto: !!work.photo, items: work.items
+          })
+        });
+        return { ok: r.ok };
+      } catch (e) { return { ok: false, offline: true }; }
+    }
+  };
+
+  async function refreshMaster() {
+    if (state.session && state.session.offline) {
+      state.master = { materials: D.materials, locations: D.locations };
+    } else {
+      state.master = await DB.master();
+    }
+  }
+
   // ---------- tiny helpers ----------
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, html) {
@@ -31,6 +110,8 @@
     module: "recce",
     ticket: null,
     work: null,          // { photo, photoAddress, storeRemarks, coords, items[] }
+    master: { materials: D.materials, locations: D.locations },
+    moduleTickets: [],   // tickets loaded for the current module (backend or demo)
     gpsReady: false,
     gpsTimer: null,
     editingIndex: null,
@@ -100,13 +181,23 @@
   function initLogin() {
     $("verTag").textContent = D.appVersion;
 
-    $("btnLogin").onclick = function () {
+    $("btnLogin").onclick = async function () {
       var code = $("loginEmpCode").value.trim();
       var pass = $("loginPassword").value.trim();
       if (!code || !pass) { toast("Login", "Please enter Employee Code and Password."); return; }
       var mode = (document.querySelector('input[name="appMode"]:checked') || {}).value || "Deployment";
-      state.session = { empCode: code, mode: mode, offline: false };
+      spinner(true, "Signing in…");
+      var res = await DB.login(code, pass, mode);
+      spinner(false);
+      if (!res.ok) {
+        toast("Login", res.network
+          ? "Cannot reach the server. Check your connection or use Offline Mode."
+          : "Invalid Employee Code or Password.");
+        return;
+      }
+      state.session = { empCode: code, name: res.name || code, mode: mode, offline: false };
       if ($("rememberMe").checked) persist({ remember: code });
+      await refreshMaster();
       startConfigSync();
     };
 
@@ -115,8 +206,9 @@
         "Please contact the OAMS Team / your Coordinator to reset your password.<br/><br/>Or tap <b>Offline Mode</b> to continue with the last synced data.");
     };
 
-    $("btnOffline").onclick = function () {
-      state.session = { empCode: $("loginEmpCode").value.trim() || "OFFLINE", mode: "Deployment", offline: true };
+    $("btnOffline").onclick = async function () {
+      state.session = { empCode: $("loginEmpCode").value.trim() || "OFFLINE", name: "Offline User", mode: "Deployment", offline: true };
+      await refreshMaster();
       showWelcome();
     };
 
@@ -211,17 +303,22 @@
   // =======================================================================
   // PAGE 5 — TICKET LIST
   // =======================================================================
-  function openModule(key, title) {
+  async function openModule(key, title) {
     state.module = key;
     $("listTitle").textContent = title;
     $("searchBar").classList.add("hidden");
     $("searchInput").value = "";
+    spinner(true, "Loading tickets…");
+    try { state.moduleTickets = await DB.tickets(key); }
+    catch (e) { state.moduleTickets = (D.tickets[key] || []); }
+    spinner(false);
     renderList("");
     show("screen-list");
   }
 
   function moduleTickets() {
-    return (D.tickets[state.module] || []).filter(function (t) {
+    // loaded per-module: from the backend when configured, else bundled demo data
+    return (state.moduleTickets || []).filter(function (t) {
       return !doneTickets()[t.ticketNo];
     });
   }
@@ -538,8 +635,10 @@
     buildTabs($("locTypeTabs"), D.locationTypeTabs, state.itemTab.locType, function (n) { state.itemTab.locType = n; });
     buildTabs($("catTabs"), D.categoryTabs, state.itemTab.cat, function (n) { state.itemTab.cat = n; });
 
-    fillSelect($("itemLocation"), D.locations, it ? it.location : D.locations[0]);
-    fillSelect($("itemMaterial"), D.materials, it ? it.material : D.materials[0]);
+    var locs = (state.master && state.master.locations) || D.locations;
+    var mats = (state.master && state.master.materials) || D.materials;
+    fillSelect($("itemLocation"), locs, it ? it.location : locs[0]);
+    fillSelect($("itemMaterial"), mats, it ? it.material : mats[0]);
     $("itemWidth").value = it ? it.width : "";
     $("itemHeight").value = it ? it.height : "";
     $("itemScaffold").value = it ? it.scaffold : "";
@@ -581,25 +680,25 @@
   // =======================================================================
   // PAGE 9 — FINAL SAVE
   // =======================================================================
-  function finalSave() {
+  async function finalSave() {
     if (!state.work.items.length && !state.work.photo) {
       toast("Save", "Add at least a store photo or one item before saving.");
       return;
     }
-    saveWork(state.ticket.ticketNo, state.work);
-    markDone(state.ticket.ticketNo);
     spinner(true, "Submitting…");
-    setTimeout(function () {
-      spinner(false);
-      popupChoice({
-        title: "Recce Saved ✅",
-        body: "Data + photo submitted for <b>" + esc(state.ticket.ticketNo) + "</b>.",
-        buttons: [
-          { text: "Download PPT", style: "btn-outline", onClick: function () { exportPPT([{ ticket: state.ticket, work: state.work }]); backToList(); } },
-          { text: "OK", style: "btn-primary", onClick: backToList }
-        ]
-      });
-    }, 1000);
+    var res = await DB.submit(state.ticket.ticketNo, state.work);
+    spinner(false);
+    var note = (res && res.offline)
+      ? "<br/><small>Saved on the device — will sync when a backend is connected.</small>"
+      : (DB.on() ? "<br/><small>Saved to the server database.</small>" : "");
+    popupChoice({
+      title: "Recce Saved ✅",
+      body: "Data + photo submitted for <b>" + esc(state.ticket.ticketNo) + "</b>." + note,
+      buttons: [
+        { text: "Download PPT", style: "btn-outline", onClick: function () { exportPPT([{ ticket: state.ticket, work: state.work }]); backToList(); } },
+        { text: "OK", style: "btn-primary", onClick: backToList }
+      ]
+    });
   }
   function backToList() {
     renderList($("searchInput").value);
