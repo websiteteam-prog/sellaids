@@ -1,35 +1,29 @@
 import React, { useState, useRef, useCallback } from "react";
-import { View, Text, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native";
+import { View, Text, StatusBar, SafeAreaView } from "react-native";
 import { Spinner, Popup } from "./src/ui";
 import { C } from "./src/theme";
 import { DATA } from "./src/data";
 
 import LoginScreen from "./src/screens/LoginScreen";
-import HomeScreen from "./src/screens/HomeScreen";
-import TicketListScreen from "./src/screens/TicketListScreen";
-import TicketDetailScreen from "./src/screens/TicketDetailScreen";
-import StoreOverviewScreen from "./src/screens/StoreOverviewScreen";
+import StoreListScreen from "./src/screens/StoreListScreen";
+import StoreRecceScreen from "./src/screens/StoreRecceScreen";
 
 const SCREENS = {
   login: LoginScreen,
-  home: HomeScreen,
-  list: TicketListScreen,
-  detail: TicketDetailScreen,
-  store: StoreOverviewScreen
+  stores: StoreListScreen,
+  recce: StoreRecceScreen
 };
 
 export default function App() {
   const [stack, setStack] = useState([{ name: "login", params: {} }]);
   const [session, setSession] = useState(null);
-  const [master, setMaster] = useState({ materials: DATA.materials, locations: DATA.locations });
-  const flowRef = useRef({ module: "recce", moduleTitle: "Recce", ticket: null, work: null });
+  const [master, setMaster] = useState({ elementTypes: DATA.elementTypes, surfaces: DATA.surfaces });
+  const flowRef = useRef({ mode: "Recce", store: null, work: null });
 
   const [spin, setSpin] = useState({ visible: false, text: "" });
   const [toastState, setToastState] = useState({ visible: false, title: "", body: "" });
   const [confirmState, setConfirmState] = useState({ visible: false, title: "", body: "", onYes: null });
 
-  // ----- navigation -----
   const push = useCallback((name, params) => setStack((s) => [...s, { name, params: params || {} }]), []);
   const pop = useCallback((n = 1) => setStack((s) => (s.length > n ? s.slice(0, s.length - n) : s)), []);
   const popTo = useCallback((name) => setStack((s) => {
@@ -40,7 +34,6 @@ export default function App() {
   const reset = useCallback((name, params) => setStack([{ name, params: params || {} }]), []);
   const nav = { push, pop, popTo, replace, reset };
 
-  // ----- global helpers -----
   const app = {
     session, setSession,
     master, setMaster,

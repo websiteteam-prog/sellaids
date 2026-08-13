@@ -1,7 +1,7 @@
 /* Data layer. Uses the backend when API_BASE is set, else the offline demo data. */
 import { API_BASE } from "./config";
 import { DATA } from "./data";
-import { getToken, setToken, getDone, markDone, getSavedWork, saveWork } from "./storage";
+import { getToken, setToken } from "./storage";
 
 const BASE = (API_BASE || "").replace(/\/+$/, "");
 export function backendOn() { return !!BASE; }
@@ -29,7 +29,7 @@ export async function login(empCode, password, mode) {
 }
 
 export async function getMaster() {
-  const fallback = { materials: DATA.materials, locations: DATA.locations };
+  const fallback = { elementTypes: DATA.elementTypes, surfaces: DATA.surfaces };
   if (!BASE) return fallback;
   try {
     const r = await fetch(BASE + "/master", { headers: await authHeaders() });
@@ -38,32 +38,34 @@ export async function getMaster() {
   return fallback;
 }
 
-export async function getTickets(module) {
-  const done = await getDone();
-  const localFiltered = (DATA.tickets[module] || []).filter((t) => !done[t.ticketNo]);
-  if (!BASE) return localFiltered;
+export async function getStores() {
+  if (!BASE) return DATA.stores;
   try {
-    const r = await fetch(BASE + "/tickets?module=" + encodeURIComponent(module), { headers: await authHeaders() });
-    if (r.ok) {
-      const list = await r.json();
-      return list.filter((t) => !done[t.ticketNo]);
-    }
+    const r = await fetch(BASE + "/stores", { headers: await authHeaders() });
+    if (r.ok) return await r.json();
   } catch (e) {}
-  return localFiltered;
+  return DATA.stores;
 }
 
-export async function submitRecce(module, ticketNo, work) {
-  await saveWork(ticketNo, work);
-  await markDone(ticketNo);
+// save a completed recce (store + work)
+export async function submitRecce(store, work) {
   if (!BASE) return { ok: true, offline: true };
   try {
-    const r = await fetch(BASE + "/recce/" + encodeURIComponent(ticketNo) + "/save", {
+    const r = await fetch(BASE + "/recce/save", {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, await authHeaders()),
       body: JSON.stringify({
-        module,
-        photoAddress: work.photoAddress, coords: work.coords,
-        remarks: work.storeRemarks, hasPhoto: !!work.photo, items: work.items
+        storeCode: store.storeCode,
+        storeName: store.storeName,
+        storePhotoCount: (work.storeImages || []).length,
+        storeRemark: work.storeRemark,
+        finalRemark: work.finalRemark,
+        elements: (work.elements || []).map((e) => ({
+          type: e.type, surface: e.surface, width: e.width, height: e.height, total: e.total,
+          withoutMarkCount: (e.imagesWithoutMark || []).length,
+          withMarkCount: (e.imagesWithMark || []).length,
+          remark: e.remark
+        }))
       })
     });
     return { ok: r.ok };
@@ -73,19 +75,13 @@ export async function submitRecce(module, ticketNo, work) {
 }
 
 // build a .pptx via the backend; returns { fileName, base64 } or throws
-export async function buildReport(module, entries) {
-  if (!BASE) {
-    const err = new Error("no-backend");
-    err.code = "no-backend";
-    throw err;
-  }
+export async function buildReport(store, work) {
+  if (!BASE) { const err = new Error("no-backend"); err.code = "no-backend"; throw err; }
   const r = await fetch(BASE + "/report", {
     method: "POST",
     headers: Object.assign({ "Content-Type": "application/json" }, await authHeaders()),
-    body: JSON.stringify({ module, entries })
+    body: JSON.stringify({ store, work })
   });
   if (!r.ok) throw new Error("report-failed");
   return await r.json();
 }
-
-export { getSavedWork };

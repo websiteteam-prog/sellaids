@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { C } from "../theme";
-import { Btn, Field, Spinner, Popup, s as ui } from "../ui";
+import { Btn, Field, Spinner, Popup } from "../ui";
 import { login, getMaster } from "../api";
 import { DATA } from "../data";
 import { getRemember, setRemember } from "../storage";
 
-const SYNC_STEPS = ["Module", "Element", "Configuration", "Location", "Material Checklist"];
+const SYNC_STEPS = ["Module", "Element", "Configuration", "Location", "Store Master"];
 
 export default function LoginScreen({ nav, app }) {
   const [empCode, setEmpCode] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState("Deployment");
+  const [mode, setMode] = useState("Recce");
   const [remember, setRememberFlag] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -30,10 +30,9 @@ export default function LoginScreen({ nav, app }) {
 
   async function afterAuth(name, offline) {
     app.setSession({ empCode: empCode || "OFFLINE", name: name || empCode, mode, offline: !!offline });
-    const m = offline ? { materials: DATA.materials, locations: DATA.locations } : await getMaster();
+    const m = offline ? { elementTypes: DATA.elementTypes, surfaces: DATA.surfaces } : await getMaster();
     app.setMaster(m);
     if (offline) { setWelcomeVisible(true); return; }
-    // Configuring popup with animated sync
     setSyncDone(0);
     setConfigVisible(true);
     let i = 0;
@@ -41,7 +40,7 @@ export default function LoginScreen({ nav, app }) {
       i += 1;
       setSyncDone(i);
       if (i >= SYNC_STEPS.length) { clearInterval(timer.current); timer.current = null; }
-    }, 350);
+    }, 300);
   }
 
   async function onLogin() {
@@ -63,8 +62,15 @@ export default function LoginScreen({ nav, app }) {
   }
 
   async function onOffline() {
-    setMode("Deployment");
     await afterAuth("Offline User", true);
+  }
+
+  function goNext() {
+    // Deployment flow will be built later; Recce is the live flow.
+    if (mode === "Deployment") {
+      app.toast("Deployment", "Deployment flow coming soon. Opening store list for now.");
+    }
+    nav.replace("stores");
   }
 
   return (
@@ -79,8 +85,9 @@ export default function LoginScreen({ nav, app }) {
           <Field label="Employee Code" value={empCode} onChangeText={setEmpCode} placeholder="e.g. EMP1024" />
           <Field label="Password" value={password} onChangeText={setPassword} placeholder="Enter password" secureTextEntry />
 
+          <Text style={st.modeHint}>Select mode</Text>
           <View style={st.modeRow}>
-            {["Deployment", "Maintenance"].map((m) => (
+            {DATA.loginModes.map((m) => (
               <TouchableOpacity key={m} style={st.radio} onPress={() => setMode(m)}>
                 <View style={[st.radioDot, mode === m && st.radioDotOn]} />
                 <Text style={st.radioLabel}>{m}</Text>
@@ -106,7 +113,6 @@ export default function LoginScreen({ nav, app }) {
         <Text style={st.version}>v{DATA.appVersion}</Text>
       </ScrollView>
 
-      {/* Configuring App popup */}
       <Popup
         visible={configVisible}
         title="Configuring App"
@@ -128,11 +134,10 @@ export default function LoginScreen({ nav, app }) {
         </Text>
       </Popup>
 
-      {/* Welcome Announcement popup */}
       <Popup
         visible={welcomeVisible}
         title={DATA.announcement.title}
-        buttons={[{ title: "OK", kind: "primary", onPress: () => { setWelcomeVisible(false); nav.replace("home"); } }]}
+        buttons={[{ title: "OK", kind: "primary", onPress: () => { setWelcomeVisible(false); goNext(); } }]}
       >
         {DATA.announcement.lines.map((l, i) => (
           <View key={i} style={{ flexDirection: "row", marginVertical: 6 }}>
@@ -153,8 +158,9 @@ const st = StyleSheet.create({
   logo: { color: "#fff", fontSize: 44, fontWeight: "800", letterSpacing: 4 },
   sub: { color: "rgba(255,255,255,0.85)", fontSize: 13, letterSpacing: 2 },
   card: { backgroundColor: "#fff", borderRadius: 14, padding: 18 },
+  modeHint: { fontSize: 12.5, color: C.muted, fontWeight: "600", marginBottom: 8 },
   modeRow: { flexDirection: "row", marginBottom: 12, marginTop: 2 },
-  radio: { flexDirection: "row", alignItems: "center", marginRight: 20 },
+  radio: { flexDirection: "row", alignItems: "center", marginRight: 24 },
   radioDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: C.muted, marginRight: 7 },
   radioDotOn: { borderColor: C.navy, backgroundColor: C.navy },
   radioLabel: { color: C.text, fontSize: 14 },
