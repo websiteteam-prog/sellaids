@@ -1,5 +1,5 @@
 {
-  "_readme": "DUMMY DATABASE. 'users' are managed from the Admin Panel. 'submissions' fill when a recce is submitted. Admin login is in 'admins'.",
+  "_readme": "DUMMY DATABASE (local dev). Production uses MySQL via .env.",
   "admins": [
     {
       "username": "admin",
