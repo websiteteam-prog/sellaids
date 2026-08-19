@@ -1,0 +1,17 @@
+# OAMS PHP backend — route all non-file requests to index.php
+RewriteEngine On
+
+# serve real files/dirs directly (admin panel, etc.)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# everything else -> index.php (the API router)
+RewriteRule ^ index.php [QSA,L]
+
+# protect local database files (only present in sqlite/local mode)
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(sqlite|db)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>

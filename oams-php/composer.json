@@ -1,0 +1,9 @@
+{
+  "name": "oams/backend-php",
+  "description": "OAMS Field App backend (PHP + MySQL) for cPanel",
+  "require": {
+    "php": ">=7.4",
+    "phpoffice/phppresentation": "^1.0"
+  },
+  "config": { "optimize-autoloader": true }
+}

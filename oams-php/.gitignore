@@ -1,0 +1,6 @@
+vendor/
+data/
+reports/
+uploads/
+*.sqlite
+*.log
