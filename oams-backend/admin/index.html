@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OAMS Admin Panel</title>
+<link rel="icon" href="data:," />
+<style>
+  :root{--navy:#1F3864;--navy2:#2b4a80;--bg:#f2f4f8;--card:#fff;--text:#1c2333;--muted:#6b7280;--line:#e3e7ee;--danger:#d64545;--success:#1f9d55;--accent:#2f80ed;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .hidden{display:none!important}
+  button{cursor:pointer;font-family:inherit}
+  input,select{font-family:inherit}
+
+  /* login */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--navy),var(--navy2));padding:20px}
+  .login-card{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .brand{text-align:center;margin-bottom:20px}
+  .brand h1{margin:0;color:var(--navy);letter-spacing:3px}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:13px;letter-spacing:2px}
+  label.fld{display:block;margin-bottom:14px}
+  label.fld span{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:6px}
+  label.fld input,label.fld select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff}
+  .btn{border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:600;background:var(--navy);color:#fff}
+  .btn.block{display:block;width:100%}
+  .btn.outline{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
+  .btn.danger{background:var(--danger)}
+  .btn.sm{padding:7px 12px;font-size:13px;border-radius:8px}
+  .err{color:var(--danger);font-size:13px;margin-top:6px;min-height:16px}
+
+  /* app */
+  header.top{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
+  header.top h2{margin:0;font-size:18px;flex:1}
+  .tabs{display:flex;gap:6px;padding:12px 20px 0;background:var(--navy)}
+  .tab{background:rgba(255,255,255,.14);color:#fff;border:0;padding:9px 16px;border-radius:10px 10px 0 0;font-size:14px}
+  .tab.active{background:var(--bg);color:var(--navy);font-weight:700}
+  .wrap{padding:20px;max-width:1200px;margin:0 auto}
+  .card{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 3px 12px rgba(20,30,60,.06);margin-bottom:16px}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+  .filters .fld{margin:0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{background:#eef2fb;color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tr:hover td{background:#f8fafd}
+  .badge{display:inline-block;background:#e8edf8;color:var(--navy);border-radius:20px;padding:2px 9px;font-size:12px}
+  .link{color:var(--accent);font-weight:600;text-decoration:none}
+  .muted{color:var(--muted)}
+  .row-actions{display:flex;gap:8px}
+  .stat{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+  .stat .box{background:var(--navy);color:#fff;border-radius:12px;padding:12px 18px}
+  .stat .box b{font-size:22px;display:block}
+  .empty{text-align:center;color:var(--muted);padding:36px}
+  .add-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:end}
+  h3.sec{margin:0 0 12px;color:var(--navy);font-size:16px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login-wrap">
+  <div class="login-card">
+    <div class="brand"><h1>OAMS</h1><p>ADMIN PANEL</p></div>
+    <label class="fld"><span>Username</span><input id="admUser" placeholder="admin" /></label>
+    <label class="fld"><span>Password</span><input id="admPass" type="password" placeholder="admin" /></label>
+    <button class="btn block" onclick="doLogin()">Login</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="top">
+    <h2>OAMS Admin Panel</h2>
+    <span id="whoami" class="muted" style="color:#cbd6ee"></span>
+    <button class="btn outline sm" onclick="logout()">Logout</button>
+  </header>
+  <div class="tabs">
+    <button class="tab active" id="tabRecces" onclick="showTab('recces')">Recces</button>
+    <button class="tab" id="tabUsers" onclick="showTab('users')">Users</button>
+  </div>
+
+  <div class="wrap">
+    <!-- RECCES -->
+    <div id="viewRecces">
+      <div class="stat">
+        <div class="box"><b id="statTotal">0</b>Total recces</div>
+        <div class="box"><b id="statShown">0</b>Showing</div>
+      </div>
+      <div class="card">
+        <h3 class="sec">Filters</h3>
+        <div class="filters">
+          <label class="fld"><span>Search store</span><input id="fq" placeholder="name / code" /></label>
+          <label class="fld"><span>User</span><select id="fuser"><option value="">All</option></select></label>
+          <label class="fld"><span>City</span><select id="fcity"><option value="">All</option></select></label>
+          <label class="fld"><span>Category</span><select id="fcat"><option value="">All</option></select></label>
+          <label class="fld"><span>From date</span><input id="ffrom" type="date" /></label>
+          <label class="fld"><span>To date</span><input id="fto" type="date" /></label>
+          <div style="display:flex;gap:8px">
+            <button class="btn sm" onclick="loadRecces()">Apply</button>
+            <button class="btn outline sm" onclick="clearFilters()">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr>
+            <th>Store</th><th>Code</th><th>User</th><th>City</th><th>Category</th>
+            <th>Photos</th><th>Elements</th><th>Submitted</th><th>Report</th>
+          </tr></thead>
+          <tbody id="reccesBody"></tbody>
+        </table>
+        <div id="reccesEmpty" class="empty hidden">No recces found.</div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="viewUsers" class="hidden">
+      <div class="card">
+        <h3 class="sec">Add User</h3>
+        <div class="add-grid">
+          <label class="fld"><span>Employee Code</span><input id="nuCode" placeholder="EMP1099" /></label>
+          <label class="fld"><span>Name</span><input id="nuName" placeholder="Full name" /></label>
+          <label class="fld"><span>Password</span><input id="nuPass" placeholder="password" /></label>
+          <label class="fld"><span>Mode</span><select id="nuMode"><option>Recce</option><option>Deployment</option></select></label>
+          <button class="btn sm" onclick="addUser()">＋ Add User</button>
+        </div>
+        <div class="err" id="userErr"></div>
+      </div>
+      <div class="card">
+        <h3 class="sec">Users</h3>
+        <table>
+          <thead><tr><th>Employee Code</th><th>Name</th><th>Mode</th><th></th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+        <div id="usersEmpty" class="empty hidden">No users.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin + "/api";
+let TOKEN = sessionStorage.getItem("oams_admin_token") || "";
+
+function h(headers) { return Object.assign({ "Content-Type": "application/json", "X-Admin-Token": TOKEN }, headers || {}); }
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+async function doLogin() {
+  const username = document.getElementById("admUser").value.trim();
+  const password = document.getElementById("admPass").value.trim();
+  document.getElementById("loginErr").textContent = "";
+  try {
+    const r = await fetch(API + "/admin/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({username,password}) });
+    if (!r.ok) { document.getElementById("loginErr").textContent = "Invalid admin credentials"; return; }
+    const d = await r.json();
+    TOKEN = d.token; sessionStorage.setItem("oams_admin_token", TOKEN);
+    document.getElementById("whoami").textContent = d.name || username;
+    enterApp();
+  } catch(e) { document.getElementById("loginErr").textContent = "Cannot reach server."; }
+}
+function logout(){ TOKEN=""; sessionStorage.removeItem("oams_admin_token"); document.getElementById("app").classList.add("hidden"); document.getElementById("login").classList.remove("hidden"); }
+
+function enterApp(){ document.getElementById("login").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); showTab("recces"); loadFilters(); loadRecces(); loadUsers(); }
+
+function showTab(t){
+  document.getElementById("viewRecces").classList.toggle("hidden", t!=="recces");
+  document.getElementById("viewUsers").classList.toggle("hidden", t!=="users");
+  document.getElementById("tabRecces").classList.toggle("active", t==="recces");
+  document.getElementById("tabUsers").classList.toggle("active", t==="users");
+}
+
+function clearFilters(){ ["fq","fuser","fcity","fcat","ffrom","fto"].forEach(id=>document.getElementById(id).value=""); loadRecces(); }
+
+async function loadFilters(){
+  try{
+    const r = await fetch(API + "/admin/filters", { headers: h() });
+    if(!r.ok) return;
+    const d = await r.json();
+    fill("fcity", d.cities.map(c=>({v:c,t:c})));
+    fill("fcat", d.categories.map(c=>({v:c,t:c})));
+    fill("fuser", d.users.map(u=>({v:u.empCode,t:u.empCode+" · "+u.name})));
+  }catch(e){}
+}
+function fill(id, items){
+  const sel=document.getElementById(id); const cur=sel.value;
+  sel.innerHTML='<option value="">All</option>'+items.map(i=>`<option value="${esc(i.v)}">${esc(i.t)}</option>`).join("");
+  sel.value=cur;
+}
+
+async function loadRecces(){
+  const p=new URLSearchParams();
+  const map={q:"fq",user:"fuser",city:"fcity",category:"fcat",from:"ffrom",to:"fto"};
+  Object.keys(map).forEach(k=>{const v=document.getElementById(map[k]).value; if(v) p.set(k,v);});
+  try{
+    const r = await fetch(API + "/admin/recces?"+p.toString(), { headers: h() });
+    if(r.status===401){ logout(); return; }
+    const list = await r.json();
+    const body=document.getElementById("reccesBody"); body.innerHTML="";
+    document.getElementById("statShown").textContent=list.length;
+    document.getElementById("reccesEmpty").classList.toggle("hidden", list.length>0);
+    list.forEach(rec=>{
+      const tr=document.createElement("tr");
+      const dl = location.origin + "/api/admin/recces/"+encodeURIComponent(rec.id)+"/ppt?t="+encodeURIComponent(TOKEN);
+      tr.innerHTML=`<td>${esc(rec.storeName)}</td><td>${esc(rec.storeCode)}</td>
+        <td>${esc(rec.userName||"")}<br><span class="muted">${esc(rec.userEmpCode||"")}</span></td>
+        <td>${esc(rec.city||"")}</td><td><span class="badge">${esc(rec.category||"")}</span></td>
+        <td>${rec.storePhotoCount||0}</td><td>${rec.elementsCount||0}</td>
+        <td>${new Date(rec.submittedAt).toLocaleString()}</td>
+        <td><a class="link" href="${dl}">⬇ PPT</a></td>`;
+      body.appendChild(tr);
+    });
+    // total = all recces (no filter)
+    const rall = await fetch(API + "/admin/recces", { headers: h() });
+    if(rall.ok){ document.getElementById("statTotal").textContent=(await rall.json()).length; }
+    loadFilters();
+  }catch(e){}
+}
+
+async function loadUsers(){
+  try{
+    const r = await fetch(API + "/admin/users", { headers: h() });
+    if(r.status===401){ logout(); return; }
+    const list = await r.json();
+    const body=document.getElementById("usersBody"); body.innerHTML="";
+    document.getElementById("usersEmpty").classList.toggle("hidden", list.length>0);
+    list.forEach(u=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td><b>${esc(u.empCode)}</b></td><td>${esc(u.name)}</td><td><span class="badge">${esc(u.mode||"Recce")}</span></td>
+        <td class="row-actions"><button class="btn danger sm" onclick="delUser('${esc(u.empCode)}')">Delete</button></td>`;
+      body.appendChild(tr);
+    });
+  }catch(e){}
+}
+
+async function addUser(){
+  const empCode=document.getElementById("nuCode").value.trim();
+  const name=document.getElementById("nuName").value.trim();
+  const password=document.getElementById("nuPass").value.trim();
+  const mode=document.getElementById("nuMode").value;
+  document.getElementById("userErr").textContent="";
+  if(!empCode||!name||!password){ document.getElementById("userErr").textContent="Fill Employee Code, Name and Password."; return; }
+  const r = await fetch(API + "/admin/users", { method:"POST", headers:h(), body: JSON.stringify({empCode,name,password,mode}) });
+  if(!r.ok){ const d=await r.json().catch(()=>({})); document.getElementById("userErr").textContent=d.error||"Could not add user."; return; }
+  document.getElementById("nuCode").value=""; document.getElementById("nuName").value=""; document.getElementById("nuPass").value="";
+  loadUsers();
+}
+
+async function delUser(empCode){
+  if(!confirm("Delete user "+empCode+"?")) return;
+  const r = await fetch(API + "/admin/users/"+encodeURIComponent(empCode), { method:"DELETE", headers:h() });
+  if(r.ok) loadUsers();
+}
+
+// auto-login if token present
+if (TOKEN) { enterApp(); }
+</script>
+</body>
+</html>

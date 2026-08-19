@@ -5,13 +5,11 @@ import { AppBar, Btn, SectionLabel, Popup } from "../ui";
 import ElementEntryModal from "../components/ElementEntryModal";
 import { pickImage } from "../imagePicker";
 import { submitRecce } from "../api";
-import { exportReport } from "../reportClient";
-import { DATA } from "../data";
 
 export default function StoreRecceScreen({ nav, app }) {
   const flow = app.flow;
   const store = flow.store || {};
-  const MIN = DATA.minStorePhotos || 5;
+  const user = app.session || {};
 
   const [storeImages, setStoreImages] = useState([]);
   const [storeRemark, setStoreRemark] = useState("");
@@ -20,7 +18,7 @@ export default function StoreRecceScreen({ nav, app }) {
 
   const [elemModal, setElemModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
-  const [saved, setSaved] = useState({ visible: false, offline: false });
+  const [done, setDone] = useState({ visible: false, offline: false });
 
   function addStoreImage() {
     pickImage((dataUrl) => setStoreImages((prev) => [...prev, dataUrl]), (e) => app.toast("Photo", e));
@@ -42,26 +40,19 @@ export default function StoreRecceScreen({ nav, app }) {
     });
   }
 
-  function currentWork() {
-    return { storeImages, storeRemark: storeRemark.trim(), elements, finalRemark: finalRemark.trim() };
-  }
-
   async function submit() {
-    if (storeImages.length < MIN) { app.toast("Store Photos", "Please upload at least " + MIN + " store photos (" + storeImages.length + "/" + MIN + ")."); return; }
+    if (storeImages.length < 1) { app.toast("Store Photos", "Please add store photos from different angles."); return; }
     if (!storeRemark.trim()) { app.toast("Remark", "Please add a remark for the store photos."); return; }
     if (elements.length === 0) { app.toast("Elements", "Add at least one element."); return; }
-    const work = currentWork();
-    app.setFlow({ work });
+    const work = { storeImages, storeRemark: storeRemark.trim(), elements, finalRemark: finalRemark.trim() };
     app.spinner(true, "Submitting…");
-    const res = await submitRecce(store, work);
+    const res = await submitRecce(store, work, user);
     app.spinner(false);
-    setSaved({ visible: true, offline: !!(res && res.offline) });
-  }
-
-  function downloadPpt() {
-    setSaved({ visible: false, offline: false });
-    exportReport(store, currentWork(), app);
-    nav.popTo("stores");
+    if (res && res.ok === false && !res.offline) {
+      app.toast("Submit failed", "Could not reach the server. Check the backend / connection and try again.");
+      return;
+    }
+    setDone({ visible: true, offline: !!(res && res.offline) });
   }
 
   return (
@@ -74,7 +65,7 @@ export default function StoreRecceScreen({ nav, app }) {
         </View>
 
         {/* STORE IMAGES */}
-        <SectionLabel>Store Photos — different angles (min {MIN})</SectionLabel>
+        <SectionLabel>Store Photos — different angles</SectionLabel>
         <View style={st.imgWrap}>
           {storeImages.map((uri, i) => (
             <View key={i} style={st.thumbBox}>
@@ -87,9 +78,7 @@ export default function StoreRecceScreen({ nav, app }) {
             <Text style={{ fontSize: 10, color: C.muted }}>Add</Text>
           </TouchableOpacity>
         </View>
-        <Text style={[st.counter, storeImages.length >= MIN && { color: C.success }]}>
-          {storeImages.length}/{MIN} {storeImages.length >= MIN ? "✓" : "photos"}
-        </Text>
+        {storeImages.length > 0 ? <Text style={st.count}>{storeImages.length} photo(s) added</Text> : null}
 
         <Text style={st.lbl}>Remark for store photos (required)</Text>
         <TextInput style={[st.input, { height: 64, textAlignVertical: "top" }]} value={storeRemark} onChangeText={setStoreRemark}
@@ -104,8 +93,8 @@ export default function StoreRecceScreen({ nav, app }) {
             <View key={idx} style={st.elCard}>
               <View style={{ flex: 1 }}>
                 <Text style={st.elTitle}>{el.type}</Text>
-                <Text style={st.elMeta}>on {el.surface} · W {el.width}" × H {el.height}" = {el.total}"</Text>
-                <Text style={st.elMeta}>📷 {el.imagesWithoutMark.length} without + {el.imagesWithMark.length} with mark</Text>
+                <Text style={st.elMeta}>W {el.width}" × H {el.height}" = {el.total}"</Text>
+                <Text style={st.elMeta}>📷 {el.photos.length} photo(s)</Text>
                 {el.remark ? <Text style={st.elRemark}>“{el.remark}”</Text> : null}
               </View>
               <View>
@@ -124,7 +113,7 @@ export default function StoreRecceScreen({ nav, app }) {
       </ScrollView>
 
       <View style={st.bottom}>
-        <Btn title="Submit & Generate PPT" kind="success" onPress={submit} />
+        <Btn title="Submit" kind="success" onPress={submit} />
       </View>
 
       <ElementEntryModal
@@ -137,18 +126,17 @@ export default function StoreRecceScreen({ nav, app }) {
       />
 
       <Popup
-        visible={saved.visible}
-        title="Recce Saved ✅"
-        buttons={[
-          { title: "Download PPT", kind: "outline", onPress: downloadPpt },
-          { title: "OK", kind: "primary", onPress: () => { setSaved({ visible: false, offline: false }); nav.popTo("stores"); } }
-        ]}
+        visible={done.visible}
+        title="Recce Submitted ✅"
+        buttons={[{ title: "OK", kind: "primary", onPress: () => { setDone({ visible: false, offline: false }); nav.popTo("stores"); } }]}
       >
         <Text style={{ color: C.text }}>
-          Recce submitted for <Text style={{ fontWeight: "700" }}>{store.storeName}</Text> — {storeImages.length} store photos, {elements.length} element(s).
+          Recce submitted for <Text style={{ fontWeight: "700" }}>{store.storeName}</Text>.
         </Text>
         <Text style={{ color: C.muted, fontSize: 12, marginTop: 6 }}>
-          {saved.offline ? "Saved on the device." : "Saved to the server."}
+          {done.offline
+            ? "Saved on the device (no backend connected). Connect a backend so the admin panel + PPT get it."
+            : "The report (PPT) is generated on the admin panel. This store is now removed from your list."}
         </Text>
       </Popup>
     </View>
@@ -163,7 +151,7 @@ const st = StyleSheet.create({
   thumbDel: { position: "absolute", top: 2, right: 2, backgroundColor: "rgba(214,69,69,0.9)", width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   thumbDelTxt: { color: "#fff", fontSize: 12 },
   addThumb: { width: 84, height: 84, borderRadius: 10, borderWidth: 2, borderColor: C.line, borderStyle: "dashed", alignItems: "center", justifyContent: "center", backgroundColor: "#fafbfd" },
-  counter: { fontSize: 13, color: C.muted, marginTop: 2, marginBottom: 8, fontWeight: "600" },
+  count: { fontSize: 13, color: C.muted, marginTop: 2, marginBottom: 8, fontWeight: "600" },
   lbl: { fontSize: 12.5, color: C.muted, marginBottom: 6, fontWeight: "600", marginTop: 6 },
   input: { borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 15, backgroundColor: "#fff", color: C.text },
   emptyBox: { backgroundColor: C.card, borderRadius: 12, padding: 20, alignItems: "center", marginBottom: 10 },

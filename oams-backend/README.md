@@ -1,57 +1,49 @@
-# OAMS Demo Backend (dummy database)
+# OAMS Backend + Admin Panel (dummy database)
 
-A tiny Node server that connects the OAMS Field App to a **dummy database**
-(`db.json`) — no MySQL, no cloud, no setup. Perfect for testing and for editing
-data in a normal code editor.
+Node + Express backend with a **db.json dummy database** (no MySQL/XAMPP needed).
+Serves the **User API** for the app AND a web **Admin Panel**.
 
-## Run it (2 steps)
-
+## Run (2 steps)
 ```bash
 cd oams-backend
-npm install      # first time only
+npm install      # first time
 npm start
 ```
+- **Admin Panel:** http://localhost:4000/admin  → login **admin / admin**
+- **User app login:** `EMP1024 / 1234` (users are managed from the Admin Panel)
 
-Then open **http://localhost:4000** in your browser.
-The app loads AND is connected to this backend automatically.
+## What the Admin Panel does
+- **Recces tab** — every submitted store recce: store, **which user did it (name + ID)**,
+  city, category, photo/element counts, date, and a **⬇ PPT download**.
+  Filters: search store, user, city, category, from/to date.
+- **Users tab** — **add / delete users**, set their password and mode (full user management).
 
-**Test login:** `EMP1024` / `1234`  (all logins are in `db.json`)
+## Flow
+1. User logs in on the app (Recce mode) → picks a store → uploads store photos + adds
+   elements (type, W×H, photos, remark) → **Submit**.
+2. On submit the backend **saves the recce, generates the PPT** (`reports/<id>.pptx`),
+   and the store is **removed from the user's list**.
+3. Admin sees the recce in the panel and downloads the PPT.
+
+## API
+| Method | URL | Who |
+|---|---|---|
+| POST | `/api/login` | user login |
+| GET  | `/api/master` | element types |
+| GET  | `/api/stores` | stores whose recce is not done |
+| POST | `/api/recce/submit` | submit a recce (saves + builds PPT) |
+| POST | `/api/admin/login` | admin login |
+| GET  | `/api/admin/recces` | list recces (filters: q,user,city,category,from,to) |
+| GET  | `/api/admin/recces/:id/ppt` | download the PPT |
+| GET/POST/DELETE | `/api/admin/users` | manage users |
 
 ## Edit the dummy database
+Open **`db.json`**: `admins`, `users`, `stores`, `elementTypes`. Restart after editing.
+Generated PPTs are written to `reports/` (git-ignored).
 
-Open **`db.json`** in any editor and change:
+## Connect the app
+In `oams-rn/src/config.js` set `API_BASE`:
+- Android emulator: `http://10.0.2.2:4000/api`
+- Real phone (same WiFi): `http://<your-PC-IP>:4000/api`
 
-- `users`     — who can log in (empCode + password + name)
-- `tickets`   — the Recce / FAS / GSB / Installation tickets shown in the app
-- `materials` — the Material Name dropdown list
-- `locations` — the Location dropdown list
-
-Save the file and **restart the server** (`Ctrl+C`, then `npm start`).
-When you save a recce from the app, it is written into `submissions` in `db.json`.
-
-## API endpoints
-
-| Method | URL | Purpose |
-|--------|-----|---------|
-| POST | `/api/login` | validate empCode + password |
-| GET  | `/api/master` | materials + locations |
-| GET  | `/api/tickets?module=recce` | tickets for a module |
-| POST | `/api/recce/:ticketNo/save` | save a completed recce |
-| GET  | `/api/reports` | everything saved so far |
-
-## Make the installed APK use this backend
-
-The APK runs offline by default. To point it at a backend:
-
-1. Host this server on a public URL (Railway / Render / your own hosting).
-2. Put that URL in **`oams-mobile/www/js/config.js`**:
-   ```js
-   window.OAMS_CONFIG = { API_BASE: "https://your-host.com/api" };
-   ```
-3. Push to the branch → GitHub Actions rebuilds a new APK that talks to your DB.
-
-## Moving to a real database later
-
-Swap the `loadDB()` / `saveDB()` calls in `server.js` for real database queries
-(e.g. MySQL via Sequelize — the same stack already used in `sellaids/server`).
-The app and the API contract stay exactly the same.
+Move to real MySQL later by replacing `loadDB()/saveDB()` with DB queries — the API stays the same.

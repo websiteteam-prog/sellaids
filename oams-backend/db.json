@@ -1,27 +1,103 @@
 {
-  "_readme": "DUMMY DATABASE. Edit users / stores / elementTypes / surfaces below and restart the server. 'submissions' fills automatically when a recce is saved.",
+  "_readme": "DUMMY DATABASE. 'users' are managed from the Admin Panel. 'submissions' fill when a recce is submitted. Admin login is in 'admins'.",
+  "admins": [
+    {
+      "username": "admin",
+      "password": "admin",
+      "name": "OAMS Admin"
+    }
+  ],
   "users": [
-    { "empCode": "EMP1024", "password": "1234", "name": "Rahul Mehta", "mode": "Recce" },
-    { "empCode": "EMP2048", "password": "1234", "name": "Sneha Kulkarni", "mode": "Recce" },
-    { "empCode": "admin", "password": "admin", "name": "OAMS Admin", "mode": "Deployment" }
+    {
+      "empCode": "EMP1024",
+      "password": "1234",
+      "name": "Rahul Mehta",
+      "mode": "Recce"
+    },
+    {
+      "empCode": "EMP2048",
+      "password": "1234",
+      "name": "Sneha Kulkarni",
+      "mode": "Recce"
+    }
   ],
   "elementTypes": [
-    "Sunboard", "Art Board", "Flex", "Acrylic Signage", "LED",
-    "Vinyl", "ACP Panel", "Glow Sign Board", "One Way Vision", "Fabric Backlit"
-  ],
-  "surfaces": [
-    "Main Entrance", "Facade", "In-Store", "Pillar", "Ceiling",
-    "Window Glass", "Cash Counter", "Wall - Left", "Wall - Right", "Backwall"
+    "Sunboard",
+    "Art Board",
+    "Flex",
+    "Acrylic Signage",
+    "LED",
+    "Vinyl",
+    "ACP Panel",
+    "Glow Sign Board",
+    "One Way Vision",
+    "Fabric Backlit"
   ],
   "stores": [
-    { "storeCode": "STR-0451", "storeName": "Reliance Trends - Andheri West", "city": "Mumbai", "category": "MBO", "coordinatorName": "Rahul Mehta", "coordinatorNumber": "+91 98200 11223" },
-    { "storeCode": "STR-0478", "storeName": "Croma - Powai", "city": "Mumbai", "category": "OT", "coordinatorName": "Sneha Kulkarni", "coordinatorNumber": "+91 99870 44556" },
-    { "storeCode": "STR-0502", "storeName": "Vijay Sales - Thane", "city": "Thane", "category": "ISB", "coordinatorName": "Amit Sharma", "coordinatorNumber": "+91 98330 77889" },
-    { "storeCode": "STR-0311", "storeName": "Big Bazaar - Malad", "city": "Mumbai", "category": "OT", "coordinatorName": "Rahul Mehta", "coordinatorNumber": "+91 98200 11223" },
-    { "storeCode": "STR-0388", "storeName": "DMart - Kandivali", "city": "Mumbai", "category": "MBO", "coordinatorName": "Sneha Kulkarni", "coordinatorNumber": "+91 99870 44556" },
-    { "storeCode": "STR-0450", "storeName": "Shoppers Stop - Ghatkopar", "city": "Mumbai", "category": "ISB", "coordinatorName": "Amit Sharma", "coordinatorNumber": "+91 98330 77889" },
-    { "storeCode": "STR-0561", "storeName": "Croma - Vashi", "city": "Navi Mumbai", "category": "OT", "coordinatorName": "Rahul Mehta", "coordinatorNumber": "+91 98200 11223" },
-    { "storeCode": "STR-0604", "storeName": "Reliance Digital - Borivali", "city": "Mumbai", "category": "MBO", "coordinatorName": "Sneha Kulkarni", "coordinatorNumber": "+91 99870 44556" }
+    {
+      "storeCode": "STR-0451",
+      "storeName": "Reliance Trends - Andheri West",
+      "city": "Mumbai",
+      "category": "MBO",
+      "coordinatorName": "Rahul Mehta",
+      "coordinatorNumber": "+91 98200 11223"
+    },
+    {
+      "storeCode": "STR-0478",
+      "storeName": "Croma - Powai",
+      "city": "Mumbai",
+      "category": "OT",
+      "coordinatorName": "Sneha Kulkarni",
+      "coordinatorNumber": "+91 99870 44556"
+    },
+    {
+      "storeCode": "STR-0502",
+      "storeName": "Vijay Sales - Thane",
+      "city": "Thane",
+      "category": "ISB",
+      "coordinatorName": "Amit Sharma",
+      "coordinatorNumber": "+91 98330 77889"
+    },
+    {
+      "storeCode": "STR-0311",
+      "storeName": "Big Bazaar - Malad",
+      "city": "Mumbai",
+      "category": "OT",
+      "coordinatorName": "Rahul Mehta",
+      "coordinatorNumber": "+91 98200 11223"
+    },
+    {
+      "storeCode": "STR-0388",
+      "storeName": "DMart - Kandivali",
+      "city": "Mumbai",
+      "category": "MBO",
+      "coordinatorName": "Sneha Kulkarni",
+      "coordinatorNumber": "+91 99870 44556"
+    },
+    {
+      "storeCode": "STR-0450",
+      "storeName": "Shoppers Stop - Ghatkopar",
+      "city": "Mumbai",
+      "category": "ISB",
+      "coordinatorName": "Amit Sharma",
+      "coordinatorNumber": "+91 98330 77889"
+    },
+    {
+      "storeCode": "STR-0561",
+      "storeName": "Croma - Vashi",
+      "city": "Navi Mumbai",
+      "category": "OT",
+      "coordinatorName": "Rahul Mehta",
+      "coordinatorNumber": "+91 98200 11223"
+    },
+    {
+      "storeCode": "STR-0604",
+      "storeName": "Reliance Digital - Borivali",
+      "city": "Mumbai",
+      "category": "MBO",
+      "coordinatorName": "Sneha Kulkarni",
+      "coordinatorNumber": "+91 99870 44556"
+    }
   ],
   "submissions": []
 }
