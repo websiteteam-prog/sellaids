@@ -1,44 +1,37 @@
 /* Offline demo data — used when API_BASE is empty (no backend). */
 export const DATA = {
-  appVersion: "2.0.0",
+  appVersion: "3.0.0",
 
-  // login mode radios (Deployment logic comes later; Recce is the live flow)
   loginModes: ["Deployment", "Recce"],
 
-  // "What is it" — element / product types
+  // "What is it" — element list (from client's Element List)
   elementTypes: [
-    "Sunboard", "Art Board", "Flex", "Acrylic Signage", "LED",
-    "Vinyl", "ACP Panel", "Glow Sign Board", "One Way Vision", "Fabric Backlit"
-  ],
-
-  // "Jis cheez pe lagana hai" — surfaces / locations
-  surfaces: [
-    "Main Entrance", "Facade", "In-Store", "Pillar", "Ceiling",
-    "Window Glass", "Cash Counter", "Wall - Left", "Wall - Right", "Backwall"
+    "SUNBOARD 3MM", "SUNBOARD 5MM", "VINYL", "ONEWAY VISION", "TRANSLIT",
+    "FABRIC PRINT", "FABRIC BOX NEW", "GSB FLEX CHANGE", "GSB NEW", "GSB NEW D/S",
+    "NONLIT BOARD", "NONLIT FLEX CHANGE", "ACP BOARD", "FROSTED VINYL",
+    "LIT ACRYLIC HEADER", "IRON ANGLE", "LIT CLIPON", "SCAFFOLDING/CRANE",
+    "ROCKET PILLAR", "REPAIR", "ACRYLIC SANDWICH", "LIT FLANGE"
   ],
 
   announcement: {
     title: "Welcome — OAMS Team",
     lines: [
-      "APK Version: 2.0.0",
-      "Select a store, upload at least 5 store photos, then add elements.",
-      "For each element upload 2 photos WITHOUT mark and 2 WITH mark.",
+      "APK Version: 3.0.0",
+      "Select a store, add store photos (front + overview), then add elements.",
+      "For each element pick the type, enter W x H, add photos and a remark.",
       "Add a remark at every step. Turn ON Camera & Gallery permissions."
     ]
   },
 
   // Store master (searchable list after login)
   stores: [
-    { storeCode: "STR-0451", storeName: "Reliance Trends - Andheri West", city: "Mumbai", category: "MBO", coordinatorName: "Rahul Mehta", coordinatorNumber: "+91 98200 11223" },
-    { storeCode: "STR-0478", storeName: "Croma - Powai", city: "Mumbai", category: "OT", coordinatorName: "Sneha Kulkarni", coordinatorNumber: "+91 99870 44556" },
-    { storeCode: "STR-0502", storeName: "Vijay Sales - Thane", city: "Thane", category: "ISB", coordinatorName: "Amit Sharma", coordinatorNumber: "+91 98330 77889" },
-    { storeCode: "STR-0311", storeName: "Big Bazaar - Malad", city: "Mumbai", category: "OT", coordinatorName: "Rahul Mehta", coordinatorNumber: "+91 98200 11223" },
-    { storeCode: "STR-0388", storeName: "DMart - Kandivali", city: "Mumbai", category: "MBO", coordinatorName: "Sneha Kulkarni", coordinatorNumber: "+91 99870 44556" },
-    { storeCode: "STR-0450", storeName: "Shoppers Stop - Ghatkopar", city: "Mumbai", category: "ISB", coordinatorName: "Amit Sharma", coordinatorNumber: "+91 98330 77889" },
-    { storeCode: "STR-0561", storeName: "Croma - Vashi", city: "Navi Mumbai", category: "OT", coordinatorName: "Rahul Mehta", coordinatorNumber: "+91 98200 11223" },
-    { storeCode: "STR-0604", storeName: "Reliance Digital - Borivali", city: "Mumbai", category: "MBO", coordinatorName: "Sneha Kulkarni", coordinatorNumber: "+91 99870 44556" }
-  ],
-
-  // minimum store photos required before submit
-  minStorePhotos: 5
+    { storeCode: "626425", storeName: "Sharma Electronics Store", address: "Opp. HDFC Bank, Chandigarh Road, Samrala (LDH)", phone: "9888908988, 9464681941", city: "Ludhiana", category: "Consumer Electronics", brand: "Mi", retType: "" },
+    { storeCode: "STR-0478", storeName: "Croma - Powai", address: "Powai Plaza, Powai", phone: "022-99870 44556", city: "Mumbai", category: "OT", brand: "Croma", retType: "" },
+    { storeCode: "STR-0451", storeName: "Reliance Trends - Andheri West", address: "Link Road, Andheri West", phone: "022-98200 11223", city: "Mumbai", category: "MBO", brand: "Reliance", retType: "" },
+    { storeCode: "STR-0502", storeName: "Vijay Sales - Thane", address: "Station Road, Thane West", phone: "022-98330 77889", city: "Thane", category: "ISB", brand: "Vijay Sales", retType: "" },
+    { storeCode: "STR-0311", storeName: "Big Bazaar - Malad", address: "Mindspace, Malad West", phone: "022-98200 11223", city: "Mumbai", category: "OT", brand: "Big Bazaar", retType: "" },
+    { storeCode: "STR-0388", storeName: "DMart - Kandivali", address: "SV Road, Kandivali", phone: "022-99870 44556", city: "Mumbai", category: "MBO", brand: "DMart", retType: "" },
+    { storeCode: "STR-0450", storeName: "Shoppers Stop - Ghatkopar", address: "R City Mall, Ghatkopar", phone: "022-98330 77889", city: "Mumbai", category: "ISB", brand: "Shoppers Stop", retType: "" },
+    { storeCode: "STR-0604", storeName: "Reliance Digital - Borivali", address: "SV Road, Borivali West", phone: "022-99870 44556", city: "Mumbai", category: "OT", brand: "Reliance Digital", retType: "" }
+  ]
 };

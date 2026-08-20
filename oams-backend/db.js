@@ -15,18 +15,21 @@ const DEFAULT_USERS = [
   { empCode: "EMP2048", password: "1234", name: "Sneha Kulkarni", mode: "Recce" }
 ];
 const DEFAULT_ELEMENT_TYPES = [
-  "Sunboard", "Art Board", "Flex", "Acrylic Signage", "LED",
-  "Vinyl", "ACP Panel", "Glow Sign Board", "One Way Vision", "Fabric Backlit"
+  "SUNBOARD 3MM", "SUNBOARD 5MM", "VINYL", "ONEWAY VISION", "TRANSLIT",
+  "FABRIC PRINT", "FABRIC BOX NEW", "GSB FLEX CHANGE", "GSB NEW", "GSB NEW D/S",
+  "NONLIT BOARD", "NONLIT FLEX CHANGE", "ACP BOARD", "FROSTED VINYL",
+  "LIT ACRYLIC HEADER", "IRON ANGLE", "LIT CLIPON", "SCAFFOLDING/CRANE",
+  "ROCKET PILLAR", "REPAIR", "ACRYLIC SANDWICH", "LIT FLANGE"
 ];
 const DEFAULT_STORES = [
-  { storeCode: "STR-0451", storeName: "Reliance Trends - Andheri West", city: "Mumbai", category: "MBO", coordinatorName: "Rahul Mehta", coordinatorNumber: "+91 98200 11223" },
-  { storeCode: "STR-0478", storeName: "Croma - Powai", city: "Mumbai", category: "OT", coordinatorName: "Sneha Kulkarni", coordinatorNumber: "+91 99870 44556" },
-  { storeCode: "STR-0502", storeName: "Vijay Sales - Thane", city: "Thane", category: "ISB", coordinatorName: "Amit Sharma", coordinatorNumber: "+91 98330 77889" },
-  { storeCode: "STR-0311", storeName: "Big Bazaar - Malad", city: "Mumbai", category: "OT", coordinatorName: "Rahul Mehta", coordinatorNumber: "+91 98200 11223" },
-  { storeCode: "STR-0388", storeName: "DMart - Kandivali", city: "Mumbai", category: "MBO", coordinatorName: "Sneha Kulkarni", coordinatorNumber: "+91 99870 44556" },
-  { storeCode: "STR-0450", storeName: "Shoppers Stop - Ghatkopar", city: "Mumbai", category: "ISB", coordinatorName: "Amit Sharma", coordinatorNumber: "+91 98330 77889" },
-  { storeCode: "STR-0561", storeName: "Croma - Vashi", city: "Navi Mumbai", category: "OT", coordinatorName: "Rahul Mehta", coordinatorNumber: "+91 98200 11223" },
-  { storeCode: "STR-0604", storeName: "Reliance Digital - Borivali", city: "Mumbai", category: "MBO", coordinatorName: "Sneha Kulkarni", coordinatorNumber: "+91 99870 44556" }
+  { storeCode: "626425", storeName: "Sharma Electronics Store", address: "Opp. HDFC Bank, Chandigarh Road, Samrala (LDH)", phone: "9888908988, 9464681941", city: "Ludhiana", category: "Consumer Electronics", brand: "Mi", retType: "" },
+  { storeCode: "STR-0478", storeName: "Croma - Powai", address: "Powai Plaza, Powai", phone: "022-99870 44556", city: "Mumbai", category: "OT", brand: "Croma", retType: "" },
+  { storeCode: "STR-0451", storeName: "Reliance Trends - Andheri West", address: "Link Road, Andheri West", phone: "022-98200 11223", city: "Mumbai", category: "MBO", brand: "Reliance", retType: "" },
+  { storeCode: "STR-0502", storeName: "Vijay Sales - Thane", address: "Station Road, Thane West", phone: "022-98330 77889", city: "Thane", category: "ISB", brand: "Vijay Sales", retType: "" },
+  { storeCode: "STR-0311", storeName: "Big Bazaar - Malad", address: "Mindspace, Malad West", phone: "022-98200 11223", city: "Mumbai", category: "OT", brand: "Big Bazaar", retType: "" },
+  { storeCode: "STR-0388", storeName: "DMart - Kandivali", address: "SV Road, Kandivali", phone: "022-99870 44556", city: "Mumbai", category: "MBO", brand: "DMart", retType: "" },
+  { storeCode: "STR-0450", storeName: "Shoppers Stop - Ghatkopar", address: "R City Mall, Ghatkopar", phone: "022-98330 77889", city: "Mumbai", category: "ISB", brand: "Shoppers Stop", retType: "" },
+  { storeCode: "STR-0604", storeName: "Reliance Digital - Borivali", address: "SV Road, Borivali West", phone: "022-99870 44556", city: "Mumbai", category: "OT", brand: "Reliance Digital", retType: "" }
 ];
 
 function safeJson(s) { try { return typeof s === "string" ? JSON.parse(s) : (s || []); } catch (e) { return []; } }
@@ -38,7 +41,7 @@ function mysqlBackend() {
   let pool;
   async function q(sql, p) { const [r] = await pool.execute(sql, p || []); return r; }
 
-  const storeRow = (r) => ({ storeCode: r.store_code, storeName: r.store_name, city: r.city, category: r.category, coordinatorName: r.coordinator_name, coordinatorNumber: r.coordinator_number });
+  const storeRow = (r) => ({ storeCode: r.store_code, storeName: r.store_name, address: r.address, phone: r.phone, city: r.city, category: r.category, brand: r.brand, retType: r.ret_type });
   const subRow = (r) => ({
     id: r.id, storeCode: r.store_code, storeName: r.store_name, city: r.city, category: r.category,
     userEmpCode: r.user_emp_code, userName: r.user_name, storePhotoCount: r.store_photo_count,
@@ -57,7 +60,7 @@ function mysqlBackend() {
       });
       await q(`CREATE TABLE IF NOT EXISTS admins (username VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128))`);
       await q(`CREATE TABLE IF NOT EXISTS users (emp_code VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128), mode VARCHAR(32))`);
-      await q(`CREATE TABLE IF NOT EXISTS stores (store_code VARCHAR(64) PRIMARY KEY, store_name VARCHAR(255), city VARCHAR(128), category VARCHAR(64), coordinator_name VARCHAR(128), coordinator_number VARCHAR(64))`);
+      await q(`CREATE TABLE IF NOT EXISTS stores (store_code VARCHAR(64) PRIMARY KEY, store_name VARCHAR(255), address VARCHAR(255), phone VARCHAR(128), city VARCHAR(128), category VARCHAR(64), brand VARCHAR(128), ret_type VARCHAR(64))`);
       await q(`CREATE TABLE IF NOT EXISTS element_types (name VARCHAR(128) PRIMARY KEY)`);
       await q(`CREATE TABLE IF NOT EXISTS submissions (
         id VARCHAR(64) PRIMARY KEY, store_code VARCHAR(64), store_name VARCHAR(255), city VARCHAR(128), category VARCHAR(64),
@@ -68,8 +71,8 @@ function mysqlBackend() {
       if ((await q(`SELECT COUNT(*) c FROM element_types`))[0].c === 0)
         for (const n of DEFAULT_ELEMENT_TYPES) await q(`INSERT INTO element_types (name) VALUES (?)`, [n]);
       if ((await q(`SELECT COUNT(*) c FROM stores`))[0].c === 0)
-        for (const s of DEFAULT_STORES) await q(`INSERT INTO stores (store_code,store_name,city,category,coordinator_name,coordinator_number) VALUES (?,?,?,?,?,?)`,
-          [s.storeCode, s.storeName, s.city, s.category, s.coordinatorName, s.coordinatorNumber]);
+        for (const s of DEFAULT_STORES) await q(`INSERT INTO stores (store_code,store_name,address,phone,city,category,brand,ret_type) VALUES (?,?,?,?,?,?,?,?)`,
+          [s.storeCode, s.storeName, s.address, s.phone, s.city, s.category, s.brand, s.retType]);
       if ((await q(`SELECT COUNT(*) c FROM users`))[0].c === 0)
         for (const u of DEFAULT_USERS) await q(`INSERT INTO users (emp_code,password,name,mode) VALUES (?,?,?,?)`, [u.empCode, u.password, u.name, u.mode]);
       console.log("[db] MySQL connected:", process.env.DB_NAME);

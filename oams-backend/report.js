@@ -1,33 +1,31 @@
 /* =========================================================================
- * OAMS report builder — turns a store recce into a PowerPoint (.pptx).
- * Returns a Node Buffer (the .pptx bytes).
- *
- * store: { storeName, storeCode, city, category, coordinatorName, coordinatorNumber }
- * work:  {
- *   storeImages: [dataUrl...],
- *   storeRemark: "...",
- *   elements: [ { type, width, height, total, photos:[dataUrl...], remark } ],
- *   finalRemark: "..."
- * }
- * meta:  { userName, userEmpCode, submittedAt }
+ * OAMS report builder — matches the client's SAMPLE PPT format.
+ * Every slide has a store header; slides: FRONT PHOTO, STORE OVERVIEW,
+ * then one slide per element (TYPE : WxH, REMARKS, photos).
+ * Returns a Node Buffer (.pptx bytes).
  * ========================================================================= */
 const PptxGenJS = require("pptxgenjs");
 
 const NAVY = "1F3864";
+const LIGHT = "E8EDF8";
 const W = 13.33, H = 7.5;
-function isImg(d) { return typeof d === "string" && d.indexOf("data:image") === 0; }
+const isImg = (d) => typeof d === "string" && d.indexOf("data:image") === 0;
 
-function header(slide, pptx, title, right) {
-  slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 0.9, fill: { color: NAVY } });
-  slide.addText(title, { x: 0.4, y: 0.12, w: 9.5, h: 0.7, fontSize: 20, bold: true, color: "FFFFFF" });
-  if (right) slide.addText(right, { x: 9.9, y: 0.24, w: 3, h: 0.5, fontSize: 12, color: "CBD6EE", align: "right" });
+function header(slide, pptx, store, section) {
+  slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 1.55, fill: { color: NAVY } });
+  slide.addText(String(store.storeName || "STORE").toUpperCase(), { x: 0.35, y: 0.1, w: 9, h: 0.5, fontSize: 22, bold: true, color: "FFFFFF" });
+  if (store.address) slide.addText(store.address, { x: 0.35, y: 0.62, w: 9, h: 0.3, fontSize: 12, color: "CBD6EE" });
+  if (store.phone) slide.addText(String(store.phone), { x: 0.35, y: 0.9, w: 9, h: 0.3, fontSize: 12, color: "CBD6EE" });
+  slide.addText("RET CODE: " + (store.storeCode || "") + "     RET TYPE: " + (store.retType || ""), { x: 0.35, y: 1.18, w: 9, h: 0.3, fontSize: 12, color: "CBD6EE" });
+  if (store.brand) slide.addText(String(store.brand), { x: 9.4, y: 0.35, w: 3.5, h: 0.4, fontSize: 18, bold: true, color: "FFFFFF", align: "right" });
+  if (store.category) slide.addText(String(store.category), { x: 9.4, y: 0.85, w: 3.5, h: 0.35, fontSize: 13, color: "AEC1E8", align: "right" });
+  // section band
+  slide.addShape(pptx.ShapeType.rect, { x: 0, y: 1.55, w: W, h: 0.55, fill: { color: LIGHT } });
+  slide.addText(String(section || "").toUpperCase(), { x: 0.4, y: 1.6, w: 12.5, h: 0.45, fontSize: 15, bold: true, color: NAVY, align: "center" });
 }
 
-function grid(slide, imgs, x0, y0, cw, ch, cols, padx, pady) {
-  imgs.forEach((data, i) => {
-    const r = Math.floor(i / cols), c = i % cols;
-    slide.addImage({ data, x: x0 + c * (cw + padx), y: y0 + r * (ch + pady), w: cw, h: ch });
-  });
+function img(slide, data, x, y, w, h) {
+  slide.addImage({ data, x, y, w, h, sizing: { type: "contain", w, h } });
 }
 
 async function buildPptxBuffer(store, work, meta) {
@@ -36,77 +34,56 @@ async function buildPptxBuffer(store, work, meta) {
   pptx.defineLayout({ name: "OAMS", width: W, height: H });
   pptx.layout = "OAMS";
 
-  // cover
-  const cover = pptx.addSlide();
-  cover.background = { color: NAVY };
-  cover.addText("OAMS Store Recce Report", { x: 0.6, y: 2.1, w: 12, h: 1, fontSize: 38, bold: true, color: "FFFFFF" });
-  cover.addText(store.storeName || "Store", { x: 0.6, y: 3.2, w: 12, h: 0.7, fontSize: 24, color: "AEC1E8" });
-  cover.addText([store.storeCode, store.category, store.city].filter(Boolean).join("  ·  "),
-    { x: 0.6, y: 4.0, w: 12, h: 0.5, fontSize: 14, color: "CBD6EE" });
-  cover.addText("Recce by: " + (meta.userName || "-") + " (" + (meta.userEmpCode || "-") + ")",
-    { x: 0.6, y: 4.7, w: 12, h: 0.4, fontSize: 14, color: "CBD6EE" });
-  cover.addText(meta.submittedAt ? new Date(meta.submittedAt).toLocaleString() : new Date().toLocaleString(),
-    { x: 0.6, y: 5.2, w: 12, h: 0.4, fontSize: 12, color: "8FA6D6" });
-
-  // store info + remarks
-  const info = pptx.addSlide();
-  header(info, pptx, "Store Details", store.storeCode || "");
-  const rows = [
-    ["Store Name", store.storeName], ["Store Code", store.storeCode],
-    ["Category", store.category], ["City", store.city],
-    ["Coordinator", store.coordinatorName], ["Contact", store.coordinatorNumber],
-    ["Recce by", (meta.userName || "") + (meta.userEmpCode ? " (" + meta.userEmpCode + ")" : "")]
-  ].filter((r) => r[1]).map((r) => [
-    { text: String(r[0]), options: { bold: true, color: NAVY } },
-    { text: String(r[1]), options: {} }
-  ]);
-  info.addTable(rows, { x: 0.5, y: 1.2, w: 7, colW: [2.4, 4.6], fontSize: 13, border: { pt: 0.5, color: "DDDDDD" }, rowH: 0.4 });
-  if (work.storeRemark) {
-    info.addText("Store remark:", { x: 8, y: 1.2, w: 4.8, h: 0.3, fontSize: 12, bold: true, color: NAVY });
-    info.addText(work.storeRemark, { x: 8, y: 1.6, w: 4.8, h: 3, fontSize: 12, color: "333333", valign: "top" });
-  }
-  if (work.finalRemark) {
-    info.addText("Final remark:", { x: 8, y: 4.6, w: 4.8, h: 0.3, fontSize: 12, bold: true, color: NAVY });
-    info.addText(work.finalRemark, { x: 8, y: 5.0, w: 4.8, h: 1.6, fontSize: 12, color: "333333", valign: "top" });
-  }
-
-  // store photos (grid, up to 6 per slide)
   const photos = (work.storeImages || []).filter(isImg);
-  const per = 6;
-  for (let s = 0; s < photos.length; s += per) {
-    const slide = pptx.addSlide();
-    header(slide, pptx, "Store Photos", (s + 1) + "-" + Math.min(s + per, photos.length) + " of " + photos.length);
-    grid(slide, photos.slice(s, s + per), 0.35, 1.15, 4.0, 2.7, 3, 0.25, 0.25);
+
+  // ---- FRONT PHOTO (first store photo) ----
+  {
+    const s = pptx.addSlide();
+    header(s, pptx, store, "Front Photo");
+    if (photos[0]) img(s, photos[0], 3.4, 2.35, 6.5, 4.7);
+    else s.addText("No front photo", { x: 0.4, y: 4, w: 12.5, h: 0.5, fontSize: 16, italic: true, color: "999999", align: "center" });
+    footer(s, meta);
   }
 
-  // one slide per element (photos grid up to 6, extra slides if more)
-  (work.elements || []).forEach((el, idx) => {
-    const eph = (el.photos || []).filter(isImg);
-    const first = pptx.addSlide();
-    header(first, pptx, "Element " + (idx + 1) + ": " + (el.type || ""), (el.type || ""));
-    const drows = [
-      ["Type", el.type], ["Width", el.width + '"'], ["Height", el.height + '"'], ["Total", el.total + '"']
-    ].map((r) => [
-      { text: String(r[0]), options: { bold: true, color: NAVY } },
-      { text: String(r[1] == null ? "" : r[1]), options: {} }
-    ]);
-    first.addText("Details", { x: 0.4, y: 1.05, w: 4, h: 0.3, fontSize: 13, bold: true, color: NAVY });
-    first.addTable(drows, { x: 0.4, y: 1.4, w: 4.2, colW: [1.6, 2.6], fontSize: 12, border: { pt: 0.5, color: "DDDDDD" }, rowH: 0.42 });
-    if (el.remark) {
-      first.addText("Remark:", { x: 0.4, y: 3.7, w: 4.2, h: 0.3, fontSize: 12, bold: true, color: NAVY });
-      first.addText(el.remark, { x: 0.4, y: 4.05, w: 4.2, h: 2.5, fontSize: 12, color: "333333", valign: "top" });
+  // ---- STORE OVERVIEW (remaining photos, 3 x 2 grid per slide) ----
+  const rest = photos.slice(1);
+  const per = 6, cols = 3, cw = 3.95, ch = 2.25, gx = 0.2, gy = 0.25, x0 = 0.45, y0 = 2.35;
+  if (rest.length) {
+    for (let i = 0; i < rest.length; i += per) {
+      const s = pptx.addSlide();
+      header(s, pptx, store, "Store Overview");
+      rest.slice(i, i + per).forEach((d, k) => { const r = Math.floor(k / cols), c = k % cols; img(s, d, x0 + c * (cw + gx), y0 + r * (ch + gy), cw, ch); });
+      footer(s, meta);
     }
-    // photos on the right (2 x 2), rest spill to extra slides
-    grid(first, eph.slice(0, 4), 5.0, 1.2, 3.7, 2.5, 2, 0.25, 0.25);
-    for (let s = 4; s < eph.length; s += per) {
-      const slide = pptx.addSlide();
-      header(slide, pptx, "Element " + (idx + 1) + " — more photos", (el.type || ""));
-      grid(slide, eph.slice(s, s + per), 0.35, 1.15, 4.0, 2.7, 3, 0.25, 0.25);
+  }
+
+  // ---- one slide per element ----
+  (work.elements || []).forEach((el) => {
+    const eph = (el.photos || []).filter(isImg);
+    const s = pptx.addSlide();
+    header(s, pptx, store, el.type || "Element");
+    s.addText((el.type || "") + "   :   " + (el.width || "") + "'' X " + (el.height || "") + "''",
+      { x: 0.4, y: 2.25, w: 12.5, h: 0.4, fontSize: 16, bold: true, color: NAVY });
+    s.addText("REMARKS : " + (el.remark || ""), { x: 0.4, y: 2.75, w: 12.5, h: 0.5, fontSize: 13, color: "333333" });
+    // photos (2 x 2)
+    const pos = [[0.6, 3.35], [6.9, 3.35], [0.6, 5.45], [6.9, 5.45]];
+    eph.slice(0, 4).forEach((d, k) => img(s, d, pos[k][0], pos[k][1], 5.8, 1.95));
+    footer(s, meta);
+    // extra element photos on more slides
+    for (let i = 4; i < eph.length; i += per) {
+      const s2 = pptx.addSlide();
+      header(s2, pptx, store, (el.type || "Element") + " — more photos");
+      eph.slice(i, i + per).forEach((d, k) => { const r = Math.floor(k / cols), c = k % cols; img(s2, d, x0 + c * (cw + gx), y0 + r * (ch + gy), cw, ch); });
+      footer(s2, meta);
     }
   });
 
-  const b64 = await pptx.write({ outputType: "base64" });
-  return Buffer.from(b64, "base64");
+  return await pptx.write({ outputType: "nodebuffer" });
+}
+
+function footer(slide, meta) {
+  const by = "Recce by: " + (meta.userName || "-") + " (" + (meta.userEmpCode || "-") + ")   ·   " + (meta.submittedAt ? new Date(meta.submittedAt).toLocaleString() : "");
+  slide.addText(by, { x: 0.4, y: 7.15, w: 12.5, h: 0.3, fontSize: 9, color: "888888", align: "right" });
 }
 
 module.exports = { buildPptxBuffer };

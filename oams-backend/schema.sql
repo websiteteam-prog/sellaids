@@ -1,9 +1,7 @@
 -- =====================================================================
 -- OAMS local database (MySQL / MariaDB)
 -- Import in phpMyAdmin (XAMPP), or:  mysql -u root -p < schema.sql
--- Creates the `oams` database with tables + demo data (admin, users,
--- stores, element types). The `submissions` table fills when recces are
--- submitted from the app.
+-- Creates the `oams` database with tables + demo data.
 -- =====================================================================
 
 CREATE DATABASE IF NOT EXISTS `oams` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -23,12 +21,14 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS stores (
-  store_code         VARCHAR(64) PRIMARY KEY,
-  store_name         VARCHAR(255),
-  city               VARCHAR(128),
-  category           VARCHAR(64),
-  coordinator_name   VARCHAR(128),
-  coordinator_number VARCHAR(64)
+  store_code VARCHAR(64) PRIMARY KEY,
+  store_name VARCHAR(255),
+  address    VARCHAR(255),
+  phone      VARCHAR(128),
+  city       VARCHAR(128),
+  category   VARCHAR(64),
+  brand      VARCHAR(128),
+  ret_type   VARCHAR(64)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS element_types (
@@ -61,16 +61,20 @@ INSERT IGNORE INTO users (emp_code, password, name, mode) VALUES
   ('EMP1024', '1234', 'Rahul Mehta', 'Recce'),
   ('EMP2048', '1234', 'Sneha Kulkarni', 'Recce');
 
+-- Element list (from client's Element List)
 INSERT IGNORE INTO element_types (name) VALUES
-  ('Sunboard'), ('Art Board'), ('Flex'), ('Acrylic Signage'), ('LED'),
-  ('Vinyl'), ('ACP Panel'), ('Glow Sign Board'), ('One Way Vision'), ('Fabric Backlit');
+  ('SUNBOARD 3MM'), ('SUNBOARD 5MM'), ('VINYL'), ('ONEWAY VISION'), ('TRANSLIT'),
+  ('FABRIC PRINT'), ('FABRIC BOX NEW'), ('GSB FLEX CHANGE'), ('GSB NEW'), ('GSB NEW D/S'),
+  ('NONLIT BOARD'), ('NONLIT FLEX CHANGE'), ('ACP BOARD'), ('FROSTED VINYL'),
+  ('LIT ACRYLIC HEADER'), ('IRON ANGLE'), ('LIT CLIPON'), ('SCAFFOLDING/CRANE'),
+  ('ROCKET PILLAR'), ('REPAIR'), ('ACRYLIC SANDWICH'), ('LIT FLANGE');
 
-INSERT IGNORE INTO stores (store_code, store_name, city, category, coordinator_name, coordinator_number) VALUES
-  ('STR-0451', 'Reliance Trends - Andheri West', 'Mumbai', 'MBO', 'Rahul Mehta', '+91 98200 11223'),
-  ('STR-0478', 'Croma - Powai', 'Mumbai', 'OT', 'Sneha Kulkarni', '+91 99870 44556'),
-  ('STR-0502', 'Vijay Sales - Thane', 'Thane', 'ISB', 'Amit Sharma', '+91 98330 77889'),
-  ('STR-0311', 'Big Bazaar - Malad', 'Mumbai', 'OT', 'Rahul Mehta', '+91 98200 11223'),
-  ('STR-0388', 'DMart - Kandivali', 'Mumbai', 'MBO', 'Sneha Kulkarni', '+91 99870 44556'),
-  ('STR-0450', 'Shoppers Stop - Ghatkopar', 'Mumbai', 'ISB', 'Amit Sharma', '+91 98330 77889'),
-  ('STR-0561', 'Croma - Vashi', 'Navi Mumbai', 'OT', 'Rahul Mehta', '+91 98200 11223'),
-  ('STR-0604', 'Reliance Digital - Borivali', 'Mumbai', 'MBO', 'Sneha Kulkarni', '+91 99870 44556');
+INSERT IGNORE INTO stores (store_code, store_name, address, phone, city, category, brand, ret_type) VALUES
+  ('626425',   'Sharma Electronics Store',        'Opp. HDFC Bank, Chandigarh Road, Samrala (LDH)', '9888908988, 9464681941', 'Ludhiana',     'Consumer Electronics', 'Mi',              ''),
+  ('STR-0478', 'Croma - Powai',                   'Powai Plaza, Powai',       '022-99870 44556', 'Mumbai',      'OT',  'Croma',            ''),
+  ('STR-0451', 'Reliance Trends - Andheri West',  'Link Road, Andheri West',  '022-98200 11223', 'Mumbai',      'MBO', 'Reliance',         ''),
+  ('STR-0502', 'Vijay Sales - Thane',             'Station Road, Thane West', '022-98330 77889', 'Thane',       'ISB', 'Vijay Sales',      ''),
+  ('STR-0311', 'Big Bazaar - Malad',              'Mindspace, Malad West',    '022-98200 11223', 'Mumbai',      'OT',  'Big Bazaar',       ''),
+  ('STR-0388', 'DMart - Kandivali',               'SV Road, Kandivali',       '022-99870 44556', 'Mumbai',      'MBO', 'DMart',            ''),
+  ('STR-0450', 'Shoppers Stop - Ghatkopar',       'R City Mall, Ghatkopar',   '022-98330 77889', 'Mumbai',      'ISB', 'Shoppers Stop',    ''),
+  ('STR-0604', 'Reliance Digital - Borivali',     'SV Road, Borivali West',   '022-99870 44556', 'Mumbai',      'OT',  'Reliance Digital', '');
