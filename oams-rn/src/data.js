@@ -33,5 +33,15 @@ export const DATA = {
     { storeCode: "STR-0388", storeName: "DMart - Kandivali", address: "SV Road, Kandivali", phone: "022-99870 44556", city: "Mumbai", category: "MBO", brand: "DMart", retType: "" },
     { storeCode: "STR-0450", storeName: "Shoppers Stop - Ghatkopar", address: "R City Mall, Ghatkopar", phone: "022-98330 77889", city: "Mumbai", category: "ISB", brand: "Shoppers Stop", retType: "" },
     { storeCode: "STR-0604", storeName: "Reliance Digital - Borivali", address: "SV Road, Borivali West", phone: "022-99870 44556", city: "Mumbai", category: "OT", brand: "Reliance Digital", retType: "" }
+  ],
+
+  // Planned elements per store (admin loads these from the Excel import).
+  // In Offline Mode the app shows these pre-filled; the field user just adds photos + a remark.
+  storeElements: [
+    { storeCode: "626425",   srNo: "1", brand: "Mi",    element: "GSB NEW",      width: 120, height: 36, qty: 1, sqft: 30,  remarks: "Main front board" },
+    { storeCode: "626425",   srNo: "2", brand: "Mi",    element: "SUNBOARD 3MM", width: 48,  height: 24, qty: 2, sqft: 16,  remarks: "Side panels" },
+    { storeCode: "626425",   srNo: "3", brand: "Mi",    element: "LIT CLIPON",   width: 36,  height: 36, qty: 1, sqft: 9,   remarks: "Entry clip-on" },
+    { storeCode: "STR-0478", srNo: "1", brand: "Croma", element: "VINYL",        width: 60,  height: 18, qty: 1, sqft: 7.5, remarks: "Window vinyl" },
+    { storeCode: "STR-0478", srNo: "2", brand: "Croma", element: "ACP BOARD",    width: 96,  height: 48, qty: 1, sqft: 32,  remarks: "Facade ACP" }
   ]
 };

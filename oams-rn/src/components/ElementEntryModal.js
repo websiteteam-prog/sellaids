@@ -12,8 +12,10 @@ export default function ElementEntryModal({ visible, initial, master, onCancel, 
   const [type, setType] = useState(types[0]);
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
+  const [qty, setQty] = useState("1");
   const [photos, setPhotos] = useState([]);
   const [remark, setRemark] = useState("");
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     if (!visible) return;
@@ -21,13 +23,17 @@ export default function ElementEntryModal({ visible, initial, master, onCancel, 
     setType(it ? it.type : types[0]);
     setWidth(it ? String(it.width) : "");
     setHeight(it ? String(it.height) : "");
+    setQty(it && it.qty ? String(it.qty) : "1");
     setPhotos(it && it.photos ? it.photos.slice() : []);
-    setRemark(it ? it.remark : "");
+    setRemark(it && it.remark ? it.remark : "");
+    setNote(it && it.note ? it.note : "");
   }, [visible]);
 
   const w = parseFloat(width) || 0;
   const h = parseFloat(height) || 0;
+  const q = parseInt(qty, 10) || 0;
   const total = w * h ? (w * h).toFixed(2) : "0";
+  const sqft = w * h * q ? ((w * h * q) / 144).toFixed(2) : "0";
 
   function addPhoto() {
     pickImage((d) => setPhotos((prev) => [...prev, d]), onError);
@@ -38,9 +44,10 @@ export default function ElementEntryModal({ visible, initial, master, onCancel, 
 
   function save() {
     if (!w || !h) { onError && onError("Please enter Width and Height."); return; }
+    if (!q) { onError && onError("Please enter Quantity (Qty)."); return; }
     if (photos.length < 1) { onError && onError("Add at least one photo of the element."); return; }
     if (!remark.trim()) { onError && onError("Remark is required for this element."); return; }
-    onSave({ type, width: w, height: h, total, photos, remark: remark.trim() });
+    onSave({ type, width: w, height: h, qty: q, total, sqft, photos, remark: remark.trim(), note, planned: !!(initial && initial.planned) });
   }
 
   return (
@@ -49,20 +56,38 @@ export default function ElementEntryModal({ visible, initial, master, onCancel, 
         <View style={st.popup}>
           <Text style={st.title}>Add Element</Text>
           <ScrollView style={{ maxHeight: 500 }} keyboardShouldPersistTaps="handled">
-            <Select label="What is it?" value={type} options={types} onChange={setType} />
+            <Select label="Element (What is it?)" value={type} options={types} onChange={setType} />
+
+            {note ? (
+              <View style={st.noteBox}>
+                <Text style={st.noteTxt}>📋 Planned: {note}</Text>
+              </View>
+            ) : null}
 
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <View style={{ width: "48%" }}>
+              <View style={{ width: "31%" }}>
                 <Text style={st.lbl}>Width (Inch)</Text>
                 <TextInput style={st.input} value={width} onChangeText={setWidth} keyboardType="numeric" placeholder="0" placeholderTextColor="#aab2c0" />
               </View>
-              <View style={{ width: "48%" }}>
+              <View style={{ width: "31%" }}>
                 <Text style={st.lbl}>Height (Inch)</Text>
                 <TextInput style={st.input} value={height} onChangeText={setHeight} keyboardType="numeric" placeholder="0" placeholderTextColor="#aab2c0" />
               </View>
+              <View style={{ width: "31%" }}>
+                <Text style={st.lbl}>Qty</Text>
+                <TextInput style={st.input} value={qty} onChangeText={setQty} keyboardType="numeric" placeholder="1" placeholderTextColor="#aab2c0" />
+              </View>
             </View>
-            <Text style={st.lbl}>Total (Inch) — auto</Text>
-            <TextInput style={[st.input, { backgroundColor: "#f3f4f6", color: C.muted }]} value={total} editable={false} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View style={{ width: "48%" }}>
+                <Text style={st.lbl}>Total (Inch) — auto</Text>
+                <TextInput style={[st.input, { backgroundColor: "#f3f4f6", color: C.muted }]} value={total} editable={false} />
+              </View>
+              <View style={{ width: "48%" }}>
+                <Text style={st.lbl}>SQFT — auto</Text>
+                <TextInput style={[st.input, { backgroundColor: "#f3f4f6", color: C.muted }]} value={sqft} editable={false} />
+              </View>
+            </View>
 
             <Text style={st.section}>Element Photos</Text>
             <View style={st.imgWrap}>
@@ -100,6 +125,8 @@ const st = StyleSheet.create({
   lbl: { fontSize: 12.5, color: C.muted, marginBottom: 6, fontWeight: "600", marginTop: 6 },
   input: { borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 15, backgroundColor: "#fff", color: C.text, marginBottom: 4 },
   section: { fontSize: 12.5, color: C.navy, fontWeight: "700", marginTop: 14, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 },
+  noteBox: { backgroundColor: "#eef4ff", borderRadius: 8, padding: 8, marginTop: 8, marginBottom: 2, borderLeftWidth: 3, borderLeftColor: C.navy },
+  noteTxt: { color: C.navy, fontSize: 12.5 },
   imgWrap: { flexDirection: "row", flexWrap: "wrap" },
   thumbBox: { width: 80, height: 80, marginRight: 8, marginBottom: 8, borderRadius: 10, overflow: "hidden", position: "relative" },
   thumb: { width: "100%", height: "100%" },

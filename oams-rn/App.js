@@ -17,7 +17,7 @@ const SCREENS = {
 export default function App() {
   const [stack, setStack] = useState([{ name: "login", params: {} }]);
   const [session, setSession] = useState(null);
-  const [master, setMaster] = useState({ elementTypes: DATA.elementTypes, surfaces: DATA.surfaces });
+  const [master, setMaster] = useState({ elementTypes: DATA.elementTypes });
   const flowRef = useRef({ mode: "Recce", store: null, work: null });
 
   const [spin, setSpin] = useState({ visible: false, text: "" });

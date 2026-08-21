@@ -1,5 +1,4 @@
 {
-  "_readme": "DUMMY DATABASE (local dev). Production uses MySQL via .env.",
   "admins": [
     {
       "username": "admin",
@@ -125,6 +124,63 @@
       "category": "OT",
       "brand": "Reliance Digital",
       "retType": ""
+    }
+  ],
+  "storeElements": [
+    {
+      "storeCode": "626425",
+      "srNo": "1",
+      "brand": "Mi",
+      "element": "GSB NEW",
+      "width": 120,
+      "height": 36,
+      "qty": 1,
+      "sqft": 30,
+      "remarks": "Main front board"
+    },
+    {
+      "storeCode": "626425",
+      "srNo": "2",
+      "brand": "Mi",
+      "element": "SUNBOARD 3MM",
+      "width": 48,
+      "height": 24,
+      "qty": 2,
+      "sqft": 16,
+      "remarks": "Side panels"
+    },
+    {
+      "storeCode": "626425",
+      "srNo": "3",
+      "brand": "Mi",
+      "element": "LIT CLIPON",
+      "width": 36,
+      "height": 36,
+      "qty": 1,
+      "sqft": 9,
+      "remarks": "Entry clip-on"
+    },
+    {
+      "storeCode": "STR-0478",
+      "srNo": "1",
+      "brand": "Croma",
+      "element": "VINYL",
+      "width": 60,
+      "height": 18,
+      "qty": 1,
+      "sqft": 7.5,
+      "remarks": "Window vinyl"
+    },
+    {
+      "storeCode": "STR-0478",
+      "srNo": "2",
+      "brand": "Croma",
+      "element": "ACP BOARD",
+      "width": 96,
+      "height": 48,
+      "qty": 1,
+      "sqft": 32,
+      "remarks": "Facade ACP"
     }
   ],
   "submissions": []

@@ -13,7 +13,18 @@ export default function StoreRecceScreen({ nav, app }) {
 
   const [storeImages, setStoreImages] = useState([]);
   const [storeRemark, setStoreRemark] = useState("");
-  const [elements, setElements] = useState([]);
+  // Pre-load the planned elements the admin assigned to this store (from the Excel import).
+  const [elements, setElements] = useState(() =>
+    (store.elements || []).map((e) => {
+      const w = Number(e.width || 0), h = Number(e.height || 0), qv = Number(e.qty || 1) || 1;
+      return {
+        type: e.element, width: w, height: h, qty: qv,
+        total: (w * h).toFixed(2),
+        sqft: e.sqft || +(((w * h * qv) / 144).toFixed(2)),
+        note: e.remarks || "", photos: [], remark: "", planned: true
+      };
+    })
+  );
   const [finalRemark, setFinalRemark] = useState("");
 
   const [elemModal, setElemModal] = useState(false);
@@ -44,6 +55,11 @@ export default function StoreRecceScreen({ nav, app }) {
     if (storeImages.length < 1) { app.toast("Store Photos", "Please add store photos from different angles."); return; }
     if (!storeRemark.trim()) { app.toast("Remark", "Please add a remark for the store photos."); return; }
     if (elements.length === 0) { app.toast("Elements", "Add at least one element."); return; }
+    const incomplete = elements.filter((e) => !(e.photos && e.photos.length >= 1 && e.remark && e.remark.trim()));
+    if (incomplete.length) {
+      app.toast("Elements incomplete", "Add at least one photo and a remark for: " + incomplete.map((e) => e.type).join(", "));
+      return;
+    }
     const work = { storeImages, storeRemark: storeRemark.trim(), elements, finalRemark: finalRemark.trim() };
     app.spinner(true, "Submitting…");
     const res = await submitRecce(store, work, user);
@@ -85,26 +101,38 @@ export default function StoreRecceScreen({ nav, app }) {
           placeholder="e.g. facade condition, footfall side, obstructions…" placeholderTextColor="#aab2c0" multiline />
 
         {/* ELEMENTS */}
-        <SectionLabel>Elements</SectionLabel>
+        <SectionLabel>Elements {elements.length ? "(" + elements.filter((e) => e.photos.length >= 1 && e.remark).length + "/" + elements.length + " done)" : ""}</SectionLabel>
+        {elements.length > 0 ? (
+          <Text style={st.hint}>Tap each element to add its photo(s) and a remark.</Text>
+        ) : null}
         {elements.length === 0 ? (
           <View style={st.emptyBox}><Text style={{ color: C.muted }}>No element added yet</Text></View>
         ) : (
-          elements.map((el, idx) => (
-            <View key={idx} style={st.elCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={st.elTitle}>{el.type}</Text>
-                <Text style={st.elMeta}>W {el.width}" × H {el.height}" = {el.total}"</Text>
-                <Text style={st.elMeta}>📷 {el.photos.length} photo(s)</Text>
-                {el.remark ? <Text style={st.elRemark}>“{el.remark}”</Text> : null}
-              </View>
-              <View>
-                <TouchableOpacity style={st.mini} onPress={() => openElement(idx)}><Text>✏️</Text></TouchableOpacity>
-                <TouchableOpacity style={[st.mini, { marginTop: 6 }]} onPress={() => deleteElement(idx)}><Text style={{ color: C.danger }}>✕</Text></TouchableOpacity>
-              </View>
-            </View>
-          ))
+          elements.map((el, idx) => {
+            const done = el.photos.length >= 1 && !!el.remark;
+            return (
+              <TouchableOpacity key={idx} style={[st.elCard, done ? st.elCardDone : st.elCardPending]} onPress={() => openElement(idx)} activeOpacity={0.85}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <Text style={st.elTitle}>{el.type}</Text>
+                    <View style={[st.badge, done ? st.badgeDone : st.badgePending]}>
+                      <Text style={[st.badgeTxt, { color: done ? "#0f7a3d" : "#9a6a00" }]}>{done ? "✓ Done" : "Pending"}</Text>
+                    </View>
+                  </View>
+                  <Text style={st.elMeta}>W {el.width}" × H {el.height}" · Qty {el.qty} · {el.sqft} sqft</Text>
+                  <Text style={st.elMeta}>📷 {el.photos.length} photo(s)</Text>
+                  {el.note ? <Text style={st.elNote}>📋 {el.note}</Text> : null}
+                  {el.remark ? <Text style={st.elRemark}>“{el.remark}”</Text> : null}
+                </View>
+                <View>
+                  <TouchableOpacity style={st.mini} onPress={() => openElement(idx)}><Text>✏️</Text></TouchableOpacity>
+                  <TouchableOpacity style={[st.mini, { marginTop: 6 }]} onPress={() => deleteElement(idx)}><Text style={{ color: C.danger }}>✕</Text></TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
-        <Btn title="＋ Add Element" onPress={() => openElement(null)} />
+        <Btn title="＋ Add Element" kind="outline" onPress={() => openElement(null)} />
 
         {/* FINAL REMARK */}
         <Text style={[st.lbl, { marginTop: 16 }]}>Final remark (optional)</Text>
@@ -154,10 +182,18 @@ const st = StyleSheet.create({
   count: { fontSize: 13, color: C.muted, marginTop: 2, marginBottom: 8, fontWeight: "600" },
   lbl: { fontSize: 12.5, color: C.muted, marginBottom: 6, fontWeight: "600", marginTop: 6 },
   input: { borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 15, backgroundColor: "#fff", color: C.text },
+  hint: { fontSize: 12, color: C.muted, marginBottom: 8, marginTop: -2 },
   emptyBox: { backgroundColor: C.card, borderRadius: 12, padding: 20, alignItems: "center", marginBottom: 10 },
-  elCard: { backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 10, flexDirection: "row" },
-  elTitle: { fontWeight: "700", color: C.navy, marginBottom: 3, fontSize: 15 },
+  elCard: { backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 10, flexDirection: "row", borderLeftWidth: 4 },
+  elCardDone: { borderLeftColor: C.success },
+  elCardPending: { borderLeftColor: "#e0a500" },
+  elTitle: { fontWeight: "700", color: C.navy, fontSize: 15 },
+  badge: { marginLeft: 8, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 1 },
+  badgeDone: { backgroundColor: "#d7f2e1" },
+  badgePending: { backgroundColor: "#fdefc9" },
+  badgeTxt: { fontSize: 11, fontWeight: "700" },
   elMeta: { fontSize: 12, color: C.muted, marginTop: 1 },
+  elNote: { fontSize: 12, color: C.navy, marginTop: 3 },
   elRemark: { fontSize: 12, color: C.text, fontStyle: "italic", marginTop: 4 },
   mini: { width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
   bottom: { padding: 14, backgroundColor: C.card, borderTopWidth: 1, borderTopColor: C.line }

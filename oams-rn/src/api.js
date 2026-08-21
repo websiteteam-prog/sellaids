@@ -38,18 +38,25 @@ export async function getMaster() {
   return fallback;
 }
 
+// attach each store's planned elements (from the offline demo data)
+function withElements(store) {
+  return Object.assign({}, store, {
+    elements: (DATA.storeElements || []).filter((e) => String(e.storeCode) === String(store.storeCode))
+  });
+}
+
 // stores whose recce is NOT yet done
 export async function getStores() {
   if (!BASE) {
     const done = await getDone();
-    return DATA.stores.filter((s) => !done[s.storeCode]);
+    return DATA.stores.filter((s) => !done[s.storeCode]).map(withElements);
   }
   try {
     const r = await fetch(BASE + "/stores", { headers: await authHeaders() });
-    if (r.ok) return await r.json();  // backend already excludes done stores
+    if (r.ok) return await r.json();  // backend already excludes done stores AND attaches elements
   } catch (e) {}
   const done = await getDone();
-  return DATA.stores.filter((s) => !done[s.storeCode]);
+  return DATA.stores.filter((s) => !done[s.storeCode]).map(withElements);
 }
 
 // submit a completed recce (store + user + full work incl photos).

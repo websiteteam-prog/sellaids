@@ -31,6 +31,15 @@ const DEFAULT_STORES = [
   { storeCode: "STR-0450", storeName: "Shoppers Stop - Ghatkopar", address: "R City Mall, Ghatkopar", phone: "022-98330 77889", city: "Mumbai", category: "ISB", brand: "Shoppers Stop", retType: "" },
   { storeCode: "STR-0604", storeName: "Reliance Digital - Borivali", address: "SV Road, Borivali West", phone: "022-99870 44556", city: "Mumbai", category: "OT", brand: "Reliance Digital", retType: "" }
 ];
+// Planned elements per store (admin loads these via the Excel import).
+// Each row = one element the field user must recce for that dealer/store.
+const DEFAULT_STORE_ELEMENTS = [
+  { storeCode: "626425",   srNo: "1", brand: "Mi",    element: "GSB NEW",      width: 120, height: 36, qty: 1, sqft: 30,  remarks: "Main front board" },
+  { storeCode: "626425",   srNo: "2", brand: "Mi",    element: "SUNBOARD 3MM", width: 48,  height: 24, qty: 2, sqft: 16,  remarks: "Side panels" },
+  { storeCode: "626425",   srNo: "3", brand: "Mi",    element: "LIT CLIPON",   width: 36,  height: 36, qty: 1, sqft: 9,   remarks: "Entry clip-on" },
+  { storeCode: "STR-0478", srNo: "1", brand: "Croma", element: "VINYL",        width: 60,  height: 18, qty: 1, sqft: 7.5, remarks: "Window vinyl" },
+  { storeCode: "STR-0478", srNo: "2", brand: "Croma", element: "ACP BOARD",    width: 96,  height: 48, qty: 1, sqft: 32,  remarks: "Facade ACP" }
+];
 
 function safeJson(s) { try { return typeof s === "string" ? JSON.parse(s) : (s || []); } catch (e) { return []; } }
 function uniq(a) { return Array.from(new Set(a.filter(Boolean))); }
@@ -42,6 +51,7 @@ function mysqlBackend() {
   async function q(sql, p) { const [r] = await pool.execute(sql, p || []); return r; }
 
   const storeRow = (r) => ({ storeCode: r.store_code, storeName: r.store_name, address: r.address, phone: r.phone, city: r.city, category: r.category, brand: r.brand, retType: r.ret_type });
+  const seRow = (r) => ({ srNo: r.sr_no, brand: r.brand, element: r.element, width: Number(r.width) || 0, height: Number(r.height) || 0, qty: Number(r.qty) || 0, sqft: Number(r.sqft) || 0, remarks: r.remarks || "" });
   const subRow = (r) => ({
     id: r.id, storeCode: r.store_code, storeName: r.store_name, city: r.city, category: r.category,
     userEmpCode: r.user_emp_code, userName: r.user_name, storePhotoCount: r.store_photo_count,
@@ -62,6 +72,10 @@ function mysqlBackend() {
       await q(`CREATE TABLE IF NOT EXISTS users (emp_code VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128), mode VARCHAR(32))`);
       await q(`CREATE TABLE IF NOT EXISTS stores (store_code VARCHAR(64) PRIMARY KEY, store_name VARCHAR(255), address VARCHAR(255), phone VARCHAR(128), city VARCHAR(128), category VARCHAR(64), brand VARCHAR(128), ret_type VARCHAR(64))`);
       await q(`CREATE TABLE IF NOT EXISTS element_types (name VARCHAR(128) PRIMARY KEY)`);
+      await q(`CREATE TABLE IF NOT EXISTS store_elements (
+        id INT AUTO_INCREMENT PRIMARY KEY, store_code VARCHAR(64), sr_no VARCHAR(32), brand VARCHAR(128),
+        element VARCHAR(128), width DECIMAL(10,2), height DECIMAL(10,2), qty INT, sqft DECIMAL(12,2), remarks TEXT,
+        INDEX idx_store_code (store_code))`);
       await q(`CREATE TABLE IF NOT EXISTS submissions (
         id VARCHAR(64) PRIMARY KEY, store_code VARCHAR(64), store_name VARCHAR(255), city VARCHAR(128), category VARCHAR(64),
         user_emp_code VARCHAR(64), user_name VARCHAR(128), store_photo_count INT, store_remark TEXT, final_remark TEXT,
@@ -75,6 +89,9 @@ function mysqlBackend() {
           [s.storeCode, s.storeName, s.address, s.phone, s.city, s.category, s.brand, s.retType]);
       if ((await q(`SELECT COUNT(*) c FROM users`))[0].c === 0)
         for (const u of DEFAULT_USERS) await q(`INSERT INTO users (emp_code,password,name,mode) VALUES (?,?,?,?)`, [u.empCode, u.password, u.name, u.mode]);
+      if ((await q(`SELECT COUNT(*) c FROM store_elements`))[0].c === 0)
+        for (const e of DEFAULT_STORE_ELEMENTS) await q(`INSERT INTO store_elements (store_code,sr_no,brand,element,width,height,qty,sqft,remarks) VALUES (?,?,?,?,?,?,?,?,?)`,
+          [e.storeCode, e.srNo, e.brand, e.element, e.width, e.height, e.qty, e.sqft, e.remarks]);
       console.log("[db] MySQL connected:", process.env.DB_NAME);
     },
     async adminByUsername(u) { const r = await q(`SELECT * FROM admins WHERE LOWER(username)=LOWER(?)`, [u]); return r[0] || null; },
@@ -86,7 +103,36 @@ function mysqlBackend() {
     },
     async deleteUser(c) { return (await q(`DELETE FROM users WHERE LOWER(emp_code)=LOWER(?)`, [c])).affectedRows; },
     async listElementTypes() { return (await q(`SELECT name FROM element_types ORDER BY name`)).map((x) => x.name); },
-    async listPendingStores() { return (await q(`SELECT * FROM stores WHERE store_code NOT IN (SELECT DISTINCT store_code FROM submissions) ORDER BY store_name`)).map(storeRow); },
+    async listStoreElements(code) { return (await q(`SELECT * FROM store_elements WHERE store_code=? ORDER BY id`, [code])).map(seRow); },
+    async listPendingStores() {
+      const stores = (await q(`SELECT * FROM stores WHERE store_code NOT IN (SELECT DISTINCT store_code FROM submissions) ORDER BY store_name`)).map(storeRow);
+      const els = (await q(`SELECT * FROM store_elements ORDER BY id`)).map((r) => Object.assign(seRow(r), { storeCode: r.store_code }));
+      return stores.map((s) => Object.assign({}, s, { elements: els.filter((e) => e.storeCode === s.storeCode) }));
+    },
+    async listDealers() {
+      const stores = (await q(`SELECT * FROM stores ORDER BY store_name`)).map(storeRow);
+      const counts = await q(`SELECT store_code, COUNT(*) c FROM store_elements GROUP BY store_code`);
+      const done = new Set((await q(`SELECT DISTINCT store_code FROM submissions`)).map((r) => r.store_code));
+      const cmap = {}; counts.forEach((r) => { cmap[r.store_code] = r.c; });
+      return stores.map((s) => Object.assign({}, s, { elementCount: cmap[s.storeCode] || 0, done: done.has(s.storeCode) }));
+    },
+    async importDealers(dealers) {
+      let storesAdded = 0, storesUpdated = 0, elements = 0;
+      for (const d of dealers) {
+        const exists = (await q(`SELECT store_code FROM stores WHERE LOWER(store_code)=LOWER(?)`, [d.storeCode])).length;
+        await q(`INSERT INTO stores (store_code,store_name,address,phone,city,category,brand,ret_type) VALUES (?,?,?,?,?,?,?,?)
+                 ON DUPLICATE KEY UPDATE store_name=VALUES(store_name), address=VALUES(address), phone=VALUES(phone), city=VALUES(city), brand=VALUES(brand)`,
+          [d.storeCode, d.storeName, d.address, d.phone, d.city, d.category || "", d.brand, d.retType || ""]);
+        if (exists) storesUpdated++; else storesAdded++;
+        await q(`DELETE FROM store_elements WHERE LOWER(store_code)=LOWER(?)`, [d.storeCode]);
+        for (const e of (d.elements || [])) {
+          await q(`INSERT INTO store_elements (store_code,sr_no,brand,element,width,height,qty,sqft,remarks) VALUES (?,?,?,?,?,?,?,?,?)`,
+            [d.storeCode, e.srNo || "", e.brand || d.brand || "", e.element, e.width || 0, e.height || 0, e.qty || 0, e.sqft || 0, e.remarks || ""]);
+          elements++;
+        }
+      }
+      return { dealers: dealers.length, storesAdded, storesUpdated, elements };
+    },
     async addSubmission(s) {
       await q(`INSERT INTO submissions (id,store_code,store_name,city,category,user_emp_code,user_name,store_photo_count,store_remark,final_remark,elements_count,elements_json,ppt_file,submitted_at)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -119,7 +165,8 @@ function jsonBackend() {
   return {
     engine: "json",
     async init() {
-      if (!fs.existsSync(FILE)) save({ admins: DEFAULT_ADMINS, users: DEFAULT_USERS, elementTypes: DEFAULT_ELEMENT_TYPES, stores: DEFAULT_STORES, submissions: [] });
+      if (!fs.existsSync(FILE)) save({ admins: DEFAULT_ADMINS, users: DEFAULT_USERS, elementTypes: DEFAULT_ELEMENT_TYPES, stores: DEFAULT_STORES, storeElements: DEFAULT_STORE_ELEMENTS, submissions: [] });
+      else { const db = load(); if (!db.storeElements) { db.storeElements = DEFAULT_STORE_ELEMENTS; save(db); } }
       console.log("[db] using db.json (local dev)");
     },
     async adminByUsername(u) { return (load().admins || []).find((a) => String(a.username).toLowerCase() === String(u).toLowerCase()) || null; },
@@ -132,7 +179,36 @@ function jsonBackend() {
     },
     async deleteUser(c) { const db = load(); const b = (db.users || []).length; db.users = (db.users || []).filter((x) => String(x.empCode).toLowerCase() !== String(c).toLowerCase()); save(db); return b - db.users.length; },
     async listElementTypes() { return load().elementTypes || []; },
-    async listPendingStores() { const db = load(); const done = new Set((db.submissions || []).map((s) => s.storeCode)); return (db.stores || []).filter((s) => !done.has(s.storeCode)); },
+    async listStoreElements(code) { return (load().storeElements || []).filter((e) => String(e.storeCode) === String(code)); },
+    async listPendingStores() {
+      const db = load(); const done = new Set((db.submissions || []).map((s) => s.storeCode)); const se = db.storeElements || [];
+      return (db.stores || []).filter((s) => !done.has(s.storeCode))
+        .map((s) => Object.assign({}, s, { elements: se.filter((e) => String(e.storeCode) === String(s.storeCode)) }));
+    },
+    async listDealers() {
+      const db = load(); const done = new Set((db.submissions || []).map((s) => s.storeCode)); const se = db.storeElements || [];
+      return (db.stores || []).map((s) => Object.assign({}, s, {
+        elementCount: se.filter((e) => String(e.storeCode) === String(s.storeCode)).length, done: done.has(s.storeCode)
+      }));
+    },
+    async importDealers(dealers) {
+      const db = load(); db.stores = db.stores || []; db.storeElements = db.storeElements || [];
+      let storesAdded = 0, storesUpdated = 0, elements = 0;
+      for (const d of dealers) {
+        const key = String(d.storeCode).toLowerCase();
+        const idx = db.stores.findIndex((s) => String(s.storeCode).toLowerCase() === key);
+        const rec = { storeCode: d.storeCode, storeName: d.storeName, address: d.address, phone: d.phone, city: d.city, category: d.category || "", brand: d.brand, retType: d.retType || "" };
+        if (idx >= 0) { db.stores[idx] = Object.assign({}, db.stores[idx], rec); storesUpdated++; }
+        else { db.stores.push(rec); storesAdded++; }
+        db.storeElements = db.storeElements.filter((e) => String(e.storeCode).toLowerCase() !== key);
+        (d.elements || []).forEach((e) => {
+          db.storeElements.push({ storeCode: d.storeCode, srNo: e.srNo || "", brand: e.brand || d.brand || "", element: e.element, width: e.width || 0, height: e.height || 0, qty: e.qty || 0, sqft: e.sqft || 0, remarks: e.remarks || "" });
+          elements++;
+        });
+      }
+      save(db);
+      return { dealers: dealers.length, storesAdded, storesUpdated, elements };
+    },
     async addSubmission(s) { const db = load(); db.submissions = db.submissions || []; db.submissions.push(s); save(db); },
     async listSubmissions(f) {
       f = f || {}; let list = (load().submissions || []).slice().reverse();

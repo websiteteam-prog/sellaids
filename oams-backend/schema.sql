@@ -35,6 +35,21 @@ CREATE TABLE IF NOT EXISTS element_types (
   name VARCHAR(128) PRIMARY KEY
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Planned elements per store/dealer (admin loads these via the Excel import).
+CREATE TABLE IF NOT EXISTS store_elements (
+  id       INT AUTO_INCREMENT PRIMARY KEY,
+  store_code VARCHAR(64),
+  sr_no    VARCHAR(32),
+  brand    VARCHAR(128),
+  element  VARCHAR(128),
+  width    DECIMAL(10,2),
+  height   DECIMAL(10,2),
+  qty      INT,
+  sqft     DECIMAL(12,2),
+  remarks  TEXT,
+  INDEX idx_store_code (store_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS submissions (
   id                VARCHAR(64) PRIMARY KEY,
   store_code        VARCHAR(64),
@@ -78,3 +93,11 @@ INSERT IGNORE INTO stores (store_code, store_name, address, phone, city, categor
   ('STR-0388', 'DMart - Kandivali',               'SV Road, Kandivali',       '022-99870 44556', 'Mumbai',      'MBO', 'DMart',            ''),
   ('STR-0450', 'Shoppers Stop - Ghatkopar',       'R City Mall, Ghatkopar',   '022-98330 77889', 'Mumbai',      'ISB', 'Shoppers Stop',    ''),
   ('STR-0604', 'Reliance Digital - Borivali',     'SV Road, Borivali West',   '022-99870 44556', 'Mumbai',      'OT',  'Reliance Digital', '');
+
+-- Demo planned elements (admin normally loads these from the Excel import)
+INSERT IGNORE INTO store_elements (store_code, sr_no, brand, element, width, height, qty, sqft, remarks) VALUES
+  ('626425',   '1', 'Mi',    'GSB NEW',      120, 36, 1, 30,   'Main front board'),
+  ('626425',   '2', 'Mi',    'SUNBOARD 3MM', 48,  24, 2, 16,   'Side panels'),
+  ('626425',   '3', 'Mi',    'LIT CLIPON',   36,  36, 1, 9,    'Entry clip-on'),
+  ('STR-0478', '1', 'Croma', 'VINYL',        60,  18, 1, 7.5,  'Window vinyl'),
+  ('STR-0478', '2', 'Croma', 'ACP BOARD',    96,  48, 1, 32,   'Facade ACP');

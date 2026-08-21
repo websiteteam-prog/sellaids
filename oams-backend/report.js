@@ -64,9 +64,13 @@ async function buildPptxBuffer(store, work, meta) {
     header(s, pptx, store, el.type || "Element");
     s.addText((el.type || "") + "   :   " + (el.width || "") + "'' X " + (el.height || "") + "''",
       { x: 0.4, y: 2.25, w: 12.5, h: 0.4, fontSize: 16, bold: true, color: NAVY });
-    s.addText("REMARKS : " + (el.remark || ""), { x: 0.4, y: 2.75, w: 12.5, h: 0.5, fontSize: 13, color: "333333" });
+    const meta = [];
+    if (el.qty) meta.push("QTY : " + el.qty);
+    if (el.sqft) meta.push("SQFT : " + el.sqft);
+    if (meta.length) s.addText(meta.join("       "), { x: 0.4, y: 2.66, w: 12.5, h: 0.3, fontSize: 12, bold: true, color: "555555" });
+    s.addText("REMARKS : " + (el.remark || ""), { x: 0.4, y: 2.96, w: 12.5, h: 0.5, fontSize: 13, color: "333333" });
     // photos (2 x 2)
-    const pos = [[0.6, 3.35], [6.9, 3.35], [0.6, 5.45], [6.9, 5.45]];
+    const pos = [[0.6, 3.5], [6.9, 3.5], [0.6, 5.5], [6.9, 5.5]];
     eph.slice(0, 4).forEach((d, k) => img(s, d, pos[k][0], pos[k][1], 5.8, 1.95));
     footer(s, meta);
     // extra element photos on more slides

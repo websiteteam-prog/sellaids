@@ -77,6 +77,7 @@
   </header>
   <div class="tabs">
     <button class="tab active" id="tabRecces" onclick="showTab('recces')">Recces</button>
+    <button class="tab" id="tabDealers" onclick="showTab('dealers')">Dealers / Import</button>
     <button class="tab" id="tabUsers" onclick="showTab('users')">Users</button>
   </div>
 
@@ -111,6 +112,28 @@
           <tbody id="reccesBody"></tbody>
         </table>
         <div id="reccesEmpty" class="empty hidden">No recces found.</div>
+      </div>
+    </div>
+
+    <!-- DEALERS / IMPORT -->
+    <div id="viewDealers" class="hidden">
+      <div class="card">
+        <h3 class="sec">Import dealers &amp; elements from Excel</h3>
+        <p class="muted" style="margin-top:0">Fill the template (one row per element; repeat the dealer for each element) and upload it. Existing dealers are updated by <b>Dealer Code</b>; their element list is refreshed.</p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input id="xlFile" type="file" accept=".xlsx,.xls" />
+          <button class="btn sm" onclick="importExcel()">⬆ Upload &amp; Import</button>
+          <a class="btn outline sm" id="tmplLink" href="#" onclick="return dlTemplate()">⬇ Download blank template</a>
+        </div>
+        <div class="err" id="importMsg" style="color:var(--success)"></div>
+      </div>
+      <div class="card">
+        <h3 class="sec">Dealers (<span id="dealerCount">0</span>)</h3>
+        <table>
+          <thead><tr><th>Code</th><th>Dealer</th><th>City</th><th>Brand</th><th>Elements</th><th>Status</th></tr></thead>
+          <tbody id="dealersBody"></tbody>
+        </table>
+        <div id="dealersEmpty" class="empty hidden">No dealers yet. Upload an Excel to add them.</div>
       </div>
     </div>
 
@@ -161,13 +184,56 @@ async function doLogin() {
 }
 function logout(){ TOKEN=""; sessionStorage.removeItem("oams_admin_token"); document.getElementById("app").classList.add("hidden"); document.getElementById("login").classList.remove("hidden"); }
 
-function enterApp(){ document.getElementById("login").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); showTab("recces"); loadFilters(); loadRecces(); loadUsers(); }
+function enterApp(){ document.getElementById("login").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); showTab("recces"); loadFilters(); loadRecces(); loadUsers(); loadDealers(); }
 
 function showTab(t){
   document.getElementById("viewRecces").classList.toggle("hidden", t!=="recces");
+  document.getElementById("viewDealers").classList.toggle("hidden", t!=="dealers");
   document.getElementById("viewUsers").classList.toggle("hidden", t!=="users");
   document.getElementById("tabRecces").classList.toggle("active", t==="recces");
+  document.getElementById("tabDealers").classList.toggle("active", t==="dealers");
   document.getElementById("tabUsers").classList.toggle("active", t==="users");
+  if(t==="dealers") loadDealers();
+}
+
+function dlTemplate(){ window.open(location.origin + "/api/admin/template.xlsx?t=" + encodeURIComponent(TOKEN), "_blank"); return false; }
+
+async function loadDealers(){
+  try{
+    const r = await fetch(API + "/admin/dealers", { headers: h() });
+    if(r.status===401){ logout(); return; }
+    const list = await r.json();
+    const body=document.getElementById("dealersBody"); body.innerHTML="";
+    document.getElementById("dealerCount").textContent=list.length;
+    document.getElementById("dealersEmpty").classList.toggle("hidden", list.length>0);
+    list.forEach(d=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td><b>${esc(d.storeCode)}</b></td><td>${esc(d.storeName)}</td><td>${esc(d.city||"")}</td>
+        <td>${esc(d.brand||"")}</td><td>${d.elementCount||0}</td>
+        <td>${d.done?'<span class="badge" style="background:#d7f2e1;color:#0f7a3d">Done</span>':'<span class="badge" style="background:#fdefc9;color:#9a6a00">Pending</span>'}</td>`;
+      body.appendChild(tr);
+    });
+  }catch(e){}
+}
+
+function importExcel(){
+  const inp=document.getElementById("xlFile");
+  const msg=document.getElementById("importMsg");
+  msg.style.color="var(--danger)"; msg.textContent="";
+  if(!inp.files || !inp.files[0]){ msg.textContent="Please choose an Excel file first."; return; }
+  const reader=new FileReader();
+  reader.onload=async function(){
+    try{
+      const b64=String(reader.result).replace(/^data:.*;base64,/,"");
+      const r=await fetch(API + "/admin/import", { method:"POST", headers:h(), body: JSON.stringify({fileBase64:b64}) });
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok){ msg.style.color="var(--danger)"; msg.textContent=d.error||"Import failed."; return; }
+      msg.style.color="var(--success)";
+      msg.textContent="Imported "+d.dealers+" dealer(s): "+d.storesAdded+" added, "+d.storesUpdated+" updated, "+d.elements+" element(s).";
+      inp.value=""; loadDealers();
+    }catch(e){ msg.style.color="var(--danger)"; msg.textContent="Import failed: "+e.message; }
+  };
+  reader.readAsDataURL(inp.files[0]);
 }
 
 function clearFilters(){ ["fq","fuser","fcity","fcat","ffrom","fto"].forEach(id=>document.getElementById(id).value=""); loadRecces(); }

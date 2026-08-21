@@ -30,7 +30,7 @@ export default function LoginScreen({ nav, app }) {
 
   async function afterAuth(name, offline) {
     app.setSession({ empCode: empCode || "OFFLINE", name: name || empCode, mode, offline: !!offline });
-    const m = offline ? { elementTypes: DATA.elementTypes, surfaces: DATA.surfaces } : await getMaster();
+    const m = offline ? { elementTypes: DATA.elementTypes } : await getMaster();
     app.setMaster(m);
     if (offline) { setWelcomeVisible(true); return; }
     setSyncDone(0);
