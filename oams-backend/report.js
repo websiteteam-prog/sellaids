@@ -24,8 +24,42 @@ function header(slide, pptx, store, section) {
   slide.addText(String(section || "").toUpperCase(), { x: 0.4, y: 1.6, w: 12.5, h: 0.45, fontSize: 15, bold: true, color: NAVY, align: "center" });
 }
 
+// Read intrinsic pixel size from a base64 JPEG/PNG data URL (so we can keep aspect ratio).
+function imageSize(dataUrl) {
+  try {
+    const i = String(dataUrl).indexOf("base64,");
+    if (i < 0) return null;
+    const buf = Buffer.from(dataUrl.slice(i + 7), "base64");
+    if (buf.length > 24 && buf[0] === 0x89 && buf[1] === 0x50) { // PNG
+      return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+    }
+    if (buf.length > 4 && buf[0] === 0xFF && buf[1] === 0xD8) { // JPEG
+      let o = 2;
+      while (o + 9 < buf.length) {
+        if (buf[o] !== 0xFF) { o++; continue; }
+        const m = buf[o + 1];
+        if ((m >= 0xC0 && m <= 0xC3) || (m >= 0xC5 && m <= 0xC7) || (m >= 0xC9 && m <= 0xCB) || (m >= 0xCD && m <= 0xCF)) {
+          return { h: buf.readUInt16BE(o + 5), w: buf.readUInt16BE(o + 7) };
+        }
+        if (buf[o + 1] === 0xD8 || buf[o + 1] === 0xD9 || (buf[o + 1] >= 0xD0 && buf[o + 1] <= 0xD7)) { o += 2; continue; }
+        o += 2 + buf.readUInt16BE(o + 2);
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+// Place an image inside the x,y,w,h box WITHOUT stretching: keep its real aspect
+// ratio (fit inside) and center it in the box.
 function img(slide, data, x, y, w, h) {
-  slide.addImage({ data, x, y, w, h, sizing: { type: "contain", w, h } });
+  const dim = imageSize(data);
+  let dw = w, dh = h, dx = x, dy = y;
+  if (dim && dim.w > 0 && dim.h > 0) {
+    const s = Math.min(w / dim.w, h / dim.h);
+    dw = dim.w * s; dh = dim.h * s;
+    dx = x + (w - dw) / 2; dy = y + (h - dh) / 2;
+  }
+  slide.addImage({ data, x: dx, y: dy, w: dw, h: dh });
 }
 
 async function buildPptxBuffer(store, work, meta) {
