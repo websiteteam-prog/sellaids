@@ -63,11 +63,13 @@ function mysqlBackend() {
   return {
     engine: "mysql",
     async init() {
-      pool = mysql.createPool({
-        host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306),
-        user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
-        waitForConnections: true, connectionLimit: 5, charset: "utf8mb4"
-      });
+      const conn = { host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306), user: process.env.DB_USER, password: process.env.DB_PASSWORD };
+      const dbName = process.env.DB_NAME || "oams";
+      // Make sure the database exists first (so a fresh MySQL just works — no manual create).
+      const boot = await mysql.createConnection(Object.assign({ charset: "utf8mb4" }, conn));
+      await boot.query("CREATE DATABASE IF NOT EXISTS `" + dbName.replace(/`/g, "") + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
+      await boot.end();
+      pool = mysql.createPool(Object.assign({ database: dbName, waitForConnections: true, connectionLimit: 5, charset: "utf8mb4" }, conn));
       await q(`CREATE TABLE IF NOT EXISTS admins (username VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128))`);
       await q(`CREATE TABLE IF NOT EXISTS users (emp_code VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128), mode VARCHAR(32))`);
       await q(`CREATE TABLE IF NOT EXISTS stores (store_code VARCHAR(64) PRIMARY KEY, store_name VARCHAR(255), address VARCHAR(255), phone VARCHAR(128), city VARCHAR(128), category VARCHAR(64), brand VARCHAR(128), ret_type VARCHAR(64))`);

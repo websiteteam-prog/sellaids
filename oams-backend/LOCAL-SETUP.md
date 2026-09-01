@@ -10,14 +10,13 @@ over your WiFi.  `📱 APK → (WiFi) → Node backend (your PC) → MySQL (your
 - Click **Start** on **MySQL** (and Apache, so you get phpMyAdmin).
 - (XAMPP’s MySQL default user is `root` with **empty** password.)
 
-## 2) Create the database (import `schema.sql`)
-Open **phpMyAdmin**: http://localhost/phpmyadmin
-- Left side → **New** → this creates a DB, OR just use Import which creates it.
-- Top menu → **Import** → choose **`schema.sql`** → **Go**.
-- You’ll now see the **`oams`** database with tables: `admins, users, stores,
-  element_types, submissions` (with demo data). ✅
+## 2) The database is created automatically
+You do **not** need to create the `oams` database by hand. On first run the
+backend auto-creates the **`oams`** database, all tables (`admins, users,
+stores, store_elements, element_types, submissions`) and demo data.
 
-> CLI alternative: `mysql -u root < schema.sql`
+> Optional: if you prefer, you can pre-create it in **phpMyAdmin → Import →
+> `schema.sql` → Go** (CLI: `mysql -u root < schema.sql`). Either way works.
 
 ## 3) Point the backend at your local MySQL
 In the `oams-backend` folder:
@@ -47,9 +46,9 @@ You should see: `Hanu Multimedia backend running on port 4000  (mysql)` ✅
 ## 5) Connect the APK (over WiFi)
 The phone can’t use `localhost` — it needs your PC’s **LAN IP**.
 - Find it: Windows → `ipconfig` → **IPv4 Address** (e.g. `192.168.1.5`).
-- In `oams-rn/src/config.js`:
+- In `oams-rn/src/config.js` set the `base` line:
   ```js
-  export const API_BASE = "http://192.168.1.5:4000/api";   // your PC IP
+  let base = "http://192.168.1.5:4000/api";   // your PC IP
   ```
   (Android **emulator** instead: `http://10.0.2.2:4000/api`.)
 - Rebuild the APK (push to GitHub → Actions → Release), install it.
