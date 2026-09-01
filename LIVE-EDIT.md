@@ -1,4 +1,4 @@
-# OAMS — App ko edit karke live dekhna (2 tareeke)
+# Hanu Multimedia — App ko edit karke live dekhna (2 tareeke)
 
 Tumhe app ke andar text / stores / elements badalne hain aur turant result
 dekhna hai. Do rasta hai. **Tareeka 1 sabse aasaan aur pakka chalega.**
@@ -45,7 +45,7 @@ Iske badle humne tumhare project ke liye ek **apna Dev APK** banaya hai:
 ```
 https://github.com/websiteteam-prog/sellaids/releases/download/oams-dev-latest/oams-field-app-dev.apk
 ```
-Install karo (naam: **OAMS Field App**). Yeh Expo Go ki jagah lega.
+Install karo (naam: **Hanu Multimedia Field App**). Yeh Expo Go ki jagah lega.
 
 **PC pe (project folder me):**
 ```
@@ -57,7 +57,7 @@ npx expo start --dev-client --tunnel
   aur "failed to download remote update" wali problem khatam.
 - Pehli baar `--tunnel` chalane pe `@expo/ngrok` install karne ko bole to
   `y` / yes dab dena.
-- Terminal me QR aayega → wo naya **OAMS Field App** (jo abhi install kiya)
+- Terminal me QR aayega → wo naya **Hanu Multimedia Field App** (jo abhi install kiya)
   usse QR scan karo. App download hoke chal jaayega, aur edit karte hi
   live reload hoga.
 

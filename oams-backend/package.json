@@ -1,7 +1,7 @@
 {
   "name": "oams-backend",
   "version": "1.0.0",
-  "description": "OAMS Field App backend + admin panel. Local: db.json. Production (VPS): MySQL.",
+  "description": "Hanu Multimedia Field App backend + admin panel. Local: db.json. Production (VPS): MySQL.",
   "type": "commonjs",
   "main": "server.js",
   "scripts": {

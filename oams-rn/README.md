@@ -1,4 +1,4 @@
-# OAMS Field App — React Native (Expo) · v2
+# Hanu Multimedia Field App — React Native (Expo) · v2
 
 Store-recce field app built in **React Native (Expo SDK 51)**.
 

@@ -1,5 +1,5 @@
 /* =========================================================================
- * OAMS Field App — BACKEND + ADMIN PANEL
+ * Hanu Multimedia Field App — BACKEND + ADMIN PANEL
  *   • Local dev:   uses db.json         (just `npm start`)
  *   • Production:  uses MySQL           (set DB_HOST/DB_USER/... in .env)
  *
@@ -170,7 +170,7 @@ app.post("/api/admin/import", requireAdmin, wrap(async (req, res) => {
 app.get("/api/admin/template.xlsx", wrap(async (req, res) => {
   if (!adminOk(req)) return res.status(401).send("Admin auth required");
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", 'attachment; filename="OAMS_Dealer_Import_Template.xlsx"');
+  res.setHeader("Content-Disposition", 'attachment; filename="Hanu_Multimedia_Dealer_Import_Template.xlsx"');
   res.send(buildTemplateBuffer());
 }));
 
@@ -195,7 +195,7 @@ const PORT = process.env.PORT || 4000;
 db.init().then(() => {
   app.listen(PORT, () => {
     console.log("────────────────────────────────────────────────────");
-    console.log(" OAMS backend running on port " + PORT + "  (" + db.engine + ")");
+    console.log(" Hanu Multimedia backend running on port " + PORT + "  (" + db.engine + ")");
     console.log(" Admin panel: /admin   (admin / admin)");
     console.log("────────────────────────────────────────────────────");
   });

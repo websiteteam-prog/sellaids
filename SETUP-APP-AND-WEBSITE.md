@@ -1,4 +1,4 @@
-# OAMS — Run on App **and** Website
+# Hanu Multimedia — Run on App **and** Website
 
 Same project, two faces:
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "OAMS Field App",
+    "name": "Hanu Multimedia",
     "slug": "oams-field-app",
     "version": "2.0.0",
     "orientation": "portrait",
@@ -20,11 +20,11 @@
       "./plugins/withCleartext",
       [
         "expo-image-picker",
-        { "cameraPermission": "Allow OAMS Field App to take geo-tagged store photos." }
+        { "cameraPermission": "Allow Hanu Multimedia to take geo-tagged store photos." }
       ],
       [
         "expo-location",
-        { "locationWhenInUsePermission": "Allow OAMS Field App to tag store photos with your GPS location." }
+        { "locationWhenInUsePermission": "Allow Hanu Multimedia to tag store photos with your GPS location." }
       ]
     ]
   }

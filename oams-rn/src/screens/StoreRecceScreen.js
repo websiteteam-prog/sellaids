@@ -13,6 +13,7 @@ export default function StoreRecceScreen({ nav, app }) {
 
   const [storeImages, setStoreImages] = useState([]);
   const [storeRemark, setStoreRemark] = useState("");
+  const [visitingCard, setVisitingCard] = useState(null);
   // Pre-load the planned elements the admin assigned to this store (from the Excel import).
   const [elements, setElements] = useState(() =>
     (store.elements || []).map((e) => {
@@ -37,6 +38,9 @@ export default function StoreRecceScreen({ nav, app }) {
   function removeStoreImage(idx) {
     setStoreImages((prev) => prev.filter((_, i) => i !== idx));
   }
+  function addVisitingCard() {
+    pickImage((dataUrl) => setVisitingCard(dataUrl), (e) => app.toast("Photo", e));
+  }
 
   function openElement(index) { setEditIndex(index); setElemModal(true); }
   function onElementSave(item) {
@@ -60,7 +64,7 @@ export default function StoreRecceScreen({ nav, app }) {
       app.toast("Elements incomplete", "Add at least one photo and a remark for: " + incomplete.map((e) => e.type).join(", "));
       return;
     }
-    const work = { storeImages, storeRemark: storeRemark.trim(), elements, finalRemark: finalRemark.trim() };
+    const work = { storeImages, storeRemark: storeRemark.trim(), visitingCard, elements, finalRemark: finalRemark.trim() };
     app.spinner(true, "Submitting…");
     const res = await submitRecce(store, work, user);
     app.spinner(false);
@@ -99,6 +103,22 @@ export default function StoreRecceScreen({ nav, app }) {
         <Text style={st.lbl}>Remark for store photos (required)</Text>
         <TextInput style={[st.input, { height: 64, textAlignVertical: "top" }]} value={storeRemark} onChangeText={setStoreRemark}
           placeholder="e.g. facade condition, footfall side, obstructions…" placeholderTextColor="#aab2c0" multiline />
+
+        {/* VISITING CARD (optional, single photo) */}
+        <SectionLabel>Visiting Card (optional)</SectionLabel>
+        <View style={st.imgWrap}>
+          {visitingCard ? (
+            <View style={st.thumbBox}>
+              <Image source={{ uri: visitingCard }} style={st.thumb} />
+              <TouchableOpacity style={st.thumbDel} onPress={() => setVisitingCard(null)}><Text style={st.thumbDelTxt}>✕</Text></TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={st.addThumb} onPress={addVisitingCard} activeOpacity={0.8}>
+              <Text style={{ fontSize: 26, color: C.muted }}>＋</Text>
+              <Text style={{ fontSize: 10, color: C.muted }}>Add</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* ELEMENTS */}
         <SectionLabel>Elements {elements.length ? "(" + elements.filter((e) => e.photos.length >= 1 && e.remark).length + "/" + elements.length + " done)" : ""}</SectionLabel>

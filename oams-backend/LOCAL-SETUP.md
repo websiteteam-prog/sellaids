@@ -40,7 +40,7 @@ cd oams-backend
 npm install
 npm start
 ```
-You should see: `OAMS backend running on port 4000  (mysql)` ✅
+You should see: `Hanu Multimedia backend running on port 4000  (mysql)` ✅
 - Admin panel: **http://localhost:4000/admin**  (login `admin / admin`)
 - Data lives in your **local MySQL** (see it live in phpMyAdmin).
 

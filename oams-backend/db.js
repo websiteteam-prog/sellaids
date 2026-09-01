@@ -9,7 +9,7 @@ const path = require("path");
 
 const USE_MYSQL = !!process.env.DB_HOST;
 
-const DEFAULT_ADMINS = [{ username: "admin", password: "admin", name: "OAMS Admin" }];
+const DEFAULT_ADMINS = [{ username: "admin", password: "admin", name: "Hanu Multimedia Admin" }];
 const DEFAULT_USERS = [
   { empCode: "EMP1024", password: "1234", name: "Rahul Mehta", mode: "Recce" },
   { empCode: "EMP2048", password: "1234", name: "Sneha Kulkarni", mode: "Recce" }

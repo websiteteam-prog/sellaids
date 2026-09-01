@@ -1,5 +1,5 @@
 -- =====================================================================
--- OAMS local database (MySQL / MariaDB)
+-- Hanu Multimedia local database (MySQL / MariaDB)
 -- Import in phpMyAdmin (XAMPP), or:  mysql -u root -p < schema.sql
 -- Creates the `oams` database with tables + demo data.
 -- =====================================================================
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS submissions (
 -- ---------------------- seed data ----------------------
 
 INSERT IGNORE INTO admins (username, password, name) VALUES
-  ('admin', 'admin', 'OAMS Admin');
+  ('admin', 'admin', 'Hanu Multimedia Admin');
 
 INSERT IGNORE INTO users (emp_code, password, name, mode) VALUES
   ('EMP1024', '1234', 'Rahul Mehta', 'Recce'),

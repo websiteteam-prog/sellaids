@@ -1,4 +1,4 @@
-# OAMS Backend + Admin Panel (dummy database)
+# Hanu Multimedia Backend + Admin Panel (dummy database)
 
 Node + Express backend with a **db.json dummy database** (no MySQL/XAMPP needed).
 Serves the **User API** for the app AND a web **Admin Panel**.
