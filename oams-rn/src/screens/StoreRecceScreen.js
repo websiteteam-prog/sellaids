@@ -14,6 +14,7 @@ export default function StoreRecceScreen({ nav, app }) {
   const [storeImages, setStoreImages] = useState([]);
   const [storeRemark, setStoreRemark] = useState("");
   const [visitingCard, setVisitingCard] = useState(null);
+  const [gstNo, setGstNo] = useState("");
   // Pre-load the planned elements the admin assigned to this store (from the Excel import).
   const [elements, setElements] = useState(() =>
     (store.elements || []).map((e) => {
@@ -64,7 +65,7 @@ export default function StoreRecceScreen({ nav, app }) {
       app.toast("Elements incomplete", "Add at least one photo and a remark for: " + incomplete.map((e) => e.type).join(", "));
       return;
     }
-    const work = { storeImages, storeRemark: storeRemark.trim(), visitingCard, elements, finalRemark: finalRemark.trim() };
+    const work = { storeImages, storeRemark: storeRemark.trim(), visitingCard, gstNo: gstNo.trim(), elements, finalRemark: finalRemark.trim() };
     app.spinner(true, "Submitting…");
     const res = await submitRecce(store, work, user);
     app.spinner(false);
@@ -120,6 +121,11 @@ export default function StoreRecceScreen({ nav, app }) {
           )}
         </View>
 
+        {/* GST NUMBER (optional) */}
+        <Text style={[st.lbl, { marginTop: 12 }]}>GST No (optional)</Text>
+        <TextInput style={st.input} value={gstNo} onChangeText={setGstNo}
+          placeholder="e.g. 03ABCDE1234F1Z5" placeholderTextColor="#aab2c0" autoCapitalize="characters" />
+
         {/* ELEMENTS */}
         <SectionLabel>Elements {elements.length ? "(" + elements.filter((e) => e.photos.length >= 1 && e.remark).length + "/" + elements.length + " done)" : ""}</SectionLabel>
         {elements.length > 0 ? (
@@ -139,7 +145,7 @@ export default function StoreRecceScreen({ nav, app }) {
                       <Text style={[st.badgeTxt, { color: done ? "#0f7a3d" : "#9a6a00" }]}>{done ? "✓ Done" : "Pending"}</Text>
                     </View>
                   </View>
-                  <Text style={st.elMeta}>W {el.width}" × H {el.height}" · Qty {el.qty} · {el.sqft} sqft</Text>
+                  <Text style={st.elMeta}>W {el.width}" × H {el.height}" · Qty {el.qty}</Text>
                   <Text style={st.elMeta}>📷 {el.photos.length} photo(s)</Text>
                   {el.note ? <Text style={st.elNote}>📋 {el.note}</Text> : null}
                   {el.remark ? <Text style={st.elRemark}>“{el.remark}”</Text> : null}

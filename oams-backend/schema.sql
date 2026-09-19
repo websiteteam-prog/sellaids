@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS submissions (
   store_name        VARCHAR(255),
   city              VARCHAR(128),
   category          VARCHAR(64),
+  brand             VARCHAR(128),
+  gst_no            VARCHAR(64),
   user_emp_code     VARCHAR(64),
   user_name         VARCHAR(128),
   store_photo_count INT,

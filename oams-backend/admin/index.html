@@ -93,8 +93,8 @@
         <div class="filters">
           <label class="fld"><span>Search store</span><input id="fq" placeholder="name / code" /></label>
           <label class="fld"><span>User</span><select id="fuser"><option value="">All</option></select></label>
+          <label class="fld"><span>Brand</span><select id="fbrand"><option value="">All</option></select></label>
           <label class="fld"><span>City</span><select id="fcity"><option value="">All</option></select></label>
-          <label class="fld"><span>Category</span><select id="fcat"><option value="">All</option></select></label>
           <label class="fld"><span>From date</span><input id="ffrom" type="date" /></label>
           <label class="fld"><span>To date</span><input id="fto" type="date" /></label>
           <div style="display:flex;gap:8px">
@@ -102,11 +102,16 @@
             <button class="btn outline sm" onclick="clearFilters()">Clear</button>
           </div>
         </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn sm" onclick="downloadAllPpt()">⬇ Download all PPT (ZIP)</button>
+          <button class="btn sm" style="background:#1f9d55" onclick="downloadExcel()">⬇ Export to Excel</button>
+          <span class="muted" style="align-self:center;font-size:12.5px">Downloads use the current filters.</span>
+        </div>
       </div>
       <div class="card">
         <table>
           <thead><tr>
-            <th>Store</th><th>Code</th><th>User</th><th>City</th><th>Category</th>
+            <th>Store</th><th>Code</th><th>Brand</th><th>User</th><th>City</th>
             <th>Photos</th><th>Elements</th><th>Submitted</th><th>Report</th>
           </tr></thead>
           <tbody id="reccesBody"></tbody>
@@ -236,16 +241,16 @@ function importExcel(){
   reader.readAsDataURL(inp.files[0]);
 }
 
-function clearFilters(){ ["fq","fuser","fcity","fcat","ffrom","fto"].forEach(id=>document.getElementById(id).value=""); loadRecces(); }
+function clearFilters(){ ["fq","fuser","fbrand","fcity","ffrom","fto"].forEach(id=>document.getElementById(id).value=""); loadRecces(); }
 
 async function loadFilters(){
   try{
     const r = await fetch(API + "/admin/filters", { headers: h() });
     if(!r.ok) return;
     const d = await r.json();
-    fill("fcity", d.cities.map(c=>({v:c,t:c})));
-    fill("fcat", d.categories.map(c=>({v:c,t:c})));
-    fill("fuser", d.users.map(u=>({v:u.empCode,t:u.empCode+" · "+u.name})));
+    fill("fcity", (d.cities||[]).map(c=>({v:c,t:c})));
+    fill("fbrand", (d.brands||[]).map(c=>({v:c,t:c})));
+    fill("fuser", (d.users||[]).map(u=>({v:u.empCode,t:u.empCode+" · "+u.name})));
   }catch(e){}
 }
 function fill(id, items){
@@ -254,10 +259,19 @@ function fill(id, items){
   sel.value=cur;
 }
 
-async function loadRecces(){
+// current filter values as a query string (shared by the table + bulk downloads)
+function currentQuery(){
   const p=new URLSearchParams();
-  const map={q:"fq",user:"fuser",city:"fcity",category:"fcat",from:"ffrom",to:"fto"};
+  const map={q:"fq",user:"fuser",brand:"fbrand",city:"fcity",from:"ffrom",to:"fto"};
   Object.keys(map).forEach(k=>{const v=document.getElementById(map[k]).value; if(v) p.set(k,v);});
+  return p;
+}
+
+function downloadAllPpt(){ window.open(location.origin + "/api/admin/recces/ppt-zip?t="+encodeURIComponent(TOKEN)+"&"+currentQuery().toString(), "_blank"); }
+function downloadExcel(){ window.open(location.origin + "/api/admin/recces/excel?t="+encodeURIComponent(TOKEN)+"&"+currentQuery().toString(), "_blank"); }
+
+async function loadRecces(){
+  const p=currentQuery();
   try{
     const r = await fetch(API + "/admin/recces?"+p.toString(), { headers: h() });
     if(r.status===401){ logout(); return; }
@@ -269,8 +283,9 @@ async function loadRecces(){
       const tr=document.createElement("tr");
       const dl = location.origin + "/api/admin/recces/"+encodeURIComponent(rec.id)+"/ppt?t="+encodeURIComponent(TOKEN);
       tr.innerHTML=`<td>${esc(rec.storeName)}</td><td>${esc(rec.storeCode)}</td>
+        <td><span class="badge">${esc(rec.brand||"")}</span></td>
         <td>${esc(rec.userName||"")}<br><span class="muted">${esc(rec.userEmpCode||"")}</span></td>
-        <td>${esc(rec.city||"")}</td><td><span class="badge">${esc(rec.category||"")}</span></td>
+        <td>${esc(rec.city||"")}</td>
         <td>${rec.storePhotoCount||0}</td><td>${rec.elementsCount||0}</td>
         <td>${new Date(rec.submittedAt).toLocaleString()}</td>
         <td><a class="link" href="${dl}">⬇ PPT</a></td>`;

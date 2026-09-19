@@ -58,6 +58,7 @@ function header(slide, store, section) {
   if (store.address) lines.push(String(store.address).toUpperCase());
   if (store.phone) lines.push(String(store.phone));
   lines.push("RET CODE: " + (store.storeCode || "") + "      RET TYPE: " + (store.retType || ""));
+  if (store.gstNo) lines.push("GST NO: " + store.gstNo);
   if (store.brand) lines.push(String(store.brand));
   if (store.category) lines.push(String(store.category));
   slide.addText(lines.join("\n"), { x: 0.4, y: 0.74, w: 7.0, h: 1.15, fontSize: 11, color: BLACK, valign: "top", lineSpacingMultiple: 1.05 });
@@ -68,6 +69,7 @@ function header(slide, store, section) {
 
 async function buildPptxBuffer(store, work, meta) {
   store = store || {}; work = work || {}; meta = meta || {};
+  if (work.gstNo) store = Object.assign({}, store, { gstNo: work.gstNo });
   const pptx = new PptxGenJS();
   pptx.defineLayout({ name: "HM", width: W, height: H });
   pptx.layout = "HM";
@@ -103,13 +105,15 @@ async function buildPptxBuffer(store, work, meta) {
     const eph = (el.photos || []).filter(isImg);
     const s = pptx.addSlide();
     header(s, store, el.type || "Element");
-    if (eph[0]) img(s, eph[0], 0.55, 2.15, 4.35, 4.35); // big photo (left)
-    if (eph[1]) img(s, eph[1], 5.25, 2.15, 4.2, 2.1);   // small (top-right)
-    if (eph[2]) img(s, eph[2], 5.25, 4.4, 4.2, 2.1);    // small (bottom-right)
+    // labels: first photo is WITHOUT marking, the rest are WITH marking
+    s.addText("WITHOUT MARKING", { x: 0.55, y: 1.98, w: 4.35, h: 0.22, fontSize: 10, bold: true, color: RED });
+    if (eph.length > 1) s.addText("WITH MARKING", { x: 5.25, y: 1.98, w: 4.2, h: 0.22, fontSize: 10, bold: true, color: RED });
+    if (eph[0]) img(s, eph[0], 0.55, 2.22, 4.35, 4.2);  // big photo, WITHOUT marking (left)
+    if (eph[1]) img(s, eph[1], 5.25, 2.22, 4.2, 2.05);  // WITH marking (top-right)
+    if (eph[2]) img(s, eph[2], 5.25, 4.4, 4.2, 2.05);   // WITH marking (bottom-right)
 
     let typeLine = (el.type || "") + "  :  " + (el.width || "") + "'' X " + (el.height || "") + "''";
     if (el.qty) typeLine += "    QTY: " + el.qty;
-    if (el.sqft) typeLine += "    SQFT: " + el.sqft;
     s.addText(typeLine, { x: 0.4, y: 6.68, w: 4.7, h: 0.6, fontSize: 13, bold: true, color: BLACK, valign: "top" });
     s.addText("REMARKS : " + (el.remark || ""), { x: 5.25, y: 6.62, w: 4.35, h: 0.75, fontSize: 12, color: BLACK, valign: "top" });
 

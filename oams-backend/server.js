@@ -14,6 +14,7 @@ const path = require("path");
 const db = require("./db");
 const { buildPptxBuffer } = require("./report");
 const XLSX = require("xlsx");
+const archiver = require("archiver");
 
 // Columns the client's Excel uses (row of headers can sit anywhere in the sheet).
 const TEMPLATE_HEADERS = ["BRAND", "SR. NO.", "DEALER CODE", "DEALER NAME", "ADDRESS", "CITY", "CONTACT NO.", "ELEMENT", "WIDTH (INCH)", "HEIGHT (INCH)", "QTY", "SQFT", "REMARKS"];
@@ -113,9 +114,10 @@ app.post("/api/recce/submit", wrap(async (req, res) => {
   fs.writeFileSync(path.join(REPORTS_DIR, pptFile), buf);
   await db.addSubmission({
     id, storeCode: store.storeCode, storeName: store.storeName, city: store.city, category: store.category,
+    brand: store.brand || "", gstNo: work.gstNo || "",
     userEmpCode: user && user.empCode, userName: user && user.name,
     storePhotoCount: (work.storeImages || []).length, storeRemark: work.storeRemark || "", finalRemark: work.finalRemark || "",
-    elements: (work.elements || []).map((e) => ({ type: e.type, width: e.width, height: e.height, total: e.total, qty: e.qty, sqft: e.sqft, photoCount: (e.photos || []).length, remark: e.remark })),
+    elements: (work.elements || []).map((e) => ({ type: e.type, width: e.width, height: e.height, total: e.total, qty: e.qty, photoCount: (e.photos || []).length, remark: e.remark })),
     elementsCount: (work.elements || []).length, pptFile, submittedAt
   });
   res.json({ ok: true, id });
@@ -133,11 +135,54 @@ app.post("/api/admin/login", wrap(async (req, res) => {
 }));
 
 app.get("/api/admin/recces", requireAdmin, wrap(async (req, res) => {
-  const { q, user, city, category, from, to } = req.query;
-  res.json(await db.listSubmissions({ q, user, city, category, from, to }));
+  const { q, user, city, brand, from, to } = req.query;
+  res.json(await db.listSubmissions({ q, user, city, brand, from, to }));
 }));
 
 app.get("/api/admin/filters", requireAdmin, wrap(async (_req, res) => res.json(await db.distinctFilters())));
+
+// ---- Bulk: download all filtered recces' PPTs as one ZIP ----
+app.get("/api/admin/recces/ppt-zip", wrap(async (req, res) => {
+  if (!adminOk(req)) return res.status(401).send("Admin auth required");
+  const { q, user, city, brand, from, to } = req.query;
+  const list = await db.listSubmissions({ q, user, city, brand, from, to });
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", 'attachment; filename="Hanu_Multimedia_Recces_PPT.zip"');
+  const archive = archiver("zip", { zlib: { level: 6 } });
+  archive.on("error", () => { try { res.status(500).end(); } catch (e) {} });
+  archive.pipe(res);
+  const used = {};
+  for (const r of list) {
+    const file = path.join(REPORTS_DIR, r.pptFile || "");
+    if (r.pptFile && fs.existsSync(file)) {
+      let name = (r.storeCode || r.id) + ".pptx";
+      if (used[name]) name = (r.storeCode || r.id) + "_" + r.id + ".pptx";
+      used[name] = 1;
+      archive.file(file, { name });
+    }
+  }
+  archive.finalize();
+}));
+
+// ---- Export the filtered recces list as an Excel file ----
+app.get("/api/admin/recces/excel", wrap(async (req, res) => {
+  if (!adminOk(req)) return res.status(401).send("Admin auth required");
+  const { q, user, city, brand, from, to } = req.query;
+  const list = await db.listSubmissions({ q, user, city, brand, from, to });
+  const rows = [["Store Name", "Dealer Code", "Brand", "City", "GST No", "Recce By", "Emp Code", "Store Photos", "Elements", "Submitted At", "Elements Detail"]];
+  list.forEach((r) => {
+    const det = (r.elements || []).map((e) => (e.type || "") + " (" + (e.width || "") + "\" x " + (e.height || "") + "\"" + (e.qty ? ", qty " + e.qty : "") + ")").join("; ");
+    rows.push([r.storeName || "", r.storeCode || "", r.brand || "", r.city || "", r.gstNo || "", r.userName || "", r.userEmpCode || "",
+      r.storePhotoCount || 0, r.elementsCount || 0, r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "", det]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = rows[0].map((h, i) => ({ wch: (i === 0 || i === 10) ? 28 : 14 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Recces");
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", 'attachment; filename="Hanu_Multimedia_Recces.xlsx"');
+  res.send(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
+}));
 
 app.get("/api/admin/recces/:id/ppt", wrap(async (req, res) => {
   if (!adminOk(req)) return res.status(401).send("Admin auth required");

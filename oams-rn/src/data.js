@@ -1,8 +1,8 @@
 /* Offline demo data — used when API_BASE is empty (no backend). */
 export const DATA = {
-  appVersion: "3.0.0",
+  appVersion: "4.0.0",
 
-  loginModes: ["Deployment", "Recce"],
+  loginModes: ["Installation", "Recce"],
 
   // "What is it" — element list (from client's Element List)
   elementTypes: [
@@ -16,7 +16,7 @@ export const DATA = {
   announcement: {
     title: "Welcome — Hanu Multimedia Team",
     lines: [
-      "App Version: 3.0.0",
+      "App Version: 4.0.0",
       "Select a store, add store photos (front + overview), then add elements.",
       "For each element pick the type, enter W x H, add photos and a remark.",
       "Add a remark at every step. Turn ON Camera & Gallery permissions."

@@ -52,8 +52,8 @@ export default function LoginScreen({ nav, app }) {
   }
 
   function goNext() {
-    if (mode === "Deployment") {
-      app.toast("Deployment", "Deployment flow coming soon. Opening store list for now.");
+    if (mode === "Installation") {
+      app.toast("Installation", "Installation flow coming soon. Opening store list for now.");
     }
     nav.replace("stores");
   }

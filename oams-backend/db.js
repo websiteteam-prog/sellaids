@@ -53,7 +53,7 @@ function mysqlBackend() {
   const storeRow = (r) => ({ storeCode: r.store_code, storeName: r.store_name, address: r.address, phone: r.phone, city: r.city, category: r.category, brand: r.brand, retType: r.ret_type });
   const seRow = (r) => ({ srNo: r.sr_no, brand: r.brand, element: r.element, width: Number(r.width) || 0, height: Number(r.height) || 0, qty: Number(r.qty) || 0, sqft: Number(r.sqft) || 0, remarks: r.remarks || "" });
   const subRow = (r) => ({
-    id: r.id, storeCode: r.store_code, storeName: r.store_name, city: r.city, category: r.category,
+    id: r.id, storeCode: r.store_code, storeName: r.store_name, city: r.city, category: r.category, brand: r.brand, gstNo: r.gst_no,
     userEmpCode: r.user_emp_code, userName: r.user_name, storePhotoCount: r.store_photo_count,
     storeRemark: r.store_remark, finalRemark: r.final_remark, elementsCount: r.elements_count,
     elements: safeJson(r.elements_json), pptFile: r.ppt_file,
@@ -79,9 +79,12 @@ function mysqlBackend() {
         element VARCHAR(128), width DECIMAL(10,2), height DECIMAL(10,2), qty INT, sqft DECIMAL(12,2), remarks TEXT,
         INDEX idx_store_code (store_code))`);
       await q(`CREATE TABLE IF NOT EXISTS submissions (
-        id VARCHAR(64) PRIMARY KEY, store_code VARCHAR(64), store_name VARCHAR(255), city VARCHAR(128), category VARCHAR(64),
+        id VARCHAR(64) PRIMARY KEY, store_code VARCHAR(64), store_name VARCHAR(255), city VARCHAR(128), category VARCHAR(64), brand VARCHAR(128), gst_no VARCHAR(64),
         user_emp_code VARCHAR(64), user_name VARCHAR(128), store_photo_count INT, store_remark TEXT, final_remark TEXT,
         elements_count INT, elements_json LONGTEXT, ppt_file VARCHAR(255), submitted_at DATETIME)`);
+      // migrate older submissions tables that predate brand/gst_no
+      try { await q(`ALTER TABLE submissions ADD COLUMN brand VARCHAR(128)`); } catch (e) {}
+      try { await q(`ALTER TABLE submissions ADD COLUMN gst_no VARCHAR(64)`); } catch (e) {}
       if ((await q(`SELECT COUNT(*) c FROM admins`))[0].c === 0)
         for (const a of DEFAULT_ADMINS) await q(`INSERT INTO admins (username,password,name) VALUES (?,?,?)`, [a.username, a.password, a.name]);
       if ((await q(`SELECT COUNT(*) c FROM element_types`))[0].c === 0)
@@ -136,15 +139,16 @@ function mysqlBackend() {
       return { dealers: dealers.length, storesAdded, storesUpdated, elements };
     },
     async addSubmission(s) {
-      await q(`INSERT INTO submissions (id,store_code,store_name,city,category,user_emp_code,user_name,store_photo_count,store_remark,final_remark,elements_count,elements_json,ppt_file,submitted_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [s.id, s.storeCode, s.storeName, s.city, s.category, s.userEmpCode, s.userName, s.storePhotoCount, s.storeRemark, s.finalRemark, s.elementsCount, JSON.stringify(s.elements || []), s.pptFile, new Date(s.submittedAt)]);
+      await q(`INSERT INTO submissions (id,store_code,store_name,city,category,brand,gst_no,user_emp_code,user_name,store_photo_count,store_remark,final_remark,elements_count,elements_json,ppt_file,submitted_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [s.id, s.storeCode, s.storeName, s.city, s.category, s.brand || "", s.gstNo || "", s.userEmpCode, s.userName, s.storePhotoCount, s.storeRemark, s.finalRemark, s.elementsCount, JSON.stringify(s.elements || []), s.pptFile, new Date(s.submittedAt)]);
     },
     async listSubmissions(f) {
       f = f || {}; const w = []; const p = [];
       if (f.q) { w.push(`(LOWER(store_name) LIKE ? OR LOWER(store_code) LIKE ?)`); p.push("%" + f.q.toLowerCase() + "%", "%" + f.q.toLowerCase() + "%"); }
       if (f.user) { w.push(`user_emp_code=?`); p.push(f.user); }
       if (f.city) { w.push(`city=?`); p.push(f.city); }
+      if (f.brand) { w.push(`brand=?`); p.push(f.brand); }
       if (f.category) { w.push(`category=?`); p.push(f.category); }
       if (f.from) { w.push(`submitted_at>=?`); p.push(new Date(f.from + "T00:00:00")); }
       if (f.to) { w.push(`submitted_at<=?`); p.push(new Date(f.to + "T23:59:59")); }
@@ -153,7 +157,7 @@ function mysqlBackend() {
     async submissionById(id) { const r = await q(`SELECT * FROM submissions WHERE id=?`, [id]); return r[0] ? subRow(r[0]) : null; },
     async distinctFilters() {
       const s = (await q(`SELECT * FROM submissions`)).map(subRow);
-      return { cities: uniq(s.map((x) => x.city)), categories: uniq(s.map((x) => x.category)),
+      return { cities: uniq(s.map((x) => x.city)), brands: uniq(s.map((x) => x.brand)),
         users: uniq(s.map((x) => x.userEmpCode)).map((code) => ({ empCode: code, name: (s.find((x) => x.userEmpCode === code) || {}).userName || "" })) };
     }
   };
@@ -217,6 +221,7 @@ function jsonBackend() {
       if (f.q) { const s = f.q.toLowerCase(); list = list.filter((r) => (r.storeName + " " + r.storeCode).toLowerCase().includes(s)); }
       if (f.user) list = list.filter((r) => r.userEmpCode === f.user);
       if (f.city) list = list.filter((r) => r.city === f.city);
+      if (f.brand) list = list.filter((r) => r.brand === f.brand);
       if (f.category) list = list.filter((r) => r.category === f.category);
       if (f.from) list = list.filter((r) => new Date(r.submittedAt) >= new Date(f.from + "T00:00:00"));
       if (f.to) list = list.filter((r) => new Date(r.submittedAt) <= new Date(f.to + "T23:59:59"));
@@ -225,7 +230,7 @@ function jsonBackend() {
     async submissionById(id) { return (load().submissions || []).find((r) => r.id === id) || null; },
     async distinctFilters() {
       const s = load().submissions || [];
-      return { cities: uniq(s.map((x) => x.city)), categories: uniq(s.map((x) => x.category)),
+      return { cities: uniq(s.map((x) => x.city)), brands: uniq(s.map((x) => x.brand)),
         users: uniq(s.map((x) => x.userEmpCode)).map((code) => ({ empCode: code, name: (s.find((x) => x.userEmpCode === code) || {}).userName || "" })) };
     }
   };
