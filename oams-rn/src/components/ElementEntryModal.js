@@ -58,14 +58,14 @@ export default function ElementEntryModal({ visible, initial, master, onCancel, 
   }
 
   function addWithout() {
-    pickImage((d) => setPhotoWithout(d), onError);
+    pickImage((d) => openMarker(d, (marked) => setPhotoWithout(marked)), onError);
+  }
+  function reMarkWithout() {
+    if (photoWithout) openMarker(photoWithout, (marked) => setPhotoWithout(marked));
   }
   function addWithMark() {
     if (photosWith.length >= 2) return;
-    pickImage((d) => openMarker(d, (marked) => setPhotosWith((prev) => [...prev, marked].slice(0, 2))), onError);
-  }
-  function reMark(i) {
-    openMarker(photosWith[i], (marked) => setPhotosWith((prev) => prev.map((p, idx) => (idx === i ? marked : p))));
+    pickImage((d) => setPhotosWith((prev) => [...prev, d].slice(0, 2)), onError);
   }
   function removeWith(i) {
     setPhotosWith((prev) => prev.filter((_, idx) => idx !== i));
@@ -109,37 +109,37 @@ export default function ElementEntryModal({ visible, initial, master, onCancel, 
             <Text style={st.lbl}>Total (Inch) — auto</Text>
             <TextInput style={[st.input, { backgroundColor: "#f3f4f6", color: C.muted }]} value={total} editable={false} />
 
-            {/* WITHOUT MARKING */}
+            {/* WITHOUT MARKING — this photo can be drawn/marked */}
             <Text style={st.section}>Photo — WITHOUT marking (1)</Text>
+            <Text style={st.hintTxt}>Tap “Mark” to draw on the photo (pencil / box) where the work is.</Text>
             <View style={st.imgWrap}>
               {photoWithout ? (
                 <View style={st.thumbBox}>
                   <Image source={{ uri: photoWithout }} style={st.thumb} />
+                  <TouchableOpacity style={st.thumbEdit} onPress={reMarkWithout}><Text style={st.thumbEditTxt}>✏️ Mark</Text></TouchableOpacity>
                   <TouchableOpacity style={st.thumbDel} onPress={() => setPhotoWithout(null)}><Text style={st.thumbDelTxt}>✕</Text></TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity style={st.addThumb} onPress={addWithout} activeOpacity={0.8}>
-                  <Text style={{ fontSize: 26, color: C.muted }}>＋</Text>
-                  <Text style={{ fontSize: 10, color: C.muted }}>Add</Text>
+                  <Text style={{ fontSize: 22, color: C.muted }}>✏️＋</Text>
+                  <Text style={{ fontSize: 10, color: C.muted }}>Add + Mark</Text>
                 </TouchableOpacity>
               )}
             </View>
 
-            {/* WITH MARKING */}
+            {/* WITH MARKING — plain photos (no drawing) */}
             <Text style={st.section}>Photos — WITH marking (up to 2)</Text>
-            <Text style={st.hintTxt}>Tap “Mark” to draw on the photo (pencil / box) where the work is.</Text>
             <View style={st.imgWrap}>
               {photosWith.map((uri, i) => (
                 <View key={i} style={st.thumbBox}>
                   <Image source={{ uri }} style={st.thumb} />
-                  <TouchableOpacity style={st.thumbEdit} onPress={() => reMark(i)}><Text style={st.thumbEditTxt}>✏️ Mark</Text></TouchableOpacity>
                   <TouchableOpacity style={st.thumbDel} onPress={() => removeWith(i)}><Text style={st.thumbDelTxt}>✕</Text></TouchableOpacity>
                 </View>
               ))}
               {photosWith.length < 2 ? (
                 <TouchableOpacity style={st.addThumb} onPress={addWithMark} activeOpacity={0.8}>
-                  <Text style={{ fontSize: 22, color: C.muted }}>✏️＋</Text>
-                  <Text style={{ fontSize: 10, color: C.muted }}>Add + Mark</Text>
+                  <Text style={{ fontSize: 26, color: C.muted }}>＋</Text>
+                  <Text style={{ fontSize: 10, color: C.muted }}>Add</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
