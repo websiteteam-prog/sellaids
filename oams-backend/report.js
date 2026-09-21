@@ -76,12 +76,16 @@ async function buildPptxBuffer(store, work, meta) {
 
   const photos = (work.storeImages || []).filter(isImg);
 
-  // ---- FRONT PHOTO ----
+  // ---- FRONT PHOTO (+ store-photos remark) ----
   {
     const s = pptx.addSlide();
     header(s, store, "Front Photo");
-    if (photos[0]) img(s, photos[0], 3.1, 2.15, 3.8, 5.0);
-    else s.addText("No front photo", { x: 0.3, y: 4, w: 9.4, h: 0.5, fontSize: 15, italic: true, color: "999999", align: "center" });
+    if (photos[0]) img(s, photos[0], 3.1, 2.05, 3.8, 4.25);
+    else s.addText("No front photo", { x: 0.3, y: 3.6, w: 9.4, h: 0.5, fontSize: 15, italic: true, color: "999999", align: "center" });
+    if (work.storeRemark) {
+      s.addText("STORE PHOTOS — REMARKS :", { x: 0.4, y: 6.4, w: 9.2, h: 0.3, fontSize: 12, bold: true, color: RED });
+      s.addText(String(work.storeRemark), { x: 0.4, y: 6.72, w: 9.2, h: 0.72, fontSize: 12, color: BLACK, valign: "top" });
+    }
   }
 
   // ---- STORE OVERVIEW (2 top + 1 bottom-center per slide) ----
@@ -124,6 +128,14 @@ async function buildPptxBuffer(store, work, meta) {
       eph.slice(i, i + 6).forEach((d, k) => { const r = Math.floor(k / 3), c = k % 3; img(s2, d, 0.5 + c * 3.15, 2.2 + r * 2.5, 2.95, 2.35); });
     }
   });
+
+  // ---- FINAL REMARKS (if any) ----
+  if (work.finalRemark) {
+    const s = pptx.addSlide();
+    header(s, store, "Final Remarks");
+    s.addText("FINAL REMARKS :", { x: 0.5, y: 2.4, w: 9, h: 0.4, fontSize: 16, bold: true, color: RED });
+    s.addText(String(work.finalRemark), { x: 0.5, y: 2.95, w: 9, h: 4, fontSize: 15, color: BLACK, valign: "top" });
+  }
 
   return await pptx.write({ outputType: "nodebuffer" });
 }
