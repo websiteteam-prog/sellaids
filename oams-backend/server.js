@@ -229,12 +229,11 @@ app.post("/api/admin/users", requireAdmin, wrap(async (req, res) => {
 app.delete("/api/admin/users/:empCode", requireAdmin, wrap(async (req, res) => { await db.deleteUser(req.params.empCode); res.json({ ok: true }); }));
 
 /* =========================== STATIC =========================== */
-// Admin panel (web): /admin
+// The WEBSITE is the ADMIN PANEL only. Recce submissions happen in the mobile
+// app; they save to this backend's database and show up here in /admin.
 app.use("/admin", express.static(path.join(__dirname, "admin")));
-// Field-app WEBSITE at the site root (built with:  cd oams-rn && npm run build:web).
-// Served from the same origin as /api, so the web build auto-connects to this backend.
-// (If not built yet, "/" simply 404s — the admin panel and API still work.)
-app.use("/", express.static(path.join(__dirname, "webapp")));
+// Site root -> admin panel (the field app is NOT served on the website).
+app.get("/", (_req, res) => res.redirect("/admin/"));
 
 const PORT = process.env.PORT || 4000;
 db.init().then(() => {
