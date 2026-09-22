@@ -15,7 +15,9 @@
  * ========================================================================= */
 
 // Set this for the mobile APK to talk to your backend. Leave "" for offline.
-let base = "";
+// LIVE server (Hanu Multimedia). Uses HTTPS — make sure the certbot/SSL step
+// (DEPLOY-LIVE.md Step 5) is done, or the app can't connect.
+let base = "https://thehanumultimedia.com/api";
 
 // On the WEBSITE: if not set above, use the same origin the site is served from
 // (so the field-app website served by the backend connects automatically).
