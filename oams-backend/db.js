@@ -65,10 +65,17 @@ function mysqlBackend() {
     async init() {
       const conn = { host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306), user: process.env.DB_USER, password: process.env.DB_PASSWORD };
       const dbName = process.env.DB_NAME || "oams";
-      // Make sure the database exists first (so a fresh MySQL just works — no manual create).
-      const boot = await mysql.createConnection(Object.assign({ charset: "utf8mb4" }, conn));
-      await boot.query("CREATE DATABASE IF NOT EXISTS `" + dbName.replace(/`/g, "") + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
-      await boot.end();
+      // Try to create the database (works on a VPS / root-ish user, so a fresh
+      // MySQL just works). On SHARED HOSTING (cPanel) you create the DB in the
+      // panel and the app user usually can't CREATE DATABASE — that's fine, we
+      // simply connect to the existing DB instead of crashing.
+      try {
+        const boot = await mysql.createConnection(Object.assign({ charset: "utf8mb4" }, conn));
+        await boot.query("CREATE DATABASE IF NOT EXISTS `" + dbName.replace(/`/g, "") + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
+        await boot.end();
+      } catch (e) {
+        console.log("[db] skipping auto-create of database (" + (e.code || e.message) + ") — will use existing DB '" + dbName + "'");
+      }
       pool = mysql.createPool(Object.assign({ database: dbName, waitForConnections: true, connectionLimit: 5, charset: "utf8mb4" }, conn));
       await q(`CREATE TABLE IF NOT EXISTS admins (username VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128))`);
       await q(`CREATE TABLE IF NOT EXISTS users (emp_code VARCHAR(64) PRIMARY KEY, password VARCHAR(255), name VARCHAR(128), mode VARCHAR(32))`);
