@@ -15,9 +15,19 @@ const db = require("./db");
 const { buildPptxBuffer } = require("./report");
 const XLSX = require("xlsx");
 const archiver = require("archiver");
+// Optional: build a nicely STYLED .xlsx template (coloured header, borders).
+// If the package isn't installed we fall back to plain xlsx, so the app always runs.
+let ExcelJS = null;
+try { ExcelJS = require("exceljs"); } catch (e) {}
 
-// Columns the client's Excel uses (row of headers can sit anywhere in the sheet).
-const TEMPLATE_HEADERS = ["BRAND", "SR. NO.", "DEALER CODE", "DEALER NAME", "ADDRESS", "CITY", "CONTACT NO.", "ELEMENT", "WIDTH (INCH)", "HEIGHT (INCH)", "QTY", "SQFT", "REMARKS"];
+// Clean column set the client wants for the downloadable template (matches their sample).
+const TEMPLATE_HEADERS = ["BRAND", "CODE", "DEALER NAME", "ADDRESS", "CITY", "DEALER CONTACT NO.", "ELEMENT", "W", "H", "QTY"];
+// Example rows shown inside the template so admins see how to fill multi-element dealers.
+const TEMPLATE_EXAMPLE = [
+  ["Daikin", "8935", "BAJAJ ELECTRIC and WATCH SERVICE", "Main Bazar, Rampura", "Rampura", "9465106000", "GSB NEW", 144, 48, 1],
+  ["Daikin", "8935", "BAJAJ ELECTRIC and WATCH SERVICE", "Main Bazar, Rampura", "Rampura", "9465106000", "SUNBOARD 3MM", 48, 150, 1],
+  ["SAMSUNG", "8936", "NAURATA RAM MURARI LAL", "Sadar Bazar, Dhuri", "Dhuri", "9417512001", "ACP BOARD", 120, 48, 1]
+];
 
 // Parse an uploaded Excel buffer into structured dealers (each with an elements[]).
 // Dealer info may appear only on the first element row of a dealer, so we carry it forward.
@@ -38,7 +48,7 @@ function parseDealers(buffer) {
   const col = (names) => { for (const n of names) if (H[n] != null) return H[n]; return -1; };
   const cBrand = col(["BRAND"]), cSr = col(["SR. NO.", "SR NO.", "SR NO", "SRNO", "SR. NO", "S. NO."]),
     cCode = col(["DEALER CODE", "STORE CODE", "RET CODE", "CODE"]), cName = col(["DEALER NAME", "STORE NAME", "DEALER"]),
-    cAddr = col(["ADDRESS"]), cCity = col(["CITY"]), cPhone = col(["CONTACT NO.", "CONTACT NO", "CONTACT", "PHONE", "MOBILE"]),
+    cAddr = col(["ADDRESS"]), cCity = col(["CITY"]), cPhone = col(["DEALER CONTACT NO.", "CONTACT NO.", "CONTACT NO", "CONTACT", "PHONE", "MOBILE"]),
     cEl = col(["ELEMENT", "ELEMENT TYPE", "TYPE"]), cW = col(["WIDTH (INCH)", "WIDTH", "WIDTH(INCH)", "W"]),
     cH = col(["HEIGHT (INCH)", "HEIGHT", "HEIGHT(INCH)", "H"]), cQ = col(["QTY", "QUANTITY", "QNTY"]),
     cSq = col(["SQFT", "SQ FT", "SQ.FT", "AREA"]), cRem = col(["REMARKS", "REMARK", "NOTE"]);
@@ -71,11 +81,39 @@ function parseDealers(buffer) {
   return dealers;
 }
 
-// Build a blank .xlsx template (header + one example row) for admins to fill.
-function buildTemplateBuffer() {
-  const example = ["Mi", "1", "626425", "Sharma Electronics Store", "Chandigarh Road, Samrala", "Ludhiana", "9888908988", "GSB NEW", 120, 36, 1, 30, "Main front board"];
-  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, example]);
-  ws["!cols"] = TEMPLATE_HEADERS.map((h) => ({ wch: Math.max(10, h.length + 2) }));
+// Column widths (in characters) for the template sheet.
+const TEMPLATE_WIDTHS = [12, 10, 30, 26, 14, 18, 20, 8, 8, 8];
+
+// Build the downloadable .xlsx template for admins to fill.
+// Uses ExcelJS for a clean, coloured, bordered look (like the client's sample);
+// falls back to plain xlsx (same columns) if ExcelJS isn't installed.
+async function buildTemplateBuffer() {
+  if (ExcelJS) {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Dealers", { views: [{ state: "frozen", ySplit: 1 }] });
+    ws.columns = TEMPLATE_HEADERS.map((h, i) => ({ header: h, width: TEMPLATE_WIDTHS[i] || 14 }));
+    const border = { top: { style: "thin", color: { argb: "FF9FA8DA" } }, bottom: { style: "thin", color: { argb: "FF9FA8DA" } }, left: { style: "thin", color: { argb: "FF9FA8DA" } }, right: { style: "thin", color: { argb: "FF9FA8DA" } } };
+    const head = ws.getRow(1);
+    head.height = 26;
+    head.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FF1A237E" }, size: 11 };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC5CAE9" } };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      cell.border = border;
+    });
+    TEMPLATE_EXAMPLE.forEach((r) => {
+      const row = ws.addRow(r);
+      row.height = 30;
+      row.eachCell((cell) => {
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        cell.border = border;
+      });
+    });
+    return await wb.xlsx.writeBuffer();
+  }
+  // Fallback: plain xlsx (no colours) with the same clean columns.
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, ...TEMPLATE_EXAMPLE]);
+  ws["!cols"] = TEMPLATE_WIDTHS.map((w) => ({ wch: w }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Dealers");
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
@@ -216,7 +254,7 @@ app.get("/api/admin/template.xlsx", wrap(async (req, res) => {
   if (!adminOk(req)) return res.status(401).send("Admin auth required");
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", 'attachment; filename="Hanu_Multimedia_Dealer_Import_Template.xlsx"');
-  res.send(buildTemplateBuffer());
+  res.send(await buildTemplateBuffer());
 }));
 
 app.get("/api/admin/users", requireAdmin, wrap(async (_req, res) => res.json(await db.listUsers())));
