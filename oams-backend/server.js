@@ -81,18 +81,19 @@ function parseDealers(buffer) {
   return dealers;
 }
 
-// Column widths (in characters) for the template sheet.
-const TEMPLATE_WIDTHS = [12, 10, 30, 26, 14, 18, 20, 8, 8, 8];
+// Column widths (in characters) shared by the template and the recce export.
+const SHEET_WIDTHS = [12, 10, 30, 26, 14, 18, 20, 8, 8, 8];
 
-// Build the downloadable .xlsx template for admins to fill.
-// Uses ExcelJS for a clean, coloured, bordered look (like the client's sample);
-// falls back to plain xlsx (same columns) if ExcelJS isn't installed.
-async function buildTemplateBuffer() {
+// Build a clean, STYLED .xlsx (coloured header, borders, frozen header row) via
+// ExcelJS; falls back to plain xlsx (same columns) if ExcelJS isn't installed.
+async function buildXlsxBuffer(sheetName, headers, dataRows, widths) {
+  widths = widths || headers.map((h) => Math.max(10, h.length + 4));
   if (ExcelJS) {
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet("Dealers", { views: [{ state: "frozen", ySplit: 1 }] });
-    ws.columns = TEMPLATE_HEADERS.map((h, i) => ({ header: h, width: TEMPLATE_WIDTHS[i] || 14 }));
-    const border = { top: { style: "thin", color: { argb: "FF9FA8DA" } }, bottom: { style: "thin", color: { argb: "FF9FA8DA" } }, left: { style: "thin", color: { argb: "FF9FA8DA" } }, right: { style: "thin", color: { argb: "FF9FA8DA" } } };
+    const ws = wb.addWorksheet(sheetName, { views: [{ state: "frozen", ySplit: 1 }] });
+    ws.columns = headers.map((h, i) => ({ header: h, width: widths[i] || 14 }));
+    const edge = { style: "thin", color: { argb: "FF9FA8DA" } };
+    const border = { top: edge, bottom: edge, left: edge, right: edge };
     const head = ws.getRow(1);
     head.height = 26;
     head.eachCell((cell) => {
@@ -101,9 +102,9 @@ async function buildTemplateBuffer() {
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
       cell.border = border;
     });
-    TEMPLATE_EXAMPLE.forEach((r) => {
+    dataRows.forEach((r) => {
       const row = ws.addRow(r);
-      row.height = 30;
+      row.height = 28;
       row.eachCell((cell) => {
         cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
         cell.border = border;
@@ -112,11 +113,16 @@ async function buildTemplateBuffer() {
     return await wb.xlsx.writeBuffer();
   }
   // Fallback: plain xlsx (no colours) with the same clean columns.
-  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, ...TEMPLATE_EXAMPLE]);
-  ws["!cols"] = TEMPLATE_WIDTHS.map((w) => ({ wch: w }));
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+  ws["!cols"] = widths.map((w) => ({ wch: w }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Dealers");
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+}
+
+// Downloadable dealer-import template (clean columns + example rows).
+function buildTemplateBuffer() {
+  return buildXlsxBuffer("Dealers", TEMPLATE_HEADERS, TEMPLATE_EXAMPLE, SHEET_WIDTHS);
 }
 
 const app = express();
@@ -202,24 +208,30 @@ app.get("/api/admin/recces/ppt-zip", wrap(async (req, res) => {
   archive.finalize();
 }));
 
-// ---- Export the filtered recces list as an Excel file ----
+// ---- Export the filtered recces as an Excel file (ONE ROW PER ELEMENT) ----
+// Clean client format: BRAND, CODE, DEALER NAME, ADDRESS, CITY, DEALER CONTACT NO.,
+// ELEMENT, W, H, QTY. Address + Contact aren't stored on the submission, so we look
+// them up from the dealer master by dealer code.
 app.get("/api/admin/recces/excel", wrap(async (req, res) => {
   if (!adminOk(req)) return res.status(401).send("Admin auth required");
   const { q, user, city, brand, from, to } = req.query;
   const list = await db.listSubmissions({ q, user, city, brand, from, to });
-  const rows = [["Store Name", "Dealer Code", "Brand", "City", "GST No", "Recce By", "Emp Code", "Store Photos", "Elements", "Submitted At", "Elements Detail"]];
+  const dealers = await db.listDealers();
+  const dmap = {};
+  dealers.forEach((d) => { dmap[String(d.storeCode || "").toLowerCase()] = d; });
+  const headers = ["BRAND", "CODE", "DEALER NAME", "ADDRESS", "CITY", "DEALER CONTACT NO.", "ELEMENT", "W", "H", "QTY"];
+  const rows = [];
   list.forEach((r) => {
-    const det = (r.elements || []).map((e) => (e.type || "") + " (" + (e.width || "") + "\" x " + (e.height || "") + "\"" + (e.qty ? ", qty " + e.qty : "") + ")").join("; ");
-    rows.push([r.storeName || "", r.storeCode || "", r.brand || "", r.city || "", r.gstNo || "", r.userName || "", r.userEmpCode || "",
-      r.storePhotoCount || 0, r.elementsCount || 0, r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "", det]);
+    const d = dmap[String(r.storeCode || "").toLowerCase()] || {};
+    const base = [r.brand || "", r.storeCode || "", r.storeName || "", d.address || "", r.city || "", d.phone || ""];
+    const els = r.elements || [];
+    if (els.length) els.forEach((e) => rows.push(base.concat([e.type || "", e.width || "", e.height || "", e.qty || ""])));
+    else rows.push(base.concat(["", "", "", ""]));
   });
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = rows[0].map((h, i) => ({ wch: (i === 0 || i === 10) ? 28 : 14 }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Recces");
+  const buf = await buildXlsxBuffer("Recces", headers, rows, SHEET_WIDTHS);
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", 'attachment; filename="Hanu_Multimedia_Recces.xlsx"');
-  res.send(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
+  res.send(buf);
 }));
 
 app.get("/api/admin/recces/:id/ppt", wrap(async (req, res) => {
